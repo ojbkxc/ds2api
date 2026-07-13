@@ -241,10 +241,7 @@ func isAccountSwitchRetryable(outErr *assistantturn.OutputError) bool {
 	case http.StatusUnauthorized:
 		return true
 	}
-	if outErr.Status >= 500 {
-		return true
-	}
-	return false
+	return outErr.Status >= 500
 }
 
 func startStandardCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth, stdReq promptcompat.StandardRequest, opts Options, maxAttempts int) (StartResult, *assistantturn.OutputError) {

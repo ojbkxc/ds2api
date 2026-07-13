@@ -11,9 +11,6 @@ import (
 var markdownImagePattern = regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
 const (
-	beginSentenceMarker      = "<|begin▁of▁sentence|>"
-	systemMarker             = "<|System|>"
-	userMarker               = "<|User|>"
 	assistantMarker          = "<|Assistant|>"
 	toolMarker               = "<|Tool|>"
 	endSentenceMarker        = "<|end▁of▁sentence|>"

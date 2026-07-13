@@ -22,11 +22,6 @@ func randomPurpose() string {
 	return purposes[rand.Intn(len(purposes))]
 }
 
-const (
-	currentInputFilename = promptcompat.CurrentInputContextFilename
-	currentToolsFilename = promptcompat.CurrentToolsContextFilename
-)
-
 var contentTypes = []string{
 	"text/plain; charset=utf-8",
 	"text/plain",

@@ -31,7 +31,7 @@ var toolCallReminders = []string{
 func BuildToolCallInstructions(toolNames []string) string {
 	title := toolCallFormatTitles[rand.Intn(len(toolCallFormatTitles))]
 	reminder := toolCallReminders[rand.Intn(len(toolCallReminders))]
-	
+
 	return title + `
 
 <|DSML|tool_calls>

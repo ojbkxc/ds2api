@@ -1,4 +1,4 @@
-﻿package promptcompat
+package promptcompat
 
 import (
 	"strings"
