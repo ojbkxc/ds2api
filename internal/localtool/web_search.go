@@ -106,11 +106,11 @@ func (e *WebSearchExecutor) Execute(call ToolCall, context ToolExecutionContext)
 	hasNoResults := strings.Contains(lastError, "no parseable search results")
 
 	return &ToolResult{
-		Ok:      false,
-		Name:    call.Name,
-		Summary: map[bool]string{true: "No search results found", false: "Search failed"}[hasNoResults],
-		Detail:  lastError,
-		Error:   &ToolError{Code: map[bool]string{true: map[bool]string{true: "search_permission_denied", false: "search_no_results"}[isPermErr], false: "search_failed"}[hasNoResults], Message: lastError, Retryable: !isPermErr},
+		Ok:        false,
+		Name:      call.Name,
+		Summary:   map[bool]string{true: "No search results found", false: "Search failed"}[hasNoResults],
+		Detail:    lastError,
+		Error:     &ToolError{Code: map[bool]string{true: map[bool]string{true: "search_permission_denied", false: "search_no_results"}[isPermErr], false: "search_failed"}[hasNoResults], Message: lastError, Retryable: !isPermErr},
 		StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds(),
 	}, nil
 }

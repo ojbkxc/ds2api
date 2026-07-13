@@ -16,10 +16,10 @@ type ToolCallId = string
 type ToolExecutionTrigger string
 
 const (
-	ToolExecutionTriggerManualChat   ToolExecutionTrigger = "manual_chat"
-	ToolExecutionTriggerAgentRun     ToolExecutionTrigger = "agent_run"
-	ToolExecutionTriggerAutomation   ToolExecutionTrigger = "automation"
-	ToolExecutionTriggerTest         ToolExecutionTrigger = "test"
+	ToolExecutionTriggerManualChat    ToolExecutionTrigger = "manual_chat"
+	ToolExecutionTriggerAgentRun      ToolExecutionTrigger = "agent_run"
+	ToolExecutionTriggerAutomation    ToolExecutionTrigger = "automation"
+	ToolExecutionTriggerTest          ToolExecutionTrigger = "test"
 	ToolExecutionTriggerSidepanelChat ToolExecutionTrigger = "sidepanel_chat"
 )
 
@@ -42,11 +42,11 @@ const (
 type ToolTransportKind string
 
 const (
-	ToolTransportKindInProcess     ToolTransportKind = "in_process"
-	ToolTransportKindHTTP          ToolTransportKind = "http"
-	ToolTransportKindSSE           ToolTransportKind = "sse"
-	ToolTransportKindStreamableHTTP ToolTransportKind = "streamable_http"
-	ToolTransportKindStdioBridge   ToolTransportKind = "stdio_bridge"
+	ToolTransportKindInProcess       ToolTransportKind = "in_process"
+	ToolTransportKindHTTP            ToolTransportKind = "http"
+	ToolTransportKindSSE             ToolTransportKind = "sse"
+	ToolTransportKindStreamableHTTP  ToolTransportKind = "streamable_http"
+	ToolTransportKindStdioBridge     ToolTransportKind = "stdio_bridge"
 	ToolTransportKindNativeMessaging ToolTransportKind = "native_messaging"
 )
 
@@ -58,18 +58,18 @@ const (
 )
 
 type ToolProviderIdentity struct {
-	Kind        ToolProviderKind   `json:"kind"`
-	ID          ToolProviderId     `json:"id"`
-	DisplayName string             `json:"display_name"`
-	Transport   ToolTransportKind  `json:"transport"`
+	Kind        ToolProviderKind  `json:"kind"`
+	ID          ToolProviderId    `json:"id"`
+	DisplayName string            `json:"display_name"`
+	Transport   ToolTransportKind `json:"transport"`
 }
 
 type ToolDescriptorSchema struct {
-	Type                 string                 `json:"type"`
-	Properties           map[string]JsonValue   `json:"properties,omitempty"`
-	Required             []string               `json:"required,omitempty"`
-	AdditionalProperties bool                   `json:"additional_properties,omitempty"`
-	Description          string                 `json:"description,omitempty"`
+	Type                 string               `json:"type"`
+	Properties           map[string]JsonValue `json:"properties,omitempty"`
+	Required             []string             `json:"required,omitempty"`
+	AdditionalProperties bool                 `json:"additional_properties,omitempty"`
+	Description          string               `json:"description,omitempty"`
 }
 
 type ToolDescriptorExecution struct {
@@ -81,16 +81,16 @@ type ToolDescriptorExecution struct {
 }
 
 type ToolDescriptor struct {
-	ID             ToolDescriptorId         `json:"id"`
-	Provider       ToolProviderIdentity     `json:"provider"`
-	Name           string                   `json:"name"`
-	InvocationName string                   `json:"invocation_name"`
-	Title          string                   `json:"title"`
-	Description    string                   `json:"description"`
-	InputSchema    ToolDescriptorSchema     `json:"input_schema"`
-	OutputSchema   *ToolDescriptorSchema    `json:"output_schema,omitempty"`
-	Execution      ToolDescriptorExecution  `json:"execution"`
-	Annotations    map[string]string        `json:"annotations,omitempty"`
+	ID             ToolDescriptorId        `json:"id"`
+	Provider       ToolProviderIdentity    `json:"provider"`
+	Name           string                  `json:"name"`
+	InvocationName string                  `json:"invocation_name"`
+	Title          string                  `json:"title"`
+	Description    string                  `json:"description"`
+	InputSchema    ToolDescriptorSchema    `json:"input_schema"`
+	OutputSchema   *ToolDescriptorSchema   `json:"output_schema,omitempty"`
+	Execution      ToolDescriptorExecution `json:"execution"`
+	Annotations    map[string]string       `json:"annotations,omitempty"`
 }
 
 type ToolCallSource struct {
@@ -106,49 +106,49 @@ type ToolCallSource struct {
 }
 
 type ToolCall struct {
-	ID           ToolCallId        `json:"id,omitempty"`
-	DescriptorId ToolDescriptorId  `json:"descriptor_id,omitempty"`
-	Provider     *ToolProviderIdentity `json:"provider,omitempty"`
-	Name         string            `json:"name"`
-	InvocationName string          `json:"invocation_name,omitempty"`
-	Payload      ToolPayload       `json:"payload"`
-	Raw          string            `json:"raw"`
-	ParseError   *ToolError        `json:"parse_error,omitempty"`
-	Source       *ToolCallSource   `json:"source,omitempty"`
-	CreatedAt    time.Time         `json:"created_at,omitempty"`
+	ID             ToolCallId            `json:"id,omitempty"`
+	DescriptorId   ToolDescriptorId      `json:"descriptor_id,omitempty"`
+	Provider       *ToolProviderIdentity `json:"provider,omitempty"`
+	Name           string                `json:"name"`
+	InvocationName string                `json:"invocation_name,omitempty"`
+	Payload        ToolPayload           `json:"payload"`
+	Raw            string                `json:"raw"`
+	ParseError     *ToolError            `json:"parse_error,omitempty"`
+	Source         *ToolCallSource       `json:"source,omitempty"`
+	CreatedAt      time.Time             `json:"created_at,omitempty"`
 }
 
 type ToolError struct {
-	Code      string                 `json:"code"`
-	Message   string                 `json:"message"`
-	Retryable bool                   `json:"retryable"`
-	Details   ToolPayload            `json:"details,omitempty"`
+	Code      string      `json:"code"`
+	Message   string      `json:"message"`
+	Retryable bool        `json:"retryable"`
+	Details   ToolPayload `json:"details,omitempty"`
 }
 
 type ToolResult struct {
-	Ok          bool                 `json:"ok"`
-	Summary     string               `json:"summary"`
-	Detail      string               `json:"detail,omitempty"`
-	CallId      ToolCallId           `json:"call_id,omitempty"`
-	DescriptorId ToolDescriptorId    `json:"descriptor_id,omitempty"`
-	Provider    *ToolProviderIdentity `json:"provider,omitempty"`
-	Name        string               `json:"name,omitempty"`
-	Output      JsonValue            `json:"output,omitempty"`
-	Error       *ToolError           `json:"error,omitempty"`
-	StartedAt   time.Time            `json:"started_at,omitempty"`
-	CompletedAt time.Time            `json:"completed_at,omitempty"`
-	DurationMs  int64                `json:"duration_ms,omitempty"`
-	Truncated   bool                 `json:"truncated,omitempty"`
+	Ok           bool                  `json:"ok"`
+	Summary      string                `json:"summary"`
+	Detail       string                `json:"detail,omitempty"`
+	CallId       ToolCallId            `json:"call_id,omitempty"`
+	DescriptorId ToolDescriptorId      `json:"descriptor_id,omitempty"`
+	Provider     *ToolProviderIdentity `json:"provider,omitempty"`
+	Name         string                `json:"name,omitempty"`
+	Output       JsonValue             `json:"output,omitempty"`
+	Error        *ToolError            `json:"error,omitempty"`
+	StartedAt    time.Time             `json:"started_at,omitempty"`
+	CompletedAt  time.Time             `json:"completed_at,omitempty"`
+	DurationMs   int64                 `json:"duration_ms,omitempty"`
+	Truncated    bool                  `json:"truncated,omitempty"`
 }
 
 type ToolExecutionContext struct {
-	Trigger         ToolExecutionTrigger `json:"trigger"`
-	RequestId       string               `json:"request_id"`
-	ChatSessionId   string               `json:"chat_session_id,omitempty"`
-	TaskId          string               `json:"task_id,omitempty"`
-	RunId           string               `json:"run_id,omitempty"`
-	TimeoutMs       int                  `json:"timeout_ms,omitempty"`
-	MaxResultBytes  int                  `json:"max_result_bytes,omitempty"`
+	Trigger        ToolExecutionTrigger `json:"trigger"`
+	RequestId      string               `json:"request_id"`
+	ChatSessionId  string               `json:"chat_session_id,omitempty"`
+	TaskId         string               `json:"task_id,omitempty"`
+	RunId          string               `json:"run_id,omitempty"`
+	TimeoutMs      int                  `json:"timeout_ms,omitempty"`
+	MaxResultBytes int                  `json:"max_result_bytes,omitempty"`
 }
 
 type ToolExecutor interface {
@@ -197,17 +197,17 @@ func (r *ToolRegistry) Has(name string) bool {
 }
 
 type ToolCallHistoryRecord struct {
-	ID        string        `json:"id"`
-	Call      ToolCall      `json:"call"`
-	Result    ToolResult    `json:"result"`
-	CreatedAt time.Time     `json:"created_at"`
+	ID        string               `json:"id"`
+	Call      ToolCall             `json:"call"`
+	Result    ToolResult           `json:"result"`
+	CreatedAt time.Time            `json:"created_at"`
 	Source    ToolExecutionTrigger `json:"source"`
 }
 
 type ToolRegistrySnapshot struct {
-	Providers  []ToolProviderIdentity `json:"providers"`
-	Tools      []ToolDescriptor       `json:"tools"`
-	RefreshedAt time.Time             `json:"refreshed_at"`
+	Providers   []ToolProviderIdentity `json:"providers"`
+	Tools       []ToolDescriptor       `json:"tools"`
+	RefreshedAt time.Time              `json:"refreshed_at"`
 }
 
 func NewToolCallId() ToolCallId {

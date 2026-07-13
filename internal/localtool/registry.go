@@ -1,10 +1,12 @@
 package localtool
 
 var DefaultRegistry = NewToolRegistry()
+var DefaultMemoryStorage = NewInMemoryStorage()
 
 func init() {
 	DefaultRegistry.Register(NewWebSearchExecutor())
 	DefaultRegistry.Register(NewWebFetchExecutor())
+	DefaultRegistry.Register(NewMemoryToolExecutor(DefaultMemoryStorage))
 }
 
 func Execute(call ToolCall, context ToolExecutionContext) (*ToolResult, error) {
@@ -21,6 +23,10 @@ func HasTool(name string) bool {
 
 func ListTools() []ToolDescriptor {
 	return DefaultRegistry.List()
+}
+
+func GetMemoryStorage() MemoryStorage {
+	return DefaultMemoryStorage
 }
 
 type ToolNotFoundError struct{ Name string }
