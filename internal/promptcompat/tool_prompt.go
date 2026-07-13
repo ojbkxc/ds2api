@@ -112,24 +112,12 @@ type toolPromptParts struct {
 	Names        []string
 }
 
-func injectToolPrompt(messages []map[string]any, tools []any, policy ToolChoicePolicy) ([]map[string]any, []string) {
-	return injectToolPromptWithDescriptionsAndFilename(messages, tools, policy, true, "")
-}
-
-func injectToolPromptInstructionsOnly(messages []map[string]any, tools []any, policy ToolChoicePolicy) ([]map[string]any, []string) {
-	return injectToolPromptWithDescriptionsAndFilename(messages, tools, policy, false, "")
-}
-
 func InjectToolPromptWithFilename(messages []map[string]any, tools []any, policy ToolChoicePolicy, toolsFilename string) ([]map[string]any, []string) {
 	return injectToolPromptWithDescriptionsAndFilename(messages, tools, policy, true, toolsFilename)
 }
 
 func InjectToolPromptInstructionsOnlyWithFilename(messages []map[string]any, tools []any, policy ToolChoicePolicy, toolsFilename string) ([]map[string]any, []string) {
 	return injectToolPromptWithDescriptionsAndFilename(messages, tools, policy, false, toolsFilename)
-}
-
-func injectToolPromptWithDescriptions(messages []map[string]any, tools []any, policy ToolChoicePolicy, includeDescriptions bool) ([]map[string]any, []string) {
-	return injectToolPromptWithDescriptionsAndFilename(messages, tools, policy, includeDescriptions, "")
 }
 
 func injectToolPromptWithDescriptionsAndFilename(messages []map[string]any, tools []any, policy ToolChoicePolicy, includeDescriptions bool, toolsFilename string) ([]map[string]any, []string) {
