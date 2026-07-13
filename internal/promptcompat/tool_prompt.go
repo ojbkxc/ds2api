@@ -1,6 +1,7 @@
 package promptcompat
 
 import (
+	"ds2api/internal/prompt"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -198,6 +199,12 @@ func buildToolPromptParts(tools []any, policy ToolChoicePolicy) toolPromptParts 
 		name, desc, schema := toolcall.ExtractToolMeta(tool)
 		name = strings.TrimSpace(name)
 		if !isAllowed(name) {
+			continue
+		}
+		// Sanitize tool metadata to prevent injection through the
+		// tool-definition channel (e.g. description containing role prefixes).
+		name, desc = prompt.SanitizeToolMeta(name, desc)
+		if name == "" {
 			continue
 		}
 		names = append(names, name)

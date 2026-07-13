@@ -155,6 +155,11 @@ func buildClaudeToolPrompt(tools []any) string {
 		if name == "" {
 			continue
 		}
+		// Sanitize tool metadata to prevent injection through descriptions.
+		name, desc = prompt.SanitizeToolMeta(name, desc)
+		if name == "" {
+			continue
+		}
 		names = append(names, name)
 		schema, _ := json.Marshal(schemaObj)
 		toolSchemas = append(toolSchemas, fmt.Sprintf("Tool: %s\nDescription: %s\nParameters: %s", name, desc, schema))

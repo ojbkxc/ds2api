@@ -1,6 +1,7 @@
 package promptcompat
 
 import (
+	"ds2api/internal/prompt"
 	"math/rand"
 	"strings"
 )
@@ -61,6 +62,9 @@ func AppendThinkingInjectionPromptToLatestUser(messages []any, injectionPrompt s
 }
 
 func containsThinkingInjection(content string) bool {
+	// Strip zero-width characters first so attackers cannot bypass
+	// detection with obfuscation like "Reasoning\u200B Effort:".
+	content = prompt.StripZeroWidthChars(content)
 	contentLower := strings.ToLower(content)
 	markers := []string{
 		"reasoning effort:",

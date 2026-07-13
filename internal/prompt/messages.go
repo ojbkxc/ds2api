@@ -59,6 +59,12 @@ func MessagesPrepareWithThinkingAndGuard(messages []map[string]any, _ bool, skip
 	for _, m := range messages {
 		role, _ := m["role"].(string)
 		text := NormalizeContent(m["content"])
+		// Sanitize user-controlled input to prevent role-prefix injection
+		// and format-injection attacks before the prompt is assembled.
+		switch role {
+		case "user", "tool":
+			text = SanitizeUserInput(text)
+		}
 		processed = append(processed, block{Role: role, Text: text})
 	}
 	if len(processed) == 0 {

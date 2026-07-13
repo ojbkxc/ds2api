@@ -1,6 +1,7 @@
 package promptcompat
 
 import (
+	"ds2api/internal/prompt"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -223,6 +224,11 @@ func buildOpenAIHistoryTranscriptImpl(messages []any, title string) string {
 		content := strings.TrimSpace(buildOpenAIHistoryEntry(role, msg))
 		if content == "" {
 			continue
+		}
+		// Sanitize user-controlled content to prevent separator-format
+		// injection that could corrupt the transcript structure.
+		if role == "user" || role == "tool" {
+			content = prompt.SanitizeUserInput(content)
 		}
 		entry++
 		fmt.Fprintf(&b, separatorFormat+"\n%s\n\n", entry, roleLabelForHistory(role), content)
