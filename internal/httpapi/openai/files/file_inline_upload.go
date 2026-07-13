@@ -60,13 +60,19 @@ func (h *Handler) PreprocessInlineFileInputs(ctx context.Context, a *auth.Reques
 	if h == nil || h.DS == nil || len(req) == 0 {
 		return nil
 	}
+	resolvedModel := ""
 	modelType := "default"
 	if requestedModel, ok := req["model"].(string); ok {
-		if resolvedModel, ok := config.ResolveModel(h.Store, requestedModel); ok {
-			if resolvedType, ok := config.GetModelType(resolvedModel); ok {
+		if r, ok := config.ResolveModel(h.Store, requestedModel); ok {
+			resolvedModel = r
+			if resolvedType, ok := config.GetModelType(r); ok {
 				modelType = resolvedType
 			}
 		}
+	}
+	// DeepSeek expert mode does not support file uploads.
+	if resolvedModel != "" && !config.ModelSupportsFileUpload(resolvedModel) {
+		return nil
 	}
 	state := &inlineUploadState{
 		ctx:          ctx,

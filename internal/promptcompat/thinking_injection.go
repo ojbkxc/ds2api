@@ -23,6 +23,10 @@ func GetRandomThinkingInjectionPrompt() string {
 
 var DefaultThinkingInjectionPrompt = thinkingInjectionPrompts[0]
 
+// ThinkingInjectionMarker is the default thinking injection text used in tests
+// to verify that thinking injection has been appended.
+var ThinkingInjectionMarker = DefaultThinkingInjectionPrompt
+
 func AppendThinkingInjectionToLatestUser(messages []any) ([]any, bool) {
 	return AppendThinkingInjectionPromptToLatestUser(messages, "")
 }

@@ -308,6 +308,10 @@ func replaceGeneratedCurrentInputRefs(existing []string, oldHistoryID, oldToolsI
 }
 
 func (s Service) isModelFileUploadDisabled(model string) bool {
+	// DeepSeek expert mode does not support file uploads by default.
+	if !config.ModelSupportsFileUpload(model) {
+		return true
+	}
 	disabledModels := s.Store.CurrentInputFileDisabledModels()
 	if len(disabledModels) == 0 {
 		return false
