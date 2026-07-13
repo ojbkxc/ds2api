@@ -124,8 +124,8 @@ func TestGetModelConfigCaseInsensitive(t *testing.T) {
 	if !ok {
 		t.Fatal("expected ok for case-insensitive deepseek-v4-flash")
 	}
-	if !thinking || search {
-		t.Fatalf("expected thinking=true search=false for case-insensitive deepseek-v4-flash")
+	if !thinking || !search {
+		t.Fatalf("expected thinking=true search=true for case-insensitive deepseek-v4-flash, got thinking=%v search=%v", thinking, search)
 	}
 }
 
