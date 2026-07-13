@@ -15,11 +15,11 @@ import (
 )
 
 func randomContentType() string {
-	return contentTypes[rand.Intn(len(contentTypes))]
+	return contentTypes[0]
 }
 
 func randomPurpose() string {
-	return purposes[rand.Intn(len(purposes))]
+	return purposes[0]
 }
 
 var contentTypes = []string{
