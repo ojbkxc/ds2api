@@ -13,13 +13,10 @@ import (
 )
 
 func main() {
-	if err := config.Init(); err != nil {
-		panic(err)
-	}
-
 	app, err := server.NewApp()
 	if err != nil {
-		config.Logger.Fatal("[main] init failed", "error", err)
+		config.Logger.Error("[main] init failed", "error", err)
+		os.Exit(1)
 	}
 
 	srv := &http.Server{
@@ -29,7 +26,8 @@ func main() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			config.Logger.Fatal("[main] listen failed", "error", err)
+			config.Logger.Error("[main] listen failed", "error", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -40,6 +38,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		config.Logger.Fatal("[main] shutdown failed", "error", err)
+		config.Logger.Error("[main] shutdown failed", "error", err)
+		os.Exit(1)
 	}
 }
