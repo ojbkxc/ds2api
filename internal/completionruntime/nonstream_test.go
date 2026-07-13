@@ -260,7 +260,7 @@ func TestExecuteNonStreamWithRetryUsesParentMessageForEmptyRetry(t *testing.T) {
 func TestExecuteNonStreamWithRetryConvertsReferenceMarkers(t *testing.T) {
 	ds := &fakeDeepSeekCaller{responses: []*http.Response{sseHTTPResponse(
 		http.StatusOK,
-		`data: {"p":"response/content","v":"答案[reference:0]�?,"citation":{"cite_index":0,"url":"https://example.com/ref"}}`,
+		`data: {"p":"response/content","v":"答案[reference:0]","citation":{"cite_index":0,"url":"https://example.com/ref"}}`,
 	)}}
 	stdReq := promptcompat.StandardRequest{
 		Surface:         "test",

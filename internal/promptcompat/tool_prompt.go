@@ -91,11 +91,7 @@ func buildToolsReferencePrompt(filename string) string {
 }
 
 func GenerateCurrentToolsFilename(historyFilename string) string {
-	name := strings.TrimSpace(historyFilename)
-	if name == "" || name == CurrentInputContextFilename {
-		return randomToolsFilename()
-	}
-	return randomToolsFilename()
+	return CurrentToolsContextFilename
 }
 
 func ToolsTranscriptTitle(filename string) string {

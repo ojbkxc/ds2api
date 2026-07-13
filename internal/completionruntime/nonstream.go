@@ -196,6 +196,37 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 			return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, turn.Error
 		}
 
+		if attempts >= 1 {
+			emptyOutputErr := &assistantturn.OutputError{
+				Status:  http.StatusServiceUnavailable,
+				Message: "Upstream service is unavailable and returned no output.",
+				Code:    "upstream_unavailable",
+			}
+			if strings.TrimSpace(turn.Thinking) != "" {
+				emptyOutputErr.Status = http.StatusTooManyRequests
+				emptyOutputErr.Message = "Upstream account hit a rate limit and returned reasoning without visible output."
+				emptyOutputErr.Code = "upstream_empty_output"
+			}
+			if canRetryOnAlternateAccount(ctx, a, emptyOutputErr, opts.RetryEnabled, nil) {
+				switched, switchErr := startStandardCompletionOnAlternateAccount(ctx, ds, a, stdReq, opts, maxAttempts)
+				if switchErr != nil {
+					return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, switchErr
+				}
+				if switched.Response != nil {
+					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after empty output", "surface", stdReq.Surface, "stream", false, "account", a.AccountID)
+					sessionID = switched.SessionID
+					payload = switched.Payload
+					pow = switched.Pow
+					currentResp = switched.Response
+					usagePrompt = stdReq.PromptTokenText
+					accumulatedThinking = ""
+					accumulatedRawThinking = ""
+					accumulatedToolDetectionThinking = ""
+					continue
+				}
+			}
+		}
+
 		attempts++
 		config.Logger.Info("[completion_runtime_empty_retry] attempting synthetic retry", "surface", stdReq.Surface, "stream", false, "retry_attempt", attempts, "parent_message_id", turn.ResponseMessageID)
 		retryPow, powErr := ds.GetPow(ctx, a, maxAttempts)
