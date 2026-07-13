@@ -93,10 +93,7 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 	historySession := startChatHistory(h.ChatHistory, r, a, stdReq)
 
 	if !stdReq.Stream {
-		result, outErr := completionruntime.ExecuteNonStreamWithRetry(r.Context(), h.DS, a, stdReq, completionruntime.Options{
-			RetryEnabled:     true,
-			CurrentInputFile: h.Store,
-		})
+		result, outErr := executeWithToolCalls(r.Context(), h.DS, h.Store, a, stdReq)
 		sessionID = result.SessionID
 		if outErr != nil {
 			if historySession != nil {
@@ -291,86 +288,4 @@ func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *htt
 			}
 		},
 	})
-}
-
-func executeWithToolCalls(ctx context.Context, ds completionruntime.DeepSeekCaller, store history.CurrentInputConfigReader, a *auth.RequestAuth, stdReq promptcompat.StandardRequest) (completionruntime.NonStreamResult, *assistantturn.OutputError) {
-	maxToolIterations := 5
-	for i := 0; i < maxToolIterations; i++ {
-		result, outErr := completionruntime.ExecuteNonStreamWithRetry(ctx, ds, a, stdReq, completionruntime.Options{
-			RetryEnabled:     true,
-			CurrentInputFile: store,
-		})
-		if outErr != nil {
-			return result, outErr
-		}
-		if len(result.Turn.ToolCalls) == 0 {
-			return result, nil
-		}
-		toolResults, execErr := executeToolCalls(result.Turn.ToolCalls)
-		if execErr != nil {
-			return result, &assistantturn.OutputError{Status: http.StatusInternalServerError, Message: execErr.Error(), Code: "tool_execution_error"}
-		}
-		stdReq = appendToolResultsToMessages(stdReq, result.Turn.ToolCalls, toolResults)
-	}
-	result, outErr := completionruntime.ExecuteNonStreamWithRetry(ctx, ds, a, stdReq, completionruntime.Options{
-		RetryEnabled:     true,
-		CurrentInputFile: store,
-	})
-	return result, outErr
-}
-
-func executeToolCalls(calls []toolcall.ParsedToolCall) ([]*localtool.ToolResult, error) {
-	results := make([]*localtool.ToolResult, 0, len(calls))
-	for _, call := range calls {
-		result, err := localtool.Execute(localtool.ToolCall{
-			ID:      call.ID,
-			Name:    call.Name,
-			Payload: call.Arguments,
-		})
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, result)
-	}
-	return results, nil
-}
-
-func appendToolResultsToMessages(stdReq promptcompat.StandardRequest, calls []toolcall.ParsedToolCall, results []*localtool.ToolResult) promptcompat.StandardRequest {
-	if len(calls) == 0 || len(results) == 0 {
-		return stdReq
-	}
-	for i, call := range calls {
-		if i >= len(results) {
-			break
-		}
-		result := results[i]
-		content := ""
-		if result.Ok {
-			if result.Detail != "" {
-				content = result.Detail
-			} else if result.Summary != "" {
-				content = result.Summary
-			}
-		} else {
-			if result.Error != nil {
-				content = "Error: " + result.Error.Message
-			} else if result.Detail != "" {
-				content = "Error: " + result.Detail
-			}
-		}
-		stdReq.Messages = append(stdReq.Messages, map[string]any{
-			"role":       "assistant",
-			"tool_calls": []map[string]any{{"id": call.ID, "type": "function", "function": map[string]any{"name": call.Name, "arguments": call.Arguments}}},
-		})
-		stdReq.Messages = append(stdReq.Messages, map[string]any{
-			"role":       "tool",
-			"tool_call_id": call.ID,
-			"content":    content,
-		})
-	}
-	finalPrompt, toolNames := promptcompat.BuildOpenAIPrompt(stdReq.Messages, stdReq.ToolsRaw, "", stdReq.ToolChoice, stdReq.Thinking)
-	stdReq.FinalPrompt = finalPrompt
-	stdReq.PromptTokenText = finalPrompt
-	stdReq.ToolNames = toolNames
-	return stdReq
 }

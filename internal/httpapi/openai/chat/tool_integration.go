@@ -44,11 +44,11 @@ func executeToolCalls(calls []toolcall.ParsedToolCall) ([]*localtool.ToolResult,
 	for _, call := range calls {
 		callID := localtool.NewToolCallId()
 		result, err := localtool.Execute(localtool.ToolCall{
-			ID:        callID,
-			Name:      call.Name,
+			ID:             callID,
+			Name:           call.Name,
 			InvocationName: call.Name,
-			Payload:   call.Input,
-			CreatedAt: time.Now(),
+			Payload:        call.Input,
+			CreatedAt:      time.Now(),
 			Source: &localtool.ToolCallSource{
 				Trigger: localtool.ToolExecutionTriggerManualChat,
 			},
