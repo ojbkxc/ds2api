@@ -90,11 +90,13 @@ func (s Service) ApplyCurrentInputFile(ctx context.Context, a *auth.RequestAuth,
 		Data:        []byte(fileText),
 	}, 3)
 	if err != nil {
-		return stdReq, fmt.Errorf("upload current user input file: %w", err)
+		config.Logger.Warn("[current_input_file] upload failed, falling back to direct message", "error", err)
+		return stdReq, nil
 	}
 	fileID := strings.TrimSpace(result.ID)
 	if fileID == "" {
-		return stdReq, errors.New("upload current user input file returned empty file id")
+		config.Logger.Warn("[current_input_file] upload returned empty file id, falling back to direct message")
+		return stdReq, nil
 	}
 
 	toolFileID := ""
@@ -107,11 +109,12 @@ func (s Service) ApplyCurrentInputFile(ctx context.Context, a *auth.RequestAuth,
 			Data:        []byte(toolsText),
 		}, 3)
 		if err != nil {
-			return stdReq, fmt.Errorf("upload current tools file: %w", err)
-		}
-		toolFileID = strings.TrimSpace(result.ID)
-		if toolFileID == "" {
-			return stdReq, errors.New("upload current tools file returned empty file id")
+			config.Logger.Warn("[current_input_file] tools file upload failed, proceeding without tools", "error", err)
+		} else {
+			toolFileID = strings.TrimSpace(result.ID)
+			if toolFileID == "" {
+				config.Logger.Warn("[current_input_file] tools file upload returned empty id, proceeding without tools")
+			}
 		}
 	}
 
@@ -162,11 +165,13 @@ func (s Service) ReuploadAppliedCurrentInputFile(ctx context.Context, a *auth.Re
 		Data:        []byte(stdReq.HistoryText),
 	}, 3)
 	if err != nil {
-		return stdReq, fmt.Errorf("upload current user input file: %w", err)
+		config.Logger.Warn("[current_input_file] reupload failed, keeping previous file references", "error", err)
+		return stdReq, nil
 	}
 	fileID := strings.TrimSpace(result.ID)
 	if fileID == "" {
-		return stdReq, errors.New("upload current user input file returned empty file id")
+		config.Logger.Warn("[current_input_file] reupload returned empty id, keeping previous file references")
+		return stdReq, nil
 	}
 
 	toolsFilename := promptcompat.GenerateCurrentToolsFilename(historyFilename)
@@ -181,11 +186,12 @@ func (s Service) ReuploadAppliedCurrentInputFile(ctx context.Context, a *auth.Re
 			Data:        []byte(toolsText),
 		}, 3)
 		if err != nil {
-			return stdReq, fmt.Errorf("upload current tools file: %w", err)
-		}
-		toolFileID = strings.TrimSpace(result.ID)
-		if toolFileID == "" {
-			return stdReq, errors.New("upload current tools file returned empty file id")
+			config.Logger.Warn("[current_input_file] tools file upload failed, proceeding without tools", "error", err)
+		} else {
+			toolFileID = strings.TrimSpace(result.ID)
+			if toolFileID == "" {
+				config.Logger.Warn("[current_input_file] tools file upload returned empty id, proceeding without tools")
+			}
 		}
 	}
 

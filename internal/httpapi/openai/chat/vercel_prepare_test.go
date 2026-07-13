@@ -388,7 +388,7 @@ func TestHandleVercelStreamPrepareUploadsToolsSeparately(t *testing.T) {
 	}
 }
 
-func TestHandleVercelStreamPrepareMapsCurrentInputFileManagedAuthFailureTo401(t *testing.T) {
+func TestHandleVercelStreamPrepareMapsCurrentInputFileManagedAuthFailureFallsBack(t *testing.T) {
 	t.Setenv("VERCEL", "1")
 	t.Setenv("DS2API_VERCEL_INTERNAL_SECRET", "stream-secret")
 
@@ -416,11 +416,8 @@ func TestHandleVercelStreamPrepareMapsCurrentInputFileManagedAuthFailureTo401(t 
 
 	h.handleVercelStreamPrepare(rec, req)
 
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d body=%s", rec.Code, rec.Body.String())
-	}
-	if !strings.Contains(rec.Body.String(), "Please re-login the account in admin") {
-		t.Fatalf("expected managed auth error message, got %s", rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 (fallback to direct message), got %d body=%s", rec.Code, rec.Body.String())
 	}
 }
 

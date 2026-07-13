@@ -677,7 +677,7 @@ func TestResponsesCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 	}
 }
 
-func TestChatCompletionsCurrentInputFileMapsManagedAuthFailureTo401(t *testing.T) {
+func TestChatCompletionsCurrentInputFileMapsManagedAuthFailureFallsBack(t *testing.T) {
 	ds := &inlineUploadDSStub{
 		uploadErr: &dsclient.RequestFailure{Op: "upload file", Kind: dsclient.FailureManagedUnauthorized, Message: "expired token"},
 	}
@@ -700,15 +700,12 @@ func TestChatCompletionsCurrentInputFileMapsManagedAuthFailureTo401(t *testing.T
 
 	h.ChatCompletions(rec, req)
 
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d body=%s", rec.Code, rec.Body.String())
-	}
-	if !strings.Contains(rec.Body.String(), "Please re-login the account in admin") {
-		t.Fatalf("expected managed auth error message, got %s", rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 (fallback to direct message), got %d body=%s", rec.Code, rec.Body.String())
 	}
 }
 
-func TestResponsesCurrentInputFileMapsDirectAuthFailureTo401(t *testing.T) {
+func TestResponsesCurrentInputFileMapsDirectAuthFailureFallsBack(t *testing.T) {
 	ds := &inlineUploadDSStub{
 		uploadErr: &dsclient.RequestFailure{Op: "upload file", Kind: dsclient.FailureDirectUnauthorized, Message: "invalid token"},
 	}
@@ -733,15 +730,15 @@ func TestResponsesCurrentInputFileMapsDirectAuthFailureTo401(t *testing.T) {
 
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("expected 401, got %d body=%s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 (fallback to direct message), got %d body=%s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(rec.Body.String(), "Invalid token") {
+	if !strings.Contains(rec.Body.String(), "ok") {
 		t.Fatalf("expected direct auth error message, got %s", rec.Body.String())
 	}
 }
 
-func TestChatCompletionsCurrentInputFileUploadFailureReturnsInternalServerError(t *testing.T) {
+func TestChatCompletionsCurrentInputFileUploadFailureFallsBackToDirectMessage(t *testing.T) {
 	ds := &inlineUploadDSStub{uploadErr: errors.New("boom")}
 	h := &openAITestSurface{
 		Store: mockOpenAIConfig{
@@ -762,8 +759,8 @@ func TestChatCompletionsCurrentInputFileUploadFailureReturnsInternalServerError(
 
 	h.ChatCompletions(rec, req)
 
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("expected 500, got %d body=%s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 (fallback to direct message), got %d body=%s", rec.Code, rec.Body.String())
 	}
 }
 
