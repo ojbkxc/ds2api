@@ -12,7 +12,7 @@ func TestAppendThinkingInjectionToLatestUserStringContent(t *testing.T) {
 		map[string]any{"role": "user", "content": "latest"},
 	}
 
-	out, changed := AppendThinkingInjectionToLatestUser(messages)
+	out, changed := AppendThinkingInjectionPromptToLatestUser(messages, ThinkingInjectionMarker)
 	if !changed {
 		t.Fatal("expected thinking injection to be appended")
 	}
@@ -37,7 +37,7 @@ func TestAppendThinkingInjectionToLatestUserArrayContent(t *testing.T) {
 		},
 	}
 
-	out, changed := AppendThinkingInjectionToLatestUser(messages)
+	out, changed := AppendThinkingInjectionPromptToLatestUser(messages, ThinkingInjectionMarker)
 	if !changed {
 		t.Fatal("expected thinking injection to be appended")
 	}
@@ -71,7 +71,7 @@ func TestAppendThinkingInjectionToLatestUserSkipsDuplicate(t *testing.T) {
 		map[string]any{"role": "user", "content": "latest\n\n" + DefaultThinkingInjectionPrompt},
 	}
 
-	out, changed := AppendThinkingInjectionToLatestUser(messages)
+	out, changed := AppendThinkingInjectionPromptToLatestUser(messages, ThinkingInjectionMarker)
 	if changed {
 		t.Fatal("expected duplicate injection to be skipped")
 	}
