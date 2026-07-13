@@ -133,4 +133,3 @@ func sanitizeToAllowedRunes(s string, allowed func(rune) bool) string {
 	}
 	return b.String()
 }
-
