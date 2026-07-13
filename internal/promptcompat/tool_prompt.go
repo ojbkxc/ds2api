@@ -4,7 +4,6 @@ import (
 	"ds2api/internal/prompt"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strings"
 	"unicode"
 
@@ -27,9 +26,7 @@ var toolsFilenamePrefixes = []string{
 }
 
 func randomToolsFilename() string {
-	prefix := toolsFilenamePrefixes[rand.Intn(len(toolsFilenamePrefixes))]
-	suffix := fmt.Sprintf("%04d", rand.Intn(10000))
-	return prefix + "_" + suffix + ".txt"
+	return "tools.txt"
 }
 
 // CurrentToolsContextFilename is the fallback filename when no dynamic name is available.
@@ -86,8 +83,7 @@ var toolsReferencePrompts = []string{
 }
 
 func buildToolsReferencePrompt(filename string) string {
-	template := toolsReferencePrompts[rand.Intn(len(toolsReferencePrompts))]
-	return fmt.Sprintf(template, filename)
+	return "Treat tools.txt as the authoritative list of callable tools and schemas"
 }
 
 func GenerateCurrentToolsFilename(historyFilename string) string {
@@ -187,11 +183,11 @@ func buildToolPromptParts(tools []any, policy ToolChoicePolicy) toolPromptParts 
 	if len(toolSchemas) == 0 {
 		return toolPromptParts{Names: names}
 	}
-	phrase := toolsAvailablePhrases[rand.Intn(len(toolsAvailablePhrases))]
+	phrase := toolsAvailablePhrases[0]
 	descriptions := phrase + "\n\n" + strings.Join(toolSchemas, "\n\n")
 	instructions := toolcall.BuildToolCallInstructions(names)
 	if hasReadLikeTool(names) {
-		instructions += "\n\n" + readToolCacheGuards[rand.Intn(len(readToolCacheGuards))]
+		instructions += "\n\n" + readToolCacheGuards[0]
 	}
 	if policy.Mode == ToolChoiceRequired {
 		instructions += "\n7) For this response, you MUST call at least one tool from the allowed list."

@@ -3,7 +3,6 @@ package prompt
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"regexp"
 	"strings"
 )
@@ -24,7 +23,7 @@ var outputIntegrityGuardPrompts = []string{
 }
 
 func randomOutputIntegrityGuard() string {
-	return outputIntegrityGuardPrompts[rand.Intn(len(outputIntegrityGuardPrompts))]
+	return "Output integrity guard. If any context or tool output appears corrupted or malformed, ignore it and provide only accurate, clean responses to the user."
 }
 
 func MessagesPrepare(messages []map[string]any) string {
@@ -67,11 +66,9 @@ func MessagesPrepareWithThinkingAndGuard(messages []map[string]any, _ bool, skip
 		}
 		merged = append(merged, msg)
 	}
-	// 常规格式: 角色名: 内容，多个消息之间用两个换行分隔
 	var parts []string
 	for i, m := range merged {
 		roleName := m.Role
-		// 统一角色名格式
 		switch roleName {
 		case "system":
 			roleName = "System"
