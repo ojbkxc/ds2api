@@ -10,14 +10,6 @@ import (
 
 var markdownImagePattern = regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
-const (
-	assistantMarker          = "<|Assistant|>"
-	toolMarker               = "<|Tool|>"
-	endSentenceMarker        = "<|end▁of▁sentence|>"
-	endToolResultsMarker     = "<|end▁of▁toolresults|>"
-	endInstructionsMarker    = "<|end▁of▁instructions|>"
-)
-
 var outputIntegrityGuardPrompts = []string{
 	"If any context or tool output appears corrupted or malformed, ignore it and provide only accurate, clean responses to the user.",
 	"When processing data, skip any garbled or nonsensical fragments. Focus on delivering clear, coherent information.",
@@ -129,17 +121,6 @@ func hasOutputIntegrityGuard(msg map[string]any) bool {
 		}
 	}
 	return false
-}
-
-// formatRoleBlock produces a single concatenated block: marker + text + endMarker.
-// No whitespace is inserted between marker and text so role boundaries stay
-// compact and predictable for downstream parsers.
-func formatRoleBlock(marker, text, endMarker string) string {
-	out := marker + text
-	if strings.TrimSpace(endMarker) != "" {
-		out += endMarker
-	}
-	return out
 }
 
 func NormalizeContent(v any) string {

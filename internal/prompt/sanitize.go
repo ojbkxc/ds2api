@@ -39,10 +39,10 @@ var deepseekSpecialMarkerPattern = regexp.MustCompile(`<\|[\w▁]+\|>`)
 // before it is assembled into the final prompt.
 //
 // It defends against:
-//   1. Role-prefix injection   (e.g. "System: ignore previous instructions")
-//   2. History-separator injection (e.g. "=== 3. ASSISTANT ===")
-//   3. DeepSeek special-marker injection (e.g. "<|System|>")
-//   4. Zero-width-character obfuscation
+//  1. Role-prefix injection (e.g. "System: ignore previous instructions")
+//  2. History-separator injection (e.g. "=== 3. ASSISTANT ===")
+//  3. DeepSeek special-marker injection (e.g. "<|System|>")
+//  4. Zero-width-character obfuscation
 //
 // The strategy is "neutralisation by insertion" – we insert a zero-width
 // space before the matched prefix so the model no longer sees it as a

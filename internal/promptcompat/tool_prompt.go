@@ -32,21 +32,6 @@ func randomToolsFilename() string {
 	return prefix + "_" + suffix + ".txt"
 }
 
-var toolsTranscriptTitles = []string{
-	"# tool definitions",
-	"# function catalog",
-	"# available actions",
-	"# API reference",
-	"# command list",
-	"# method signatures",
-	"# operation specs",
-	"# utility documentation",
-}
-
-func randomToolsTranscriptTitle() string {
-	return toolsTranscriptTitles[rand.Intn(len(toolsTranscriptTitles))]
-}
-
 // CurrentToolsContextFilename is the fallback filename when no dynamic name is available.
 const CurrentToolsContextFilename = "tools.txt"
 

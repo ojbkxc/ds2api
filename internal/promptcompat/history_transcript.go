@@ -8,30 +8,6 @@ import (
 	"time"
 )
 
-var contextFilenamePrefixesForTitle = []string{
-	"context",
-	"chat",
-	"history",
-	"session",
-	"conversation",
-	"dialog",
-	"message",
-	"transcript",
-	"log",
-	"notes",
-	"record",
-	"trace",
-	"output",
-	"result",
-	"data",
-}
-
-func randomHistoryFilename() string {
-	prefix := contextFilenamePrefixesForTitle[rand.Intn(len(contextFilenamePrefixesForTitle))]
-	suffix := fmt.Sprintf("%04d", rand.Intn(10000))
-	return prefix + "_" + suffix + ".txt"
-}
-
 var historyTranscriptTitles = []string{
 	"# context transcript",
 	"# chat history",
