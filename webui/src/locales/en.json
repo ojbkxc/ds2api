@@ -409,6 +409,8 @@
         "currentInputFileDisabledModelsHelp": "Comma-separated model names that cannot upload files.",
         "currentInputFileVisionAccounts": "Vision Accounts",
         "currentInputFileVisionAccountsHelp": "Comma-separated account identifiers that support vision models.",
+        "currentInputFileDisabledAccounts": "Disabled Accounts",
+        "currentInputFileDisabledAccountsHelp": "Comma-separated account identifiers that are excluded from file upload.",
         "modelTitle": "Model mapping",
         "modelAliases": "Global model aliases (JSON)",
         "autoDeleteTitle": "Session Cleanup Policy",

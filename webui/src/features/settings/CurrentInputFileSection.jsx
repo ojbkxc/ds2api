@@ -93,6 +93,23 @@ export default function CurrentInputFileSection({ t, form, setForm }) {
                     />
                     <p className="text-xs text-muted-foreground">{t('settings.currentInputFileVisionAccountsHelp', { defaultValue: 'Comma-separated account identifiers that support vision models.' })}</p>
                 </label>
+                <label className="text-sm space-y-2">
+                    <span className="text-muted-foreground">{t('settings.currentInputFileDisabledAccounts', { defaultValue: 'Disabled Accounts' })}</span>
+                    <input
+                        type="text"
+                        placeholder="2@email.lxseek.com, 5@email.lxseek.com"
+                        value={(form.current_input_file?.disabled_accounts ?? []).join(', ')}
+                        onChange={(e) => setForm((prev) => ({
+                            ...prev,
+                            current_input_file: {
+                                ...prev.current_input_file,
+                                disabled_accounts: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
+                            },
+                        }))}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2"
+                    />
+                    <p className="text-xs text-muted-foreground">{t('settings.currentInputFileDisabledAccountsHelp', { defaultValue: 'Comma-separated account identifiers that are excluded from file upload.' })}</p>
+                </label>
             </div>
         </div>
     )

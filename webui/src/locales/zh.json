@@ -409,6 +409,8 @@
         "currentInputFileDisabledModelsHelp": "逗号分隔的模型名称，这些模型不会上传文件。",
         "currentInputFileVisionAccounts": "支持图片的账号",
         "currentInputFileVisionAccountsHelp": "逗号分隔的账号标识符，只有这些账号可以使用 vision 模型。",
+        "currentInputFileDisabledAccounts": "禁用文件上传的账号",
+        "currentInputFileDisabledAccountsHelp": "逗号分隔的账号标识符，这些账号不会上传上下文文件。",
         "modelTitle": "模型映射",
         "modelAliases": "全局模型映射（JSON）",
         "autoDeleteTitle": "会话删除策略",
