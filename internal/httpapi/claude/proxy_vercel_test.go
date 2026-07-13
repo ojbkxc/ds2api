@@ -14,8 +14,10 @@ type claudeProxyStoreStub struct {
 
 func (s claudeProxyStoreStub) ModelAliases() map[string]string { return s.aliases }
 
-func (claudeProxyStoreStub) CurrentInputFileEnabled() bool { return true }
-func (claudeProxyStoreStub) CurrentInputFileMinChars() int { return 0 }
+func (claudeProxyStoreStub) CurrentInputFileEnabled() bool            { return true }
+func (claudeProxyStoreStub) CurrentInputFileMinChars() int            { return 0 }
+func (claudeProxyStoreStub) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
+func (claudeProxyStoreStub) CurrentInputFileDisabledModels() []string { return nil }
 
 type openAIProxyStub struct {
 	status int

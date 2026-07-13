@@ -20,10 +20,11 @@ import (
 
 type testGeminiConfig struct{}
 
-func (testGeminiConfig) ModelAliases() map[string]string { return nil }
-func (testGeminiConfig) CurrentInputFileEnabled() bool   { return true }
-func (testGeminiConfig) CurrentInputFileMinChars() int   { return 0 }
-func (testGeminiConfig) CurrentInputFileDisabledModels() []string { return nil }
+func (testGeminiConfig) ModelAliases() map[string]string            { return nil }
+func (testGeminiConfig) CurrentInputFileEnabled() bool              { return true }
+func (testGeminiConfig) CurrentInputFileMinChars() int              { return 0 }
+func (testGeminiConfig) CurrentInputFileFilenameTemplate() string   { return "deepseek.txt" }
+func (testGeminiConfig) CurrentInputFileDisabledModels() []string   { return nil }
 
 type testGeminiAuth struct {
 	a   *auth.RequestAuth

@@ -23,8 +23,10 @@ type streamStatusClaudeStoreStub struct{}
 
 func (streamStatusClaudeStoreStub) ModelAliases() map[string]string { return nil }
 
-func (streamStatusClaudeStoreStub) CurrentInputFileEnabled() bool { return true }
-func (streamStatusClaudeStoreStub) CurrentInputFileMinChars() int { return 0 }
+func (streamStatusClaudeStoreStub) CurrentInputFileEnabled() bool            { return true }
+func (streamStatusClaudeStoreStub) CurrentInputFileMinChars() int            { return 0 }
+func (streamStatusClaudeStoreStub) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
+func (streamStatusClaudeStoreStub) CurrentInputFileDisabledModels() []string { return nil }
 
 func captureClaudeStatusMiddleware(statuses *[]int) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
