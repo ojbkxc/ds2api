@@ -52,26 +52,27 @@ func SanitizeUserInput(text string) string {
 		return ""
 	}
 
-	// 1. Neutralise role-prefix injections.
+	// 1. Strip zero-width characters first so attackers cannot use them
+	// for obfuscation (e.g. "Reasoning\u200B Effort:" to bypass checks).
+	// This must happen BEFORE we insert our own zero-width spaces.
+	text = StripZeroWidthChars(text)
+
+	// 2. Neutralise role-prefix injections.
 	for _, re := range rolePrefixPatterns {
 		text = re.ReplaceAllString(text, "${1}"+zeroWidthSpace+"${2}")
 	}
 
-	// 2. Neutralise history-separator injections.
+	// 3. Neutralise history-separator injections.
 	for _, re := range historySeparatorPatterns {
 		text = re.ReplaceAllStringFunc(text, func(match string) string {
 			return zeroWidthSpace + match
 		})
 	}
 
-	// 3. Neutralise DeepSeek special markers.
+	// 4. Neutralise DeepSeek special markers.
 	text = deepseekSpecialMarkerPattern.ReplaceAllStringFunc(text, func(match string) string {
 		return zeroWidthSpace + match
 	})
-
-	// 4. Remove zero-width characters that may be used for obfuscation
-	// (e.g. "Reasoning\u200B Effort:" to bypass simple string checks).
-	text = StripZeroWidthChars(text)
 
 	return text
 }

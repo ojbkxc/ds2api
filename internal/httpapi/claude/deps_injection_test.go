@@ -10,6 +10,7 @@ func (m mockClaudeConfig) ModelAliases() map[string]string { return m.aliases }
 func (mockClaudeConfig) CurrentInputFileEnabled() bool     { return true }
 func (mockClaudeConfig) CurrentInputFileMinChars() int     { return 0 }
 func (mockClaudeConfig) CurrentInputFileDisabledModels() []string { return nil }
+func (mockClaudeConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
 
 func TestNormalizeClaudeRequestUsesGlobalAliasMapping(t *testing.T) {
 	req := map[string]any{
