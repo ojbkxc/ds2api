@@ -3,6 +3,7 @@ package chat
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"ds2api/internal/assistantturn"
 	"ds2api/internal/auth"
@@ -40,11 +41,20 @@ func executeWithToolCalls(ctx context.Context, ds completionruntime.DeepSeekCall
 
 func executeToolCalls(calls []toolcall.ParsedToolCall) ([]*localtool.ToolResult, error) {
 	results := make([]*localtool.ToolResult, 0, len(calls))
-	for i, call := range calls {
+	for _, call := range calls {
+		callID := localtool.NewToolCallId()
 		result, err := localtool.Execute(localtool.ToolCall{
-			ID:      string(rune('t') + rune(i)),
-			Name:    call.Name,
-			Payload: call.Input,
+			ID:        callID,
+			Name:      call.Name,
+			InvocationName: call.Name,
+			Payload:   call.Input,
+			CreatedAt: time.Now(),
+			Source: &localtool.ToolCallSource{
+				Trigger: localtool.ToolExecutionTriggerManualChat,
+			},
+		}, localtool.ToolExecutionContext{
+			Trigger:   localtool.ToolExecutionTriggerManualChat,
+			RequestId: string(callID),
 		})
 		if err != nil {
 			return nil, err
@@ -77,15 +87,15 @@ func appendToolResultsToMessages(stdReq promptcompat.StandardRequest, calls []to
 				content = "Error: " + result.Detail
 			}
 		}
-		callID := string(rune('t') + rune(i))
+		callID := string(results[i].CallId)
 		stdReq.Messages = append(stdReq.Messages, map[string]any{
 			"role":       "assistant",
 			"tool_calls": []map[string]any{{"id": callID, "type": "function", "function": map[string]any{"name": call.Name, "arguments": call.Input}}},
 		})
 		stdReq.Messages = append(stdReq.Messages, map[string]any{
-			"role":          "tool",
-			"tool_call_id":  callID,
-			"content":       content,
+			"role":         "tool",
+			"tool_call_id": callID,
+			"content":      content,
 		})
 	}
 	finalPrompt, toolNames := promptcompat.BuildOpenAIPrompt(stdReq.Messages, stdReq.ToolsRaw, "", stdReq.ToolChoice, stdReq.Thinking)

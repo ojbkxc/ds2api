@@ -23,224 +23,101 @@ func (e *WebFetchExecutor) GetDescriptor() ToolDescriptor {
 		Name:           "web_fetch",
 		InvocationName: "web_fetch",
 		Title:          "Web Fetch",
-		Description:    "Fetch and extract text content from a URL",
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"url": map[string]interface{}{
-					"type":        "string",
-					"description": "URL to fetch",
-				},
+		Description:    "Fetch and extract text content from a web URL",
+		InputSchema: ToolDescriptorSchema{
+			Type: "object",
+			Properties: map[string]JsonValue{
+				"url": map[string]JsonValue{"type": "string", "description": "URL to fetch"},
 			},
-			"required": []string{"url"},
+			Required: []string{"url"},
 		},
-		Execution: struct {
-			Mode    string `json:"mode"`
-			Enabled bool   `json:"enabled"`
-			Risk    string `json:"risk"`
-		}{
-			Mode:    "manual",
+		Execution: ToolDescriptorExecution{
+			Mode:    ToolExecutionModeAuto,
 			Enabled: true,
-			Risk:    "medium",
+			Risk:    ToolRiskLevelLow,
+		},
+		Provider: ToolProviderIdentity{
+			Kind:        ToolProviderKindLocal,
+			ID:          "local-web",
+			DisplayName: "Local Web Tools",
+			Transport:   ToolTransportKindInProcess,
 		},
 	}
 }
 
-func (e *WebFetchExecutor) Execute(call ToolCall) (*ToolResult, error) {
+func (e *WebFetchExecutor) Execute(call ToolCall, context ToolExecutionContext) (*ToolResult, error) {
 	startTime := time.Now()
-
 	urlStr, ok := call.Payload["url"].(string)
 	if !ok || strings.TrimSpace(urlStr) == "" {
-		return &ToolResult{
-			Ok:      false,
-			Name:    call.Name,
-			Summary: "URL is required",
-			Error: &ToolError{
-				Code:      "empty_url",
-				Message:   "url is required",
-				Retryable: false,
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
+		return &ToolResult{Ok: false, Name: call.Name, Summary: "URL is required", Error: &ToolError{Code: "empty_url", Message: "url is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
-	parsedUrl, err := url.Parse(urlStr)
+	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
-		return &ToolResult{
-			Ok:      false,
-			Name:    call.Name,
-			Summary: "Invalid URL",
-			Detail:  "Invalid URL: " + urlStr,
-			Error: &ToolError{
-				Code:      "invalid_url",
-				Message:   "Invalid URL: " + urlStr,
-				Retryable: false,
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
+		return &ToolResult{Ok: false, Name: call.Name, Summary: "Invalid URL", Error: &ToolError{Code: "invalid_url", Message: "invalid URL format", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+	}
+
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return &ToolResult{Ok: false, Name: call.Name, Summary: "Unsupported protocol", Error: &ToolError{Code: "unsupported_protocol", Message: "only http and https are supported", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	client := &http.Client{Timeout: 15 * time.Second}
-
-	req, err := http.NewRequest("GET", urlStr, nil)
-	if err != nil {
-		return &ToolResult{
-			Ok:      false,
-			Name:    call.Name,
-			Summary: "Failed to fetch",
-			Detail:  err.Error(),
-			Error: &ToolError{
-				Code:      "fetch_failed",
-				Message:   err.Error(),
-				Retryable: false,
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
-	}
-
+	req, _ := http.NewRequest("GET", parsedURL.String(), nil)
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		message := err.Error()
-		isPermissionError := strings.Contains(message, "Failed to fetch") ||
-			strings.Contains(message, "NetworkError") ||
-			strings.Contains(message, "opaque") ||
-			strings.Contains(message, "status 0")
-
-		return &ToolResult{
-			Ok:      false,
-			Name:    call.Name,
-			Summary: "Failed to fetch",
-			Detail:  message,
-			Error: &ToolError{
-				Code: func() string {
-					if isPermissionError {
-						return "fetch_permission_denied"
-					}
-					return "fetch_failed"
-				}(),
-				Message: func() string {
-					if isPermissionError {
-						return "Host permission for " + parsedUrl.Host + " is not granted."
-					}
-					return message
-				}(),
-				Retryable: isPermissionError,
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
+		return &ToolResult{Ok: false, Name: call.Name, Summary: "Failed to fetch", Error: &ToolError{Code: "fetch_failed", Message: err.Error(), Retryable: true}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return &ToolResult{
-			Ok:      false,
-			Name:    call.Name,
-			Summary: "HTTP " + resp.Status,
-			Detail:  "HTTP " + resp.Status,
-			Error: &ToolError{
-				Code:      "fetch_http_error",
-				Message:   "HTTP " + resp.Status,
-				Retryable: true,
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
+		return &ToolResult{Ok: false, Name: call.Name, Summary: "HTTP error", Error: &ToolError{Code: "http_error", Message: "HTTP status " + resp.Status, Retryable: resp.StatusCode >= 500}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
-	contentType := resp.Header.Get("content-type")
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return &ToolResult{
-			Ok:      false,
-			Name:    call.Name,
-			Summary: "Failed to read response",
-			Detail:  err.Error(),
-			Error: &ToolError{
-				Code:      "fetch_read_error",
-				Message:   err.Error(),
-				Retryable: true,
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
-	}
-
-	if !isTextContentType(contentType) {
-		return &ToolResult{
-			Ok:      true,
-			Name:    call.Name,
-			Summary: "Content type: " + contentType,
-			Detail:  "The URL returned non-text content (" + contentType + "): " + urlStr,
-			Output: map[string]interface{}{
-				"url":          urlStr,
-				"contentType":  contentType,
-				"contentLength": len(body),
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
-	}
-
-	text := string(body)
-	var extracted string
+	contentType := resp.Header.Get("Content-Type")
 	if strings.Contains(contentType, "text/html") {
-		extracted = extractTextFromHTML(text)
-	} else {
-		extracted = text
+		return e.fetchHTML(resp.Body, call.Name, startTime)
+	}
+	if strings.Contains(contentType, "text/plain") {
+		return e.fetchText(resp.Body, call.Name, startTime)
 	}
 
-	maxLength := 50000
-	truncated := len(extracted) > maxLength
-	var outputText string
-	if truncated {
-		outputText = extracted[:maxLength] + "\n...[truncated]"
-	} else {
-		outputText = extracted
-	}
-
-	var detail string
-	if truncated {
-		detail = "Content length: " + string(rune('0'+len(extracted)/1000)) + "KB (truncated to 50KB)"
-	} else {
-		detail = "Content length: " + string(rune('0'+len(extracted)/1000)) + "KB"
-	}
-
-	return &ToolResult{
-		Ok:      true,
-		Name:    call.Name,
-		Summary: "Fetched: " + urlStr,
-		Detail:  detail,
-		Output: map[string]interface{}{
-			"url":          urlStr,
-			"content":      outputText,
-			"contentType":  contentType,
-			"truncated":    truncated,
-			"contentLength": len(extracted),
-		},
-		StartedAt:   startTime,
-		CompletedAt: time.Now(),
-		DurationMs:  time.Since(startTime).Milliseconds(),
-	}, nil
+	return &ToolResult{Ok: false, Name: call.Name, Summary: "Unsupported content type", Error: &ToolError{Code: "unsupported_content", Message: "content type not supported: " + contentType, Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 }
 
-func isTextContentType(contentType string) bool {
-	return strings.Contains(contentType, "text/html") ||
-		strings.Contains(contentType, "text/plain") ||
-		strings.Contains(contentType, "application/json")
+func (e *WebFetchExecutor) fetchHTML(body io.Reader, name string, startTime time.Time) (*ToolResult, error) {
+	data, err := io.ReadAll(body)
+	if err != nil {
+		return &ToolResult{Ok: false, Name: name, Summary: "Failed to read response", Error: &ToolError{Code: "read_failed", Message: err.Error(), Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+	}
+
+	text := extractTextFromHTML(string(data))
+	text = cleanExtractedText(text)
+
+	if len(text) > 10000 {
+		text = text[:10000] + "\n\n[Content truncated]"
+		return &ToolResult{Ok: true, Name: name, Summary: "Content fetched (truncated)", Detail: text, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds(), Truncated: true}, nil
+	}
+
+	return &ToolResult{Ok: true, Name: name, Summary: "Content fetched", Detail: text, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+}
+
+func (e *WebFetchExecutor) fetchText(body io.Reader, name string, startTime time.Time) (*ToolResult, error) {
+	data, err := io.ReadAll(body)
+	if err != nil {
+		return &ToolResult{Ok: false, Name: name, Summary: "Failed to read response", Error: &ToolError{Code: "read_failed", Message: err.Error(), Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+	}
+
+	text := cleanExtractedText(string(data))
+	if len(text) > 10000 {
+		text = text[:10000] + "\n\n[Content truncated]"
+		return &ToolResult{Ok: true, Name: name, Summary: "Content fetched (truncated)", Detail: text, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds(), Truncated: true}, nil
+	}
+
+	return &ToolResult{Ok: true, Name: name, Summary: "Content fetched", Detail: text, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 }
 
 func extractTextFromHTML(htmlContent string) string {
@@ -249,46 +126,30 @@ func extractTextFromHTML(htmlContent string) string {
 		return htmlContent
 	}
 
-	var extract func(*html.Node)
 	var sb strings.Builder
-
-	extract = func(n *html.Node) {
-		if n.Type == html.TextNode {
-			sb.WriteString(n.Data)
+	var f func(*html.Node)
+	f = func(n *html.Node) {
+		switch n.Data {
+		case "script", "style", "noscript", "iframe", "head":
 			return
 		}
-		if n.Type == html.ElementNode {
-			switch n.Data {
-			case "script", "style", "nav", "footer", "header":
-				return
-			case "br", "p", "div", "h1", "h2", "h3", "h4", "h5", "h6":
-				sb.WriteString("\n")
-			}
+
+		if n.Type == html.TextNode {
+			sb.WriteString(n.Data)
+			sb.WriteString(" ")
 		}
+
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			extract(c)
+			f(c)
 		}
 	}
-
-	extract(doc)
-
-	text := sb.String()
-	text = regexp.MustCompile(`[\r\n]+`).ReplaceAllString(text, "\n")
-	text = regexp.MustCompile(`[ \t]+`).ReplaceAllString(text, " ")
-	text = regexp.MustCompile(`\n\s+\n`).ReplaceAllString(text, "\n")
-	text = regexp.MustCompile(`\n{3,}`).ReplaceAllString(text, "\n\n")
-
-	text = htmlUnescape(text)
-
-	return strings.TrimSpace(text)
+	f(doc)
+	return sb.String()
 }
 
-func htmlUnescape(text string) string {
-	text = strings.ReplaceAll(text, "&amp;", "&")
-	text = strings.ReplaceAll(text, "&lt;", "<")
-	text = strings.ReplaceAll(text, "&gt;", ">")
-	text = strings.ReplaceAll(text, "&quot;", "\"")
-	text = strings.ReplaceAll(text, "&#39;", "'")
-	text = strings.ReplaceAll(text, "&nbsp;", " ")
+func cleanExtractedText(text string) string {
+	text = regexp.MustCompile(`\s+`).ReplaceAllString(text, " ")
+	text = regexp.MustCompile(`(?m)^\s+$`).ReplaceAllString(text, "")
+	text = strings.TrimSpace(text)
 	return text
 }

@@ -24,56 +24,35 @@ func (e *WebSearchExecutor) GetDescriptor() ToolDescriptor {
 		InvocationName: "web_search",
 		Title:          "Web Search",
 		Description:    "Search the web using Bing search engine",
-		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"query": map[string]interface{}{
-					"type":        "string",
-					"description": "Search query",
-				},
-				"topK": map[string]interface{}{
-					"type":        "integer",
-					"description": "Number of results to return (1-10)",
-				},
+		InputSchema: ToolDescriptorSchema{
+			Type: "object",
+			Properties: map[string]JsonValue{
+				"query": map[string]JsonValue{"type": "string", "description": "Search query"},
+				"topK":  map[string]JsonValue{"type": "integer", "description": "Number of results (1-10)"},
 			},
-			"required": []string{"query"},
+			Required: []string{"query"},
 		},
-		Execution: struct {
-			Mode    string `json:"mode"`
-			Enabled bool   `json:"enabled"`
-			Risk    string `json:"risk"`
-		}{
-			Mode:    "auto",
+		Execution: ToolDescriptorExecution{
+			Mode:    ToolExecutionModeAuto,
 			Enabled: true,
-			Risk:    "low",
+			Risk:    ToolRiskLevelLow,
+		},
+		Provider: ToolProviderIdentity{
+			Kind:        ToolProviderKindLocal,
+			ID:          "local-web",
+			DisplayName: "Local Web Tools",
+			Transport:   ToolTransportKindInProcess,
 		},
 	}
 }
 
-type SearchResult struct {
-	Title   string `json:"title"`
-	URL     string `json:"url"`
-	Snippet string `json:"snippet"`
-}
+type SearchResult struct{ Title, URL, Snippet string }
 
-func (e *WebSearchExecutor) Execute(call ToolCall) (*ToolResult, error) {
+func (e *WebSearchExecutor) Execute(call ToolCall, context ToolExecutionContext) (*ToolResult, error) {
 	startTime := time.Now()
-
 	query, ok := call.Payload["query"].(string)
 	if !ok || strings.TrimSpace(query) == "" {
-		return &ToolResult{
-			Ok:      false,
-			Name:    call.Name,
-			Summary: "Query is required",
-			Error: &ToolError{
-				Code:      "empty_query",
-				Message:   "query is required",
-				Retryable: false,
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
+		return &ToolResult{Ok: false, Name: call.Name, Summary: "Query is required", Error: &ToolError{Code: "empty_query", Message: "query is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	topK := 5
@@ -98,7 +77,6 @@ func (e *WebSearchExecutor) Execute(call ToolCall) (*ToolResult, error) {
 			lastError = "Search timed out (>18s)"
 			break
 		}
-
 		results, err := bingSearch(domain, query, topK)
 		if err != nil {
 			lastError = err.Error()
@@ -107,7 +85,6 @@ func (e *WebSearchExecutor) Execute(call ToolCall) (*ToolResult, error) {
 			}
 			continue
 		}
-
 		if len(results) == 0 {
 			lastError = domain + " returned no parseable search results"
 			continue
@@ -116,84 +93,40 @@ func (e *WebSearchExecutor) Execute(call ToolCall) (*ToolResult, error) {
 		output := make([]map[string]string, 0, len(results))
 		var detail strings.Builder
 		for i, r := range results {
-			output = append(output, map[string]string{
-				"title":   r.Title,
-				"url":     r.URL,
-				"snippet": r.Snippet,
-			})
+			output = append(output, map[string]string{"title": r.Title, "url": r.URL, "snippet": r.Snippet})
 			detail.WriteString(renderSearchResult(i+1, r))
 			if i < len(results)-1 {
 				detail.WriteString("\n")
 			}
 		}
-
-		return &ToolResult{
-			Ok:      true,
-			Name:    call.Name,
-			Summary: "Search completed with " + string(rune('0'+len(results))) + " results",
-			Detail:  detail.String(),
-			Output: map[string]interface{}{
-				"results": output,
-			},
-			StartedAt:   startTime,
-			CompletedAt: time.Now(),
-			DurationMs:  time.Since(startTime).Milliseconds(),
-		}, nil
+		return &ToolResult{Ok: true, Name: call.Name, Summary: "Search completed with " + fmtInt(len(results)) + " results", Detail: detail.String(), Output: map[string]interface{}{"results": output}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
-	isPermissionError := strings.Contains(lastError, "Failed to fetch") ||
-		strings.Contains(lastError, "NetworkError") ||
-		strings.Contains(lastError, "opaque") ||
-		strings.Contains(lastError, "status 0")
-	hasNoParseableResults := strings.Contains(lastError, "no parseable search results")
-
-	summary := "Search failed"
-	if hasNoParseableResults {
-		summary = "No search results found"
-	}
+	isPermErr := strings.Contains(lastError, "Failed to fetch") || strings.Contains(lastError, "NetworkError") || strings.Contains(lastError, "opaque") || strings.Contains(lastError, "status 0")
+	hasNoResults := strings.Contains(lastError, "no parseable search results")
 
 	return &ToolResult{
 		Ok:      false,
 		Name:    call.Name,
-		Summary: summary,
+		Summary: map[bool]string{true: "No search results found", false: "Search failed"}[hasNoResults],
 		Detail:  lastError,
-		Error: &ToolError{
-			Code: func() string {
-				if isPermissionError {
-					return "search_permission_denied"
-				}
-				if hasNoParseableResults {
-					return "search_no_results"
-				}
-				return "search_failed"
-			}(),
-			Message:   lastError,
-			Retryable: !isPermissionError,
-		},
-		StartedAt:   startTime,
-		CompletedAt: time.Now(),
-		DurationMs:  time.Since(startTime).Milliseconds(),
+		Error:   &ToolError{Code: map[bool]string{true: map[bool]string{true: "search_permission_denied", false: "search_no_results"}[isPermErr], false: "search_failed"}[hasNoResults], Message: lastError, Retryable: !isPermErr},
+		StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds(),
 	}, nil
 }
 
+func fmtInt(n int) string {
+	return string(rune('0') + rune(n))
+}
+
 func bingSearch(domain, query string, topK int) ([]SearchResult, error) {
-	u, err := url.Parse("https://" + domain + "/search")
-	if err != nil {
-		return nil, err
-	}
+	u, _ := url.Parse("https://" + domain + "/search")
 	q := u.Query()
 	q.Set("q", query)
 	u.RawQuery = q.Encode()
 
-	client := &http.Client{
-		Timeout: 8 * time.Second,
-	}
-
-	req, err := http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
+	client := &http.Client{Timeout: 8 * time.Second}
+	req, _ := http.NewRequest("GET", u.String(), nil)
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml")
@@ -204,21 +137,13 @@ func bingSearch(domain, query string, topK int) ([]SearchResult, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 0 {
-		return nil, ErrHostPermissionDenied(domain)
-	}
-
 	if resp.StatusCode != http.StatusOK {
-		return nil, ErrHTTPStatus(domain, resp.StatusCode)
+		return nil, &SearchError{message: domain + " returned status " + resp.Status}
 	}
 
 	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, ErrResponseBodyUnreadable(domain)
-	}
-
-	if len(body) < 200 {
-		return nil, ErrEmptyResponse(domain, len(body))
+	if err != nil || len(body) < 200 {
+		return nil, &SearchError{message: domain + " response body unreadable or empty"}
 	}
 
 	return parseBingResults(string(body), topK)
@@ -238,8 +163,8 @@ func parseBingResults(htmlContent string, topK int) ([]SearchResult, error) {
 		}
 		if n.Type == html.ElementNode && n.Data == "li" {
 			for _, attr := range n.Attr {
-				if attr.Key == "class" && containsClass(attr.Val, "b_algo") {
-					result := extractSearchResultFromLi(n)
+				if attr.Key == "class" && strings.Contains(attr.Val, "b_algo") {
+					result := extractSearchResult(n)
 					if result.Title != "" && result.URL != "" {
 						results = append(results, result)
 					}
@@ -256,79 +181,42 @@ func parseBingResults(htmlContent string, topK int) ([]SearchResult, error) {
 	return results, nil
 }
 
-func extractSearchResultFromLi(n *html.Node) SearchResult {
+func extractSearchResult(n *html.Node) SearchResult {
 	var result SearchResult
 
-	var findH2 func(*html.Node)
-	findH2 = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "h2" {
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				if c.Type == html.ElementNode && c.Data == "a" {
-					for _, attr := range c.Attr {
-						if attr.Key == "href" {
-							result.URL = attr.Val
-							break
-						}
-					}
-					result.Title = textContent(c)
-					return
+	var findLink func(*html.Node)
+	findLink = func(n *html.Node) {
+		if n.Type == html.ElementNode && n.Data == "a" {
+			for _, attr := range n.Attr {
+				if attr.Key == "href" {
+					result.URL = attr.Val
+					break
 				}
 			}
+			result.Title = textContent(n)
+			return
 		}
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			findH2(c)
+			findLink(c)
 		}
 	}
-	findH2(n)
+	findLink(n)
 
-	if result.URL == "" {
-		var findAInLi func(*html.Node)
-		findAInLi = func(n *html.Node) {
-			if n.Type == html.ElementNode && n.Data == "a" {
-				for _, attr := range c.Attr {
-					if attr.Key == "href" {
-						result.URL = attr.Val
-						break
-					}
-				}
-				result.Title = textContent(n)
-				return
-			}
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				findAInLi(c)
-			}
-		}
-		findAInLi(n)
-	}
-
-	var findCaption func(*html.Node)
-	findCaption = func(n *html.Node) {
+	var findSnippet func(*html.Node)
+	findSnippet = func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "div" {
 			for _, attr := range n.Attr {
-				if attr.Key == "class" && containsClass(attr.Val, "b_caption") {
-					var findP func(*html.Node)
-					findP = func(n *html.Node) {
-						if n.Type == html.ElementNode && n.Data == "p" {
-							result.Snippet = textContent(n)
-							return
-						}
-						for c := n.FirstChild; c != nil; c = c.NextSibling {
-							findP(c)
-						}
-					}
-					findP(n)
-					if result.Snippet == "" {
-						result.Snippet = textContent(n)
-					}
+				if attr.Key == "class" && strings.Contains(attr.Val, "b_caption") {
+					result.Snippet = textContent(n)
 					return
 				}
 			}
 		}
 		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			findCaption(c)
+			findSnippet(c)
 		}
 	}
-	findCaption(n)
+	findSnippet(n)
 
 	result.URL = normalizeURL(result.URL)
 	result.Title = cleanText(result.Title)
@@ -352,15 +240,6 @@ func textContent(n *html.Node) string {
 	return sb.String()
 }
 
-func containsClass(classList, className string) bool {
-	for _, c := range strings.Split(classList, " ") {
-		if c == className {
-			return true
-		}
-	}
-	return false
-}
-
 func normalizeURL(u string) string {
 	if strings.HasPrefix(u, "//") {
 		return "https:" + u
@@ -374,28 +253,10 @@ func cleanText(text string) string {
 }
 
 func renderSearchResult(index int, r SearchResult) string {
-	return string(rune('0'+index)) + ". [" + r.Title + "](" + r.URL + ")\n   " + r.Snippet
+	return fmtInt(index) + ". [" + r.Title + "](" + r.URL + ")\n   " + r.Snippet
 }
 
-func ErrHostPermissionDenied(domain string) error {
-	return &SearchError{message: "Host permission denied (opaque response) for " + domain}
-}
-
-func ErrHTTPStatus(domain string, status int) error {
-	return &SearchError{message: domain + " returned status " + string(rune('0'+status/100)) + string(rune('0'+(status/10)%10)) + string(rune('0'+status%10))}
-}
-
-func ErrResponseBodyUnreadable(domain string) error {
-	return &SearchError{message: domain + " response body unreadable"}
-}
-
-func ErrEmptyResponse(domain string, bytes int) error {
-	return &SearchError{message: domain + " returned an empty or blocked response (" + string(rune('0'+bytes/1000)) + "KB)"}
-}
-
-type SearchError struct {
-	message string
-}
+type SearchError struct{ message string }
 
 func (e *SearchError) Error() string {
 	return e.message

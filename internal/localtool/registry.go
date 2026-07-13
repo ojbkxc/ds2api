@@ -7,12 +7,12 @@ func init() {
 	DefaultRegistry.Register(NewWebFetchExecutor())
 }
 
-func Execute(call ToolCall) (*ToolResult, error) {
+func Execute(call ToolCall, context ToolExecutionContext) (*ToolResult, error) {
 	executor, ok := DefaultRegistry.Get(call.Name)
 	if !ok {
 		return nil, &ToolNotFoundError{Name: call.Name}
 	}
-	return executor.Execute(call)
+	return executor.Execute(call, context)
 }
 
 func HasTool(name string) bool {
