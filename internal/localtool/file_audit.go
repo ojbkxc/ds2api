@@ -205,16 +205,6 @@ func (a *DefaultFileAuditor) AuditContent(content []byte, filename string, maxSi
 	return result
 }
 
-func fmtInt(n int) string {
-	if n < 0 {
-		return "-" + fmtInt(-n)
-	}
-	if n < 10 {
-		return string('0' + byte(n))
-	}
-	return fmtInt(n/10) + string('0'+byte(n%10))
-}
-
 func fmtIntBytes(n int64) string {
 	if n < 1024 {
 		return fmtInt(int(n)) + " B"
