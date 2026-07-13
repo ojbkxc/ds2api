@@ -1,5 +1,9 @@
 package localtool
 
+import (
+	"time"
+)
+
 type MemoryToolExecutor struct {
 	storage MemoryStorage
 }
@@ -44,15 +48,16 @@ func (e *MemoryToolExecutor) Execute(call ToolCall, context ToolExecutionContext
 	startTime := time.Now()
 	switch call.Name {
 	case "memory_save":
-		return e.saveMemory(call, startTime)
+		return e.saveMemory(call, call.ID, startTime)
 	case "memory_update":
-		return e.updateMemory(call, startTime)
+		return e.updateMemory(call, call.ID, startTime)
 	case "memory_delete":
-		return e.deleteMemory(call, startTime)
+		return e.deleteMemory(call, call.ID, startTime)
 	default:
 		return &ToolResult{
 			Ok:          false,
 			Name:        call.Name,
+			CallId:      call.ID,
 			Summary:     "Unsupported memory tool",
 			Error:       &ToolError{Code: "memory_tool_unsupported", Message: "Unsupported memory tool: " + call.Name, Retryable: false},
 			StartedAt:   startTime,
@@ -62,29 +67,29 @@ func (e *MemoryToolExecutor) Execute(call ToolCall, context ToolExecutionContext
 	}
 }
 
-func (e *MemoryToolExecutor) saveMemory(call ToolCall, startTime time.Time) (*ToolResult, error) {
+func (e *MemoryToolExecutor) saveMemory(call ToolCall, callID ToolCallId, startTime time.Time) (*ToolResult, error) {
 	typeVal, ok := call.Payload["type"].(string)
 	if !ok {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "type is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "type is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 	memoryType := MemoryType(typeVal)
 	if memoryType != MemoryTypeUser && memoryType != MemoryTypeFeedback && memoryType != MemoryTypeTopic && memoryType != MemoryTypeReference {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "invalid type", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "invalid type", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	name, ok := call.Payload["name"].(string)
 	if !ok || name == "" {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "name is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "name is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	content, ok := call.Payload["content"].(string)
 	if !ok || content == "" {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "content is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "content is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	tags, ok := call.Payload["tags"].([]interface{})
 	if !ok {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "tags must be array", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Invalid payload", Error: &ToolError{Code: "memory_invalid_payload", Message: "tags must be array", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	tagStrings := make([]string, 0, len(tags))
@@ -103,12 +108,13 @@ func (e *MemoryToolExecutor) saveMemory(call ToolCall, startTime time.Time) (*To
 		Pinned:      false,
 	})
 	if err != nil {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Save failed", Error: &ToolError{Code: "memory_save_failed", Message: err.Error(), Retryable: true}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Save failed", Error: &ToolError{Code: "memory_save_failed", Message: err.Error(), Retryable: true}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	return &ToolResult{
 		Ok:          true,
 		Name:        call.Name,
+		CallId:      callID,
 		Summary:     "Memory saved",
 		Detail:      name,
 		Output:      map[string]interface{}{"id": memory.ID},
@@ -118,16 +124,16 @@ func (e *MemoryToolExecutor) saveMemory(call ToolCall, startTime time.Time) (*To
 	}, nil
 }
 
-func (e *MemoryToolExecutor) updateMemory(call ToolCall, startTime time.Time) (*ToolResult, error) {
+func (e *MemoryToolExecutor) updateMemory(call ToolCall, callID ToolCallId, startTime time.Time) (*ToolResult, error) {
 	idVal, ok := call.Payload["id"].(float64)
 	if !ok || idVal <= 0 {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Invalid ID", Error: &ToolError{Code: "memory_invalid_id", Message: "id is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Invalid ID", Error: &ToolError{Code: "memory_invalid_id", Message: "id is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 	id := int(idVal)
 
 	existing, err := e.storage.GetMemoryByID(id)
 	if err != nil {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Memory not found", Error: &ToolError{Code: "memory_not_found", Message: err.Error(), Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Memory not found", Error: &ToolError{Code: "memory_not_found", Message: err.Error(), Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	typeVal, ok := call.Payload["type"].(string)
@@ -162,12 +168,13 @@ func (e *MemoryToolExecutor) updateMemory(call ToolCall, startTime time.Time) (*
 
 	err = e.storage.UpdateMemory(*existing)
 	if err != nil {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Update failed", Error: &ToolError{Code: "memory_update_failed", Message: err.Error(), Retryable: true}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Update failed", Error: &ToolError{Code: "memory_update_failed", Message: err.Error(), Retryable: true}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	return &ToolResult{
 		Ok:          true,
 		Name:        call.Name,
+		CallId:      callID,
 		Summary:     "Memory updated",
 		Detail:      existing.Name,
 		StartedAt:   startTime,
@@ -176,21 +183,22 @@ func (e *MemoryToolExecutor) updateMemory(call ToolCall, startTime time.Time) (*
 	}, nil
 }
 
-func (e *MemoryToolExecutor) deleteMemory(call ToolCall, startTime time.Time) (*ToolResult, error) {
+func (e *MemoryToolExecutor) deleteMemory(call ToolCall, callID ToolCallId, startTime time.Time) (*ToolResult, error) {
 	idVal, ok := call.Payload["id"].(float64)
 	if !ok || idVal <= 0 {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Invalid ID", Error: &ToolError{Code: "memory_invalid_id", Message: "id is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Invalid ID", Error: &ToolError{Code: "memory_invalid_id", Message: "id is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 	id := int(idVal)
 
 	err := e.storage.DeleteMemory(id)
 	if err != nil {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Delete failed", Error: &ToolError{Code: "memory_delete_failed", Message: err.Error(), Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: callID, Summary: "Delete failed", Error: &ToolError{Code: "memory_delete_failed", Message: err.Error(), Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	return &ToolResult{
 		Ok:          true,
 		Name:        call.Name,
+		CallId:      callID,
 		Summary:     "Memory deleted",
 		Detail:      "#" + fmtInt(id),
 		StartedAt:   startTime,

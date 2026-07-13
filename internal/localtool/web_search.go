@@ -1,6 +1,7 @@
 package localtool
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -52,7 +53,7 @@ func (e *WebSearchExecutor) Execute(call ToolCall, context ToolExecutionContext)
 	startTime := time.Now()
 	query, ok := call.Payload["query"].(string)
 	if !ok || strings.TrimSpace(query) == "" {
-		return &ToolResult{Ok: false, Name: call.Name, Summary: "Query is required", Error: &ToolError{Code: "empty_query", Message: "query is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: false, Name: call.Name, CallId: call.ID, Summary: "Query is required", Error: &ToolError{Code: "empty_query", Message: "query is required", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	topK := 5
@@ -99,7 +100,7 @@ func (e *WebSearchExecutor) Execute(call ToolCall, context ToolExecutionContext)
 				detail.WriteString("\n")
 			}
 		}
-		return &ToolResult{Ok: true, Name: call.Name, Summary: "Search completed with " + fmtInt(len(results)) + " results", Detail: detail.String(), Output: map[string]interface{}{"results": output}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+		return &ToolResult{Ok: true, Name: call.Name, CallId: call.ID, Summary: "Search completed with " + fmtInt(len(results)) + " results", Detail: detail.String(), Output: map[string]interface{}{"results": output}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	isPermErr := strings.Contains(lastError, "Failed to fetch") || strings.Contains(lastError, "NetworkError") || strings.Contains(lastError, "opaque") || strings.Contains(lastError, "status 0")
@@ -116,7 +117,7 @@ func (e *WebSearchExecutor) Execute(call ToolCall, context ToolExecutionContext)
 }
 
 func fmtInt(n int) string {
-	return string(rune('0') + rune(n))
+	return fmt.Sprintf("%d", n)
 }
 
 func bingSearch(domain, query string, topK int) ([]SearchResult, error) {

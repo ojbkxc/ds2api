@@ -1,7 +1,9 @@
 package localtool
 
 import (
+	"fmt"
 	"sync"
+	"time"
 )
 
 type MemoryType string
@@ -141,7 +143,7 @@ func (s *InMemoryStorage) ListMemoriesByType(memoryType MemoryType) ([]Memory, e
 type MemoryNotFoundError struct{ ID int }
 
 func (e *MemoryNotFoundError) Error() string {
-	return "memory not found: " + fmtInt(e.ID)
+	return fmt.Sprintf("memory not found: %d", e.ID)
 }
 
 func timeNowUnix() int64 {
