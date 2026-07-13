@@ -181,7 +181,7 @@ func buildToolPromptParts(tools []any, policy ToolChoicePolicy) toolPromptParts 
 			desc = "No description available"
 		}
 		b, _ := json.Marshal(schema)
-		template := toolDescriptionTemplates[rand.Intn(len(toolDescriptionTemplates))]
+		template := toolDescriptionTemplates[0]
 		toolSchemas = append(toolSchemas, fmt.Sprintf(template, name, desc, string(b)))
 	}
 	if len(toolSchemas) == 0 {
@@ -226,7 +226,7 @@ func BuildOpenAIToolsContextTranscriptWithFilename(toolsRaw any, policy ToolChoi
 	var b strings.Builder
 	b.WriteString(ToolsTranscriptTitle(toolsFilename))
 	b.WriteString("\n")
-	b.WriteString(toolsTranscriptSummaries[rand.Intn(len(toolsTranscriptSummaries))])
+	b.WriteString(toolsTranscriptSummaries[0])
 	b.WriteString("\n\n")
 	b.WriteString(parts.Descriptions)
 	b.WriteString("\n")

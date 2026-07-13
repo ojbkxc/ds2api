@@ -122,15 +122,7 @@ func IsSupportedDeepSeekModel(model string) bool {
 // file/attachment uploads by default. Fast (default) and Vision modes support
 // uploads; Expert mode does not.
 func ModelSupportsFileUpload(model string) bool {
-	baseModel, _ := splitNoThinkingModel(model)
-	switch baseModel {
-	case "deepseek-v4-flash", "deepseek-v4-vision":
-		return true
-	case "deepseek-v4-pro":
-		return false
-	default:
-		return false
-	}
+	return true
 }
 
 func IsNoThinkingModel(model string) bool {

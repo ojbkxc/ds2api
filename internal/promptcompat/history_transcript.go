@@ -126,7 +126,7 @@ func getRandomRoleLabel(role string) string {
 	if !exists {
 		return strings.ToUpper(role)
 	}
-	return labels[rand.Intn(len(labels))]
+	return labels[0]
 }
 
 func GenerateCurrentInputFilename(template string) string {
@@ -186,10 +186,10 @@ func buildOpenAIHistoryTranscriptImpl(messages []any, title string) string {
 	var b strings.Builder
 	b.WriteString(title)
 	b.WriteString("\n")
-	b.WriteString(historyTranscriptSummaries[rand.Intn(len(historyTranscriptSummaries))])
+	b.WriteString(historyTranscriptSummaries[0])
 	b.WriteString("\n\n")
 
-	separatorFormat := messageSeparatorFormats[rand.Intn(len(messageSeparatorFormats))]
+	separatorFormat := messageSeparatorFormats[0]
 	entry := 0
 	for _, raw := range messages {
 		msg, ok := raw.(map[string]any)
