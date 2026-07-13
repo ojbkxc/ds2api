@@ -224,13 +224,13 @@
     "apiTester": {
         "defaultMessage": "Hello, please introduce yourself in one sentence.",
         "models": {
-            "flash": "v4 Flash (thinking on by default)",
-            "pro": "v4 Pro (thinking on by default)",
-            "flashSearch": "v4 Flash (with search)",
-            "proSearch": "v4 Pro (with search)",
-            "vision": "v4 Vision (thinking on by default)",
+            "flash": "v4 Flash · Thinking · File Upload",
+            "flashSearch": "v4 Flash · Thinking · Search · File Upload",
+            "pro": "v4 Pro · Thinking",
+            "proSearch": "v4 Pro",
+            "vision": "v4 Vision · Thinking · Image Upload",
             "generic": "Compatible model",
-            "noThinking": "thinking forced off"
+            "noThinking": "No Thinking"
         },
         "missingApiKey": "Please provide an API key.",
         "requestFailed": "Request failed.",

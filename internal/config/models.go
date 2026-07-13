@@ -31,15 +31,18 @@ const noThinkingModelSuffix = "-nothinking"
 
 var deepSeekBaseModels = []ModelInfo{
 	{ID: "deepseek-v4-flash", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
+	{ID: "deepseek-v4-flash-search", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 	{ID: "deepseek-v4-pro", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 	{ID: "deepseek-v4-vision", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 }
 
 var OllamaCapabilitiesModels = []OllamaCapabilitiesModelInfo{
 	{ID: "deepseek-v4-flash", Capabilities: []string{"tools", "thinking", "search"}},
+	{ID: "deepseek-v4-flash-search", Capabilities: []string{"tools", "thinking", "search"}},
 	{ID: "deepseek-v4-pro", Capabilities: []string{"tools", "thinking"}},
 	{ID: "deepseek-v4-vision", Capabilities: []string{"tools", "thinking", "vision"}},
 	{ID: "deepseek-v4-flash-nothinking", Capabilities: []string{"tools", "search"}},
+	{ID: "deepseek-v4-flash-search-nothinking", Capabilities: []string{"tools", "search"}},
 	{ID: "deepseek-v4-pro-nothinking", Capabilities: []string{"tools"}},
 	{ID: "deepseek-v4-vision-nothinking", Capabilities: []string{"tools", "vision"}},
 }
@@ -86,6 +89,8 @@ func GetModelConfig(model string) (thinking bool, search bool, ok bool) {
 	switch baseModel {
 	case "deepseek-v4-flash":
 		return !noThinking, false, true
+	case "deepseek-v4-flash-search":
+		return !noThinking, true, true
 	case "deepseek-v4-pro", "deepseek-v4-vision":
 		return !noThinking, false, true
 	default:
@@ -95,14 +100,14 @@ func GetModelConfig(model string) (thinking bool, search bool, ok bool) {
 
 func GetModelType(model string) (modelType string, ok bool) {
 	baseModel, _ := splitNoThinkingModel(model)
-	// Resolve legacy aliases (e.g., deepseek-v4-flash-search → deepseek-v4-flash)
+	// Resolve legacy aliases (e.g., deepseek-chat → deepseek-v4-flash)
 	aliases := DefaultModelAliases()
 	if mapped, ok := aliases[baseModel]; ok {
 		baseModel = mapped
 	}
 	baseModel, _ = splitNoThinkingModel(baseModel)
 	switch baseModel {
-	case "deepseek-v4-flash":
+	case "deepseek-v4-flash", "deepseek-v4-flash-search":
 		return "default", true
 	case "deepseek-v4-pro":
 		return "expert", true
@@ -132,7 +137,7 @@ func ModelSupportsFileUpload(model string) bool {
 	switch baseModel {
 	case "deepseek-v4-pro":
 		return false
-	case "deepseek-v4-flash", "deepseek-v4-vision":
+	case "deepseek-v4-flash", "deepseek-v4-flash-search", "deepseek-v4-vision":
 		return true
 	default:
 		return false
@@ -155,7 +160,6 @@ func DefaultModelAliases() map[string]string {
 		"deepseek-expert-reasoner": "deepseek-v4-pro",
 		"deepseek-vision-chat":     "deepseek-v4-vision",
 		"deepseek-vision":          "deepseek-v4-vision",
-		"deepseek-v4-flash-search": "deepseek-v4-flash",
 		"deepseek-v4-pro-search":   "deepseek-v4-pro",
 
 		// OpenAI GPT / ChatGPT families

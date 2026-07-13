@@ -224,13 +224,13 @@
     "apiTester": {
         "defaultMessage": "你好，请用一句话介绍你自己。",
         "models": {
-            "flash": "v4 Flash（默认开启思考）",
-            "pro": "v4 Pro（默认开启思考）",
-            "flashSearch": "v4 Flash（带搜索）",
-            "proSearch": "v4 Pro（带搜索）",
-            "vision": "v4 Vision（默认开启思考）",
+            "flash": "v4 Flash · 思考 · 上传文件",
+            "flashSearch": "v4 Flash · 思考 · 联网搜索 · 上传文件",
+            "pro": "v4 Pro · 思考",
+            "proSearch": "v4 Pro",
+            "vision": "v4 Vision · 思考 · 上传图片",
             "generic": "兼容模型",
-            "noThinking": "强制关闭思考"
+            "noThinking": "不思考"
         },
         "missingApiKey": "请提供 API 密钥",
         "requestFailed": "请求失败",

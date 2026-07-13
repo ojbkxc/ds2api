@@ -102,7 +102,7 @@ func TestResolveModelLegacyDeepSeekIDs(t *testing.T) {
 		{"deepseek-expert-reasoner", "deepseek-v4-pro"},
 		{"deepseek-vision-chat", "deepseek-v4-vision"},
 		{"deepseek-vision", "deepseek-v4-vision"},
-		{"deepseek-v4-flash-search", "deepseek-v4-flash"},
+		{"deepseek-v4-flash-search", "deepseek-v4-flash-search"},
 		{"deepseek-v4-pro-search", "deepseek-v4-pro"},
 	}
 	for _, tc := range cases {
