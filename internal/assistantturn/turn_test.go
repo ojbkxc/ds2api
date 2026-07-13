@@ -31,7 +31,7 @@ func TestBuildTurnFromCollectedKeepsNonStreamReferenceLinks(t *testing.T) {
 			1: "https://example.com/a",
 			2: "https://example.com/b",
 		},
-	}, BuildOptions{Model: "deepseek-v4-flash-search", Prompt: "prompt", SearchEnabled: true})
+	}, BuildOptions{Model: "deepseek-v4-flash", Prompt: "prompt", SearchEnabled: true})
 	want := "结论[0](https://example.com/a)，补充[1](https://example.com/b)。"
 	if turn.Text != want {
 		t.Fatalf("text mismatch: got %q want %q", turn.Text, want)

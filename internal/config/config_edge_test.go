@@ -39,43 +39,33 @@ func TestGetModelConfigDeepSeekReasoner(t *testing.T) {
 	}
 }
 
-func TestGetModelConfigDeepSeekChatSearch(t *testing.T) {
-	thinking, search, ok := GetModelConfig("deepseek-v4-flash-search")
+func TestGetModelConfigDeepSeekFlashHasSearch(t *testing.T) {
+	thinking, search, ok := GetModelConfig("deepseek-v4-flash")
 	if !ok {
-		t.Fatal("expected ok for deepseek-v4-flash-search")
+		t.Fatal("expected ok for deepseek-v4-flash")
 	}
 	if !thinking || !search {
 		t.Fatalf("expected thinking=true search=true, got thinking=%v search=%v", thinking, search)
 	}
 }
 
-func TestGetModelConfigDeepSeekReasonerSearch(t *testing.T) {
-	thinking, search, ok := GetModelConfig("deepseek-v4-pro-search")
+func TestGetModelConfigDeepSeekFlashNoThinkingHasSearch(t *testing.T) {
+	thinking, search, ok := GetModelConfig("deepseek-v4-flash-nothinking")
 	if !ok {
-		t.Fatal("expected ok for deepseek-v4-pro-search")
+		t.Fatal("expected ok for deepseek-v4-flash-nothinking")
 	}
-	if !thinking || !search {
-		t.Fatalf("expected both true, got thinking=%v search=%v", thinking, search)
+	if thinking || !search {
+		t.Fatalf("expected thinking=false search=true, got thinking=%v search=%v", thinking, search)
 	}
 }
 
-func TestGetModelConfigDeepSeekExpertChat(t *testing.T) {
+func TestGetModelConfigDeepSeekProNoSearch(t *testing.T) {
 	thinking, search, ok := GetModelConfig("deepseek-v4-pro")
 	if !ok {
 		t.Fatal("expected ok for deepseek-v4-pro")
 	}
 	if !thinking || search {
 		t.Fatalf("expected thinking=true search=false for deepseek-v4-pro, got thinking=%v search=%v", thinking, search)
-	}
-}
-
-func TestGetModelConfigDeepSeekExpertReasonerSearch(t *testing.T) {
-	thinking, search, ok := GetModelConfig("deepseek-v4-pro-search")
-	if !ok {
-		t.Fatal("expected ok for deepseek-v4-pro-search")
-	}
-	if !thinking || !search {
-		t.Fatalf("expected both true, got thinking=%v search=%v", thinking, search)
 	}
 }
 
@@ -112,6 +102,37 @@ func TestGetModelTypeDefaultExpertAndVision(t *testing.T) {
 	visionType, ok := GetModelType("deepseek-v4-vision")
 	if !ok || visionType != "vision" {
 		t.Fatalf("expected vision model_type, got ok=%v model_type=%q", ok, visionType)
+	}
+}
+
+func TestGetModelTypeLegacyDeepSeekIDs(t *testing.T) {
+	cases := []struct {
+		model     string
+		wantType  string
+		wantOk    bool
+	}{
+		{"deepseek-chat", "default", true},
+		{"deepseek-reasoner", "expert", true},
+		{"deepseek-v4-flash-search", "default", true},
+		{"deepseek-v4-pro-search", "expert", true},
+		{"deepseek-vision", "vision", true},
+		{"unknown-model", "", false},
+	}
+	for _, tc := range cases {
+		resolved, ok := ResolveModel(nil, tc.model)
+		if !tc.wantOk {
+			if ok {
+				t.Fatalf("expected legacy model %q to be rejected, got %q", tc.model, resolved)
+			}
+			continue
+		}
+		if !ok {
+			t.Fatalf("expected legacy model %q to resolve, got not ok", tc.model)
+		}
+		modelType, ok := GetModelType(resolved)
+		if !ok || modelType != tc.wantType {
+			t.Fatalf("expected model %q -> type %q, got type=%q ok=%v", tc.model, tc.wantType, modelType, ok)
+		}
 	}
 }
 
@@ -683,16 +704,12 @@ func TestOpenAIModelsResponse(t *testing.T) {
 		t.Fatal("expected non-empty models list")
 	}
 	expected := map[string]bool{
-		"deepseek-v4-flash":                   false,
-		"deepseek-v4-flash-nothinking":        false,
-		"deepseek-v4-pro":                     false,
-		"deepseek-v4-pro-nothinking":          false,
-		"deepseek-v4-flash-search":            false,
-		"deepseek-v4-flash-search-nothinking": false,
-		"deepseek-v4-pro-search":              false,
-		"deepseek-v4-pro-search-nothinking":   false,
-		"deepseek-v4-vision":                  false,
-		"deepseek-v4-vision-nothinking":       false,
+		"deepseek-v4-flash":             false,
+		"deepseek-v4-flash-nothinking":  false,
+		"deepseek-v4-pro":               false,
+		"deepseek-v4-pro-nothinking":    false,
+		"deepseek-v4-vision":            false,
+		"deepseek-v4-vision-nothinking": false,
 	}
 	for _, model := range data {
 		if _, ok := expected[model.ID]; ok {

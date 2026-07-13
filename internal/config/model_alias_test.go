@@ -56,7 +56,7 @@ func TestResolveExpandedHistoricalAliases(t *testing.T) {
 	}{
 		{name: "openai old chatgpt", model: "chatgpt-4o", want: "deepseek-v4-flash"},
 		{name: "openai codex max", model: "gpt-5.1-codex-max", want: "deepseek-v4-pro"},
-		{name: "openai deep research", model: "o3-deep-research", want: "deepseek-v4-pro-search"},
+		{name: "openai deep research", model: "o3-deep-research", want: "deepseek-v4-pro"},
 		{name: "openai historical reasoning", model: "o1-preview", want: "deepseek-v4-pro"},
 		{name: "claude latest historical", model: "claude-3-5-sonnet-latest", want: "deepseek-v4-flash"},
 		{name: "claude historical opus", model: "claude-3-opus-20240229", want: "deepseek-v4-pro"},
@@ -89,19 +89,26 @@ func TestResolveModelUnknownKnownFamilyName(t *testing.T) {
 	}
 }
 
-func TestResolveModelRejectsLegacyDeepSeekIDs(t *testing.T) {
-	legacyModels := []string{
-		"deepseek-chat",
-		"deepseek-reasoner",
-		"deepseek-chat-search",
-		"deepseek-reasoner-search",
-		"deepseek-expert-chat",
-		"deepseek-expert-reasoner",
-		"deepseek-vision-chat",
+func TestResolveModelLegacyDeepSeekIDs(t *testing.T) {
+	cases := []struct {
+		model string
+		want  string
+	}{
+		{"deepseek-chat", "deepseek-v4-flash"},
+		{"deepseek-reasoner", "deepseek-v4-pro"},
+		{"deepseek-chat-search", "deepseek-v4-flash"},
+		{"deepseek-reasoner-search", "deepseek-v4-pro"},
+		{"deepseek-expert-chat", "deepseek-v4-pro"},
+		{"deepseek-expert-reasoner", "deepseek-v4-pro"},
+		{"deepseek-vision-chat", "deepseek-v4-vision"},
+		{"deepseek-vision", "deepseek-v4-vision"},
+		{"deepseek-v4-flash-search", "deepseek-v4-flash"},
+		{"deepseek-v4-pro-search", "deepseek-v4-pro"},
 	}
-	for _, model := range legacyModels {
-		if got, ok := ResolveModel(nil, model); ok {
-			t.Fatalf("expected legacy model %q to be rejected, got %q", model, got)
+	for _, tc := range cases {
+		got, ok := ResolveModel(nil, tc.model)
+		if !ok || got != tc.want {
+			t.Fatalf("expected legacy model %q -> %q, got ok=%v model=%q", tc.model, tc.want, ok, got)
 		}
 	}
 }
@@ -128,10 +135,10 @@ func TestResolveModelDirectDeepSeekExpert(t *testing.T) {
 
 func TestResolveModelCustomAliasToExpert(t *testing.T) {
 	got, ok := ResolveModel(mockModelAliasReader{
-		"my-expert-model": "deepseek-v4-pro-search",
+		"my-expert-model": "deepseek-v4-pro",
 	}, "my-expert-model")
-	if !ok || got != "deepseek-v4-pro-search" {
-		t.Fatalf("expected alias -> deepseek-v4-pro-search, got ok=%v model=%q", ok, got)
+	if !ok || got != "deepseek-v4-pro" {
+		t.Fatalf("expected alias -> deepseek-v4-pro, got ok=%v model=%q", ok, got)
 	}
 }
 

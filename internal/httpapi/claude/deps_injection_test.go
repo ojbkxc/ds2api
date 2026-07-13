@@ -27,10 +27,10 @@ func TestNormalizeClaudeRequestUsesGlobalAliasMapping(t *testing.T) {
 	if err != nil {
 		t.Fatalf("normalizeClaudeRequest error: %v", err)
 	}
-	if out.Standard.ResolvedModel != "deepseek-v4-pro-search" {
+	if out.Standard.ResolvedModel != "deepseek-v4-pro" {
 		t.Fatalf("resolved model mismatch: got=%q", out.Standard.ResolvedModel)
 	}
-	if !out.Standard.Thinking || !out.Standard.Search {
+	if !out.Standard.Thinking || out.Standard.Search {
 		t.Fatalf("unexpected flags: thinking=%v search=%v", out.Standard.Thinking, out.Standard.Search)
 	}
 }

@@ -368,8 +368,8 @@ func TestConvertClaudeToDeepSeekUsesExplicitModelAlias(t *testing.T) {
 		"messages": []any{map[string]any{"role": "user", "content": "Hi"}},
 	}
 	out := ConvertClaudeToDeepSeek(req, store)
-	if out["model"] != "deepseek-v4-pro-search" {
-		t.Fatalf("expected explicit alias override, got %q", out["model"])
+	if out["model"] != "deepseek-v4-pro" {
+		t.Fatalf("expected explicit alias override resolved to deepseek-v4-pro, got %q", out["model"])
 	}
 }
 
@@ -381,7 +381,7 @@ func TestConvertClaudeToDeepSeekUsesExplicitNoThinkingModelAlias(t *testing.T) {
 		"messages": []any{map[string]any{"role": "user", "content": "Hi"}},
 	}
 	out := ConvertClaudeToDeepSeek(req, store)
-	if out["model"] != "deepseek-v4-pro-search-nothinking" {
-		t.Fatalf("expected explicit alias override with nothinking suffix, got %q", out["model"])
+	if out["model"] != "deepseek-v4-pro-nothinking" {
+		t.Fatalf("expected explicit alias override with nothinking suffix resolved to deepseek-v4-pro-nothinking, got %q", out["model"])
 	}
 }

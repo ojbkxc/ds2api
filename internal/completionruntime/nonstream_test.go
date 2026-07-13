@@ -264,7 +264,7 @@ func TestExecuteNonStreamWithRetryConvertsReferenceMarkers(t *testing.T) {
 	)}}
 	stdReq := promptcompat.StandardRequest{
 		Surface:         "test",
-		ResponseModel:   "deepseek-v4-flash-search",
+		ResponseModel:   "deepseek-v4-flash",
 		PromptTokenText: "prompt",
 		FinalPrompt:     "final prompt",
 		Search:          true,

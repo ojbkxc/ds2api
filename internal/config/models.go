@@ -32,21 +32,15 @@ const noThinkingModelSuffix = "-nothinking"
 var deepSeekBaseModels = []ModelInfo{
 	{ID: "deepseek-v4-flash", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 	{ID: "deepseek-v4-pro", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
-	{ID: "deepseek-v4-flash-search", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
-	{ID: "deepseek-v4-pro-search", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 	{ID: "deepseek-v4-vision", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 }
 
 var OllamaCapabilitiesModels = []OllamaCapabilitiesModelInfo{
-	{ID: "deepseek-v4-flash", Capabilities: []string{"tools", "thinking"}},
+	{ID: "deepseek-v4-flash", Capabilities: []string{"tools", "thinking", "search"}},
 	{ID: "deepseek-v4-pro", Capabilities: []string{"tools", "thinking"}},
-	{ID: "deepseek-v4-flash-search", Capabilities: []string{"tools", "thinking", "search"}},
-	{ID: "deepseek-v4-pro-search", Capabilities: []string{"tools", "thinking", "search"}},
 	{ID: "deepseek-v4-vision", Capabilities: []string{"tools", "thinking", "vision"}},
-	{ID: "deepseek-v4-flash-nothinking", Capabilities: []string{"tools"}},
+	{ID: "deepseek-v4-flash-nothinking", Capabilities: []string{"tools", "search"}},
 	{ID: "deepseek-v4-pro-nothinking", Capabilities: []string{"tools"}},
-	{ID: "deepseek-v4-flash-search-nothinking", Capabilities: []string{"tools", "search"}},
-	{ID: "deepseek-v4-pro-search-nothinking", Capabilities: []string{"tools", "search"}},
 	{ID: "deepseek-v4-vision-nothinking", Capabilities: []string{"tools", "vision"}},
 }
 
@@ -90,10 +84,10 @@ func GetModelConfig(model string) (thinking bool, search bool, ok bool) {
 		return false, false, false
 	}
 	switch baseModel {
-	case "deepseek-v4-flash", "deepseek-v4-pro", "deepseek-v4-vision":
-		return !noThinking, false, true
-	case "deepseek-v4-flash-search", "deepseek-v4-pro-search":
+	case "deepseek-v4-flash":
 		return !noThinking, true, true
+	case "deepseek-v4-pro", "deepseek-v4-vision":
+		return !noThinking, false, true
 	default:
 		return false, false, false
 	}
@@ -102,9 +96,9 @@ func GetModelConfig(model string) (thinking bool, search bool, ok bool) {
 func GetModelType(model string) (modelType string, ok bool) {
 	baseModel, _ := splitNoThinkingModel(model)
 	switch baseModel {
-	case "deepseek-v4-flash", "deepseek-v4-flash-search":
+	case "deepseek-v4-flash":
 		return "default", true
-	case "deepseek-v4-pro", "deepseek-v4-pro-search":
+	case "deepseek-v4-pro":
 		return "expert", true
 	case "deepseek-v4-vision":
 		return "vision", true
@@ -125,6 +119,18 @@ func IsNoThinkingModel(model string) bool {
 
 func DefaultModelAliases() map[string]string {
 	return map[string]string{
+		// DeepSeek legacy model names (backward compatibility)
+		"deepseek-chat":           "deepseek-v4-flash",
+		"deepseek-reasoner":       "deepseek-v4-pro",
+		"deepseek-chat-search":    "deepseek-v4-flash",
+		"deepseek-reasoner-search": "deepseek-v4-pro",
+		"deepseek-expert-chat":    "deepseek-v4-pro",
+		"deepseek-expert-reasoner": "deepseek-v4-pro",
+		"deepseek-vision-chat":    "deepseek-v4-vision",
+		"deepseek-vision":         "deepseek-v4-vision",
+		"deepseek-v4-flash-search": "deepseek-v4-flash",
+		"deepseek-v4-pro-search":   "deepseek-v4-pro",
+
 		// OpenAI GPT / ChatGPT families
 		"chatgpt-4o":          "deepseek-v4-flash",
 		"gpt-4":               "deepseek-v4-flash",
@@ -169,9 +175,9 @@ func DefaultModelAliases() map[string]string {
 		"o3":                    "deepseek-v4-pro",
 		"o3-mini":               "deepseek-v4-pro",
 		"o3-pro":                "deepseek-v4-pro",
-		"o3-deep-research":      "deepseek-v4-pro-search",
+		"o3-deep-research":      "deepseek-v4-pro",
 		"o4-mini":               "deepseek-v4-pro",
-		"o4-mini-deep-research": "deepseek-v4-pro-search",
+		"o4-mini-deep-research": "deepseek-v4-pro",
 
 		// Claude current and historical aliases
 		"claude-opus-4-6":            "deepseek-v4-pro",
@@ -233,16 +239,31 @@ func ResolveModel(store ModelAliasReader, requested string) (string, bool) {
 		return "", false
 	}
 	aliases := loadModelAliases(store)
-	if IsSupportedDeepSeekModel(model) {
-		return model, true
+
+	// Resolve with alias recursion (max 3 hops to prevent cycles)
+	for i := 0; i < 3; i++ {
+		if IsSupportedDeepSeekModel(model) {
+			return model, true
+		}
+		if mapped, ok := aliases[model]; ok {
+			model = mapped
+			continue
+		}
+		break
 	}
-	if mapped, ok := aliases[model]; ok && IsSupportedDeepSeekModel(mapped) {
-		return mapped, true
-	}
+
 	baseModel, noThinking := splitNoThinkingModel(model)
-	if mapped, ok := aliases[baseModel]; ok && IsSupportedDeepSeekModel(mapped) {
-		return withNoThinkingVariant(mapped, noThinking), true
+	for i := 0; i < 3; i++ {
+		if IsSupportedDeepSeekModel(baseModel) {
+			return withNoThinkingVariant(baseModel, noThinking), true
+		}
+		if mapped, ok := aliases[baseModel]; ok {
+			baseModel = mapped
+			continue
+		}
+		break
 	}
+
 	return "", false
 }
 
