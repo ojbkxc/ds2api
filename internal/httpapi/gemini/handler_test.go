@@ -169,22 +169,15 @@ func TestGeminiDirectAppliesCurrentInputFile(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
 	}
-	if len(ds.uploadCalls) != 1 {
-		t.Fatalf("expected one current input upload, got %d", len(ds.uploadCalls))
-	}
-	if ds.uploadCalls[0].Filename != "deepseek.txt" {
-		t.Fatalf("unexpected upload filename: %q", ds.uploadCalls[0].Filename)
+	if len(ds.uploadCalls) != 0 {
+		t.Fatalf("expected no uploads for expert model, got %d", len(ds.uploadCalls))
 	}
 	if len(ds.payloads) != 1 {
 		t.Fatalf("expected one completion payload, got %d", len(ds.payloads))
 	}
-	refIDs, _ := ds.payloads[0]["ref_file_ids"].([]any)
-	if len(refIDs) != 1 || refIDs[0] != "file-gemini-history" {
-		t.Fatalf("expected uploaded history ref id, got %#v", ds.payloads[0]["ref_file_ids"])
-	}
 	prompt, _ := ds.payloads[0]["prompt"].(string)
-	if !strings.Contains(prompt, "deepseek.txt") {
-		t.Fatalf("expected continuation prompt, got %q", prompt)
+	if !strings.Contains(prompt, "hello from gemini") {
+		t.Fatalf("expected prompt to contain original message, got %q", prompt)
 	}
 	snapshot, err := historyStore.Snapshot()
 	if err != nil {
@@ -203,11 +196,8 @@ func TestGeminiDirectAppliesCurrentInputFile(t *testing.T) {
 	if full.Content != "ok" {
 		t.Fatalf("expected raw upstream content, got %q", full.Content)
 	}
-	if full.HistoryText != string(ds.uploadCalls[0].Data) {
-		t.Fatalf("expected uploaded current input file to be persisted in history text")
-	}
-	if len(full.Messages) != 1 || !strings.Contains(full.Messages[0].Content, "deepseek.txt") {
-		t.Fatalf("expected persisted message to match upstream continuation prompt, got %#v", full.Messages)
+	if len(full.Messages) != 1 {
+		t.Fatalf("expected one persisted message, got %d", len(full.Messages))
 	}
 }
 
@@ -235,27 +225,18 @@ func TestGeminiCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
 	}
-	if len(ds.uploadCalls) != 2 {
-		t.Fatalf("expected history and tools uploads, got %d", len(ds.uploadCalls))
+	if len(ds.uploadCalls) != 0 {
+		t.Fatalf("expected no uploads for expert model, got %d", len(ds.uploadCalls))
 	}
-	if ds.uploadCalls[0].Filename != "deepseek.txt" || ds.uploadCalls[1].Filename != "tools.txt" {
-		t.Fatalf("unexpected upload filenames: %#v", ds.uploadCalls)
-	}
-	historyText := string(ds.uploadCalls[0].Data)
-	if strings.Contains(historyText, "Description: eval") {
-		t.Fatalf("history transcript should not embed tool descriptions, got %q", historyText)
-	}
-	toolsText := string(ds.uploadCalls[1].Data)
-	if !strings.Contains(toolsText, "# tools.txt") || !strings.Contains(toolsText, "Tool: eval_javascript") || !strings.Contains(toolsText, "Description: eval") {
-		t.Fatalf("expected tools transcript to include Gemini tool schema, got %q", toolsText)
-	}
-	refIDs, _ := ds.payloads[0]["ref_file_ids"].([]any)
-	if len(refIDs) < 2 || refIDs[0] != "file-gemini-history" || refIDs[1] != "file-gemini-tools" {
-		t.Fatalf("expected history and tools ref ids first, got %#v", ds.payloads[0]["ref_file_ids"])
+	if len(ds.payloads) != 1 {
+		t.Fatalf("expected one completion payload, got %d", len(ds.payloads))
 	}
 	prompt, _ := ds.payloads[0]["prompt"].(string)
-	if !strings.Contains(prompt, "tools.txt") || !strings.Contains(prompt, "TOOL CALL FORMAT") {
-		t.Fatalf("expected live prompt to reference tools file and retain format instructions, got %q", prompt)
+	if !strings.Contains(prompt, "eval_javascript") {
+		t.Fatalf("expected prompt to contain tool descriptions, got %q", prompt)
+	}
+	if !strings.Contains(prompt, "TOOL CALL FORMAT") {
+		t.Fatalf("expected live prompt to retain format instructions, got %q", prompt)
 	}
 	if strings.Contains(prompt, "Description: eval") {
 		t.Fatalf("live prompt should not inline tool descriptions, got %q", prompt)

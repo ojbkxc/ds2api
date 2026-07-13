@@ -63,7 +63,7 @@ func TestNormalizeOpenAIChatRequestWithConfigInterface(t *testing.T) {
 	if out.ResolvedModel != "deepseek-v4-flash" {
 		t.Fatalf("resolved model mismatch: got=%q", out.ResolvedModel)
 	}
-	if !out.Search || !out.Thinking {
+	if out.Search || !out.Thinking {
 		t.Fatalf("unexpected model flags: thinking=%v search=%v", out.Thinking, out.Search)
 	}
 }

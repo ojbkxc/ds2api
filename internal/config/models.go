@@ -85,7 +85,7 @@ func GetModelConfig(model string) (thinking bool, search bool, ok bool) {
 	}
 	switch baseModel {
 	case "deepseek-v4-flash":
-		return !noThinking, true, true
+		return !noThinking, false, true
 	case "deepseek-v4-pro", "deepseek-v4-vision":
 		return !noThinking, false, true
 	default:
@@ -122,7 +122,21 @@ func IsSupportedDeepSeekModel(model string) bool {
 // file/attachment uploads by default. Fast (default) and Vision modes support
 // uploads; Expert mode does not.
 func ModelSupportsFileUpload(model string) bool {
-	return true
+	baseModel, _ := splitNoThinkingModel(model)
+	// Resolve legacy aliases first
+	aliases := DefaultModelAliases()
+	if mapped, ok := aliases[baseModel]; ok {
+		baseModel = mapped
+	}
+	baseModel, _ = splitNoThinkingModel(baseModel)
+	switch baseModel {
+	case "deepseek-v4-pro":
+		return false
+	case "deepseek-v4-flash", "deepseek-v4-vision":
+		return true
+	default:
+		return false
+	}
 }
 
 func IsNoThinkingModel(model string) bool {

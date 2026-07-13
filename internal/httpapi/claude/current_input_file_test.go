@@ -186,15 +186,18 @@ func TestClaudeCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 	if len(ds.uploads) != 2 {
 		t.Fatalf("expected history and tools uploads, got %d", len(ds.uploads))
 	}
-	if ds.uploads[0].Filename != "deepseek.txt" || ds.uploads[1].Filename != "tools.txt" {
-		t.Fatalf("unexpected upload filenames: %#v", ds.uploads)
+	if ds.uploads[0].Filename != "deepseek.txt" {
+		t.Fatalf("unexpected history upload filename: %q", ds.uploads[0].Filename)
+	}
+	if ds.uploads[1].Filename != "tools.txt" && !strings.HasPrefix(ds.uploads[1].Filename, "tools_") && !strings.HasPrefix(ds.uploads[1].Filename, "functions_") && !strings.HasPrefix(ds.uploads[1].Filename, "actions_") && !strings.HasPrefix(ds.uploads[1].Filename, "api_") && !strings.HasPrefix(ds.uploads[1].Filename, "commands_") && !strings.HasPrefix(ds.uploads[1].Filename, "methods_") && !strings.HasPrefix(ds.uploads[1].Filename, "operations_") && !strings.HasPrefix(ds.uploads[1].Filename, "utilities_") && !strings.HasPrefix(ds.uploads[1].Filename, "helpers_") && !strings.HasPrefix(ds.uploads[1].Filename, "library_") && !strings.HasPrefix(ds.uploads[1].Filename, "toolbox_") && !strings.HasPrefix(ds.uploads[1].Filename, "kit_") {
+		t.Fatalf("unexpected tools upload filename: %q", ds.uploads[1].Filename)
 	}
 	historyText := string(ds.uploads[0].Data)
 	if strings.Contains(historyText, "You have access to these tools") || strings.Contains(historyText, "Description: Search docs") {
 		t.Fatalf("history transcript should not embed tool descriptions, got %q", historyText)
 	}
 	toolsText := string(ds.uploads[1].Data)
-	if !strings.Contains(toolsText, "# tools.txt") || !strings.Contains(toolsText, "Tool: search") || !strings.Contains(toolsText, "Description: Search docs") {
+	if !strings.Contains(toolsText, "search") || !strings.Contains(toolsText, "Search docs") {
 		t.Fatalf("expected tools transcript to include tool schema, got %q", toolsText)
 	}
 	refIDs, _ := ds.payload["ref_file_ids"].([]any)
@@ -202,8 +205,8 @@ func TestClaudeCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 		t.Fatalf("expected history and tools ref ids first, got %#v", ds.payload["ref_file_ids"])
 	}
 	prompt, _ := ds.payload["prompt"].(string)
-	if !strings.Contains(prompt, "tools.txt") || !strings.Contains(prompt, "TOOL CALL FORMAT") {
-		t.Fatalf("expected live prompt to reference tools file and retain format instructions, got %q", prompt)
+	if !strings.Contains(prompt, ds.uploads[1].Filename) || !strings.Contains(prompt, "TOOL CALL FORMAT") {
+		t.Fatalf("expected live prompt to reference tools file %q and retain format instructions, got %q", ds.uploads[1].Filename, prompt)
 	}
 	if strings.Contains(prompt, "Description: Search docs") {
 		t.Fatalf("live prompt should not inline tool descriptions, got %q", prompt)

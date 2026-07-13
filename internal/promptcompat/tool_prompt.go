@@ -4,14 +4,47 @@ import (
 	"ds2api/internal/prompt"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
 	"unicode"
 
 	"ds2api/internal/toolcall"
 )
 
+var toolsFilenamePrefixes = []string{
+	"tools",
+	"functions",
+	"actions",
+	"api",
+	"commands",
+	"methods",
+	"operations",
+	"utilities",
+	"helpers",
+	"library",
+	"toolbox",
+	"kit",
+}
+
 func randomToolsFilename() string {
-	return "tools.txt"
+	prefix := toolsFilenamePrefixes[rand.Intn(len(toolsFilenamePrefixes))]
+	suffix := fmt.Sprintf("%04d", rand.Intn(10000))
+	return prefix + "_" + suffix + ".txt"
+}
+
+var toolsTranscriptTitles = []string{
+	"# tool definitions",
+	"# function catalog",
+	"# available actions",
+	"# API reference",
+	"# command list",
+	"# method signatures",
+	"# operation specs",
+	"# utility documentation",
+}
+
+func randomToolsTranscriptTitle() string {
+	return toolsTranscriptTitles[rand.Intn(len(toolsTranscriptTitles))]
 }
 
 // CurrentToolsContextFilename is the fallback filename when no dynamic name is available.
@@ -56,12 +89,28 @@ var readToolCacheGuards = []string{
 	"Content retrieval safeguard: If read tool results show no new data or unavailable content, consider it missing. Avoid repeated identical requests. Obtain full content or inform the user accordingly.",
 }
 
+var toolsReferencePrompts = []string{
+	"Refer to %s for tool definitions and schemas. Only use tools defined there.",
+	"Tool specifications are in %s. Use only the tools listed in that file.",
+	"See %s for available tools and their parameters. Stick to those tools only.",
+	"%s contains the tool catalog. Use only tools defined in that reference.",
+	"Check %s for tool definitions. Only call tools specified there.",
+	"Tool schemas are documented in %s. Use those tools and follow their specifications.",
+	"Refer to %s for available functions. Only use tools defined in that file.",
+	"%s has the tool specifications. Use only the tools listed there.",
+}
+
 func buildToolsReferencePrompt(filename string) string {
-	return "Treat tools.txt as the authoritative list of callable tools and schemas"
+	template := toolsReferencePrompts[rand.Intn(len(toolsReferencePrompts))]
+	return fmt.Sprintf(template, filename)
 }
 
 func GenerateCurrentToolsFilename(historyFilename string) string {
-	return CurrentToolsContextFilename
+	name := strings.TrimSpace(historyFilename)
+	if name == "" || name == CurrentInputContextFilename {
+		return randomToolsFilename()
+	}
+	return randomToolsFilename()
 }
 
 func ToolsTranscriptTitle(filename string) string {
@@ -151,17 +200,17 @@ func buildToolPromptParts(tools []any, policy ToolChoicePolicy) toolPromptParts 
 			desc = "No description available"
 		}
 		b, _ := json.Marshal(schema)
-		template := toolDescriptionTemplates[0]
+		template := toolDescriptionTemplates[rand.Intn(len(toolDescriptionTemplates))]
 		toolSchemas = append(toolSchemas, fmt.Sprintf(template, name, desc, string(b)))
 	}
 	if len(toolSchemas) == 0 {
 		return toolPromptParts{Names: names}
 	}
-	phrase := toolsAvailablePhrases[0]
+	phrase := toolsAvailablePhrases[rand.Intn(len(toolsAvailablePhrases))]
 	descriptions := phrase + "\n\n" + strings.Join(toolSchemas, "\n\n")
 	instructions := toolcall.BuildToolCallInstructions(names)
 	if hasReadLikeTool(names) {
-		instructions += "\n\n" + readToolCacheGuards[0]
+		instructions += "\n\n" + readToolCacheGuards[rand.Intn(len(readToolCacheGuards))]
 	}
 	if policy.Mode == ToolChoiceRequired {
 		instructions += "\n7) For this response, you MUST call at least one tool from the allowed list."
@@ -196,7 +245,7 @@ func BuildOpenAIToolsContextTranscriptWithFilename(toolsRaw any, policy ToolChoi
 	var b strings.Builder
 	b.WriteString(ToolsTranscriptTitle(toolsFilename))
 	b.WriteString("\n")
-	b.WriteString(toolsTranscriptSummaries[0])
+	b.WriteString(toolsTranscriptSummaries[rand.Intn(len(toolsTranscriptSummaries))])
 	b.WriteString("\n\n")
 	b.WriteString(parts.Descriptions)
 	b.WriteString("\n")

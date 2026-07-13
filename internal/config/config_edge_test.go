@@ -27,8 +27,8 @@ func TestGetModelConfigDeepSeekFlashHasSearch(t *testing.T) {
 	if !ok {
 		t.Fatal("expected ok for deepseek-v4-flash")
 	}
-	if !thinking || !search {
-		t.Fatalf("expected thinking=true search=true, got thinking=%v search=%v", thinking, search)
+	if !thinking || search {
+		t.Fatalf("expected thinking=true search=false, got thinking=%v search=%v", thinking, search)
 	}
 }
 
@@ -37,8 +37,8 @@ func TestGetModelConfigDeepSeekFlashNoThinkingHasSearch(t *testing.T) {
 	if !ok {
 		t.Fatal("expected ok for deepseek-v4-flash-nothinking")
 	}
-	if thinking || !search {
-		t.Fatalf("expected thinking=false search=true, got thinking=%v search=%v", thinking, search)
+	if thinking || search {
+		t.Fatalf("expected thinking=false search=false, got thinking=%v search=%v", thinking, search)
 	}
 }
 
@@ -124,8 +124,8 @@ func TestGetModelConfigCaseInsensitive(t *testing.T) {
 	if !ok {
 		t.Fatal("expected ok for case-insensitive deepseek-v4-flash")
 	}
-	if !thinking || !search {
-		t.Fatalf("expected thinking=true search=true for case-insensitive deepseek-v4-flash, got thinking=%v search=%v", thinking, search)
+	if !thinking || search {
+		t.Fatalf("expected thinking=true search=false for case-insensitive deepseek-v4-flash, got thinking=%v search=%v", thinking, search)
 	}
 }
 

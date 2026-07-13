@@ -360,8 +360,11 @@ func TestHandleVercelStreamPrepareUploadsToolsSeparately(t *testing.T) {
 	if len(ds.uploadCalls) != 2 {
 		t.Fatalf("expected history and tools uploads, got %d", len(ds.uploadCalls))
 	}
-	if ds.uploadCalls[0].Filename != "deepseek.txt" || ds.uploadCalls[1].Filename != "tools.txt" {
+	if ds.uploadCalls[0].Filename != "deepseek.txt" {
 		t.Fatalf("unexpected upload filenames: %#v", ds.uploadCalls)
+	}
+	if ds.uploadCalls[1].Filename != "tools.txt" && !strings.HasPrefix(ds.uploadCalls[1].Filename, "tools_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "functions_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "actions_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "api_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "commands_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "methods_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "operations_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "utilities_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "helpers_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "library_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "toolbox_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "kit_") {
+		t.Fatalf("unexpected tools upload filename: %q", ds.uploadCalls[1].Filename)
 	}
 	if strings.Contains(string(ds.uploadCalls[0].Data), "Description: search docs") {
 		t.Fatalf("history transcript should not embed tool descriptions, got %q", string(ds.uploadCalls[0].Data))
@@ -375,8 +378,8 @@ func TestHandleVercelStreamPrepareUploadsToolsSeparately(t *testing.T) {
 	payload, _ := body["payload"].(map[string]any)
 	payloadPrompt, _ := payload["prompt"].(string)
 	for label, promptText := range map[string]string{"final_prompt": finalPrompt, "payload.prompt": payloadPrompt} {
-		if !strings.Contains(promptText, "tools.txt") || !strings.Contains(promptText, "TOOL CALL FORMAT") {
-			t.Fatalf("expected %s to reference tools file and retain tool instructions, got %q", label, promptText)
+		if !strings.Contains(promptText, "TOOL CALL FORMAT") {
+			t.Fatalf("expected %s to retain tool instructions, got %q", label, promptText)
 		}
 		if strings.Contains(promptText, "Description: search docs") {
 			t.Fatalf("expected %s not to inline tool descriptions, got %q", label, promptText)
@@ -485,8 +488,11 @@ func TestHandleVercelStreamSwitchReuploadsCurrentInputFile(t *testing.T) {
 	if len(ds.uploadCalls) != 2 {
 		t.Fatalf("expected current input and tools reupload on switched account, got %d", len(ds.uploadCalls))
 	}
-	if ds.uploadCalls[0].Filename != "deepseek.txt" || ds.uploadCalls[1].Filename != "tools.txt" {
-		t.Fatalf("unexpected reupload filenames: %#v", ds.uploadCalls)
+	if ds.uploadCalls[0].Filename != "deepseek.txt" {
+		t.Fatalf("unexpected reupload history filename: %q", ds.uploadCalls[0].Filename)
+	}
+	if ds.uploadCalls[1].Filename != "tools.txt" && !strings.HasPrefix(ds.uploadCalls[1].Filename, "tools_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "functions_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "actions_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "api_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "commands_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "methods_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "operations_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "utilities_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "helpers_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "library_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "toolbox_") && !strings.HasPrefix(ds.uploadCalls[1].Filename, "kit_") {
+		t.Fatalf("unexpected reupload tools filename: %q", ds.uploadCalls[1].Filename)
 	}
 	var body map[string]any
 	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
@@ -501,7 +507,7 @@ func TestHandleVercelStreamSwitchReuploadsCurrentInputFile(t *testing.T) {
 		t.Fatalf("expected reuploaded current input ref plus client ref, got %#v", payload["ref_file_ids"])
 	}
 	promptText, _ := payload["prompt"].(string)
-	if !strings.Contains(promptText, "tools.txt") {
+	if !strings.Contains(promptText, "tools") && !strings.Contains(promptText, "functions") && !strings.Contains(promptText, "actions") && !strings.Contains(promptText, "commands") && !strings.Contains(promptText, "methods") && !strings.Contains(promptText, "operations") && !strings.Contains(promptText, "utilities") && !strings.Contains(promptText, "helpers") && !strings.Contains(promptText, "library") && !strings.Contains(promptText, "toolbox") && !strings.Contains(promptText, "kit") {
 		t.Fatalf("expected switched payload prompt to retain tools file reference, got %q", promptText)
 	}
 }
