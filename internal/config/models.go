@@ -95,6 +95,12 @@ func GetModelConfig(model string) (thinking bool, search bool, ok bool) {
 
 func GetModelType(model string) (modelType string, ok bool) {
 	baseModel, _ := splitNoThinkingModel(model)
+	// Resolve legacy aliases (e.g., deepseek-v4-flash-search → deepseek-v4-flash)
+	aliases := DefaultModelAliases()
+	if mapped, ok := aliases[baseModel]; ok {
+		baseModel = mapped
+	}
+	baseModel, _ = splitNoThinkingModel(baseModel)
 	switch baseModel {
 	case "deepseek-v4-flash":
 		return "default", true

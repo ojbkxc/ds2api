@@ -9,25 +9,8 @@ import (
 
 // ─── GetModelConfig edge cases ───────────────────────────────────────
 
-func TestGetModelConfigDeepSeekChat(t *testing.T) {
-	thinking, search, ok := GetModelConfig("deepseek-v4-flash")
-	if !ok {
-		t.Fatal("expected ok for deepseek-v4-flash")
-	}
-	if !thinking || search {
-		t.Fatalf("expected thinking=true search=false for deepseek-v4-flash, got thinking=%v search=%v", thinking, search)
-	}
-}
-
-func TestGetModelConfigDeepSeekChatNoThinking(t *testing.T) {
-	thinking, search, ok := GetModelConfig("deepseek-v4-flash-nothinking")
-	if !ok {
-		t.Fatal("expected ok for deepseek-v4-flash-nothinking")
-	}
-	if thinking || search {
-		t.Fatalf("expected thinking=false search=false for deepseek-v4-flash-nothinking, got thinking=%v search=%v", thinking, search)
-	}
-}
+// TestGetModelConfigDeepSeekChat replaced by TestGetModelConfigDeepSeekFlashHasSearch below.
+// TestGetModelConfigDeepSeekChatNoThinking replaced by TestGetModelConfigDeepSeekFlashNoThinkingHasSearch below.
 
 func TestGetModelConfigDeepSeekReasoner(t *testing.T) {
 	thinking, search, ok := GetModelConfig("deepseek-v4-pro")
