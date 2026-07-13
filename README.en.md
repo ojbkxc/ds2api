@@ -4,15 +4,15 @@
 
 # DS2API
 
-<a href="https://trendshift.io/repositories/24508" target="_blank"><img src="https://trendshift.io/api/badge/repositories/24508" alt="CJackHwang%2Fds2api | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/24508" target="_blank"><img src="https://trendshift.io/api/badge/repositories/24508" alt="ojbkxc%2Fds2api | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-[![License](https://img.shields.io/github/license/CJackHwang/ds2api.svg)](LICENSE)
-![Stars](https://img.shields.io/github/stars/CJackHwang/ds2api.svg)
-![Forks](https://img.shields.io/github/forks/CJackHwang/ds2api.svg)
-[![Release](https://img.shields.io/github/v/release/CJackHwang/ds2api?display_name=tag)](https://github.com/CJackHwang/ds2api/releases)
+[![License](https://img.shields.io/github/license/ojbkxc/ds2api.svg)](LICENSE)
+![Stars](https://img.shields.io/github/stars/ojbkxc/ds2api.svg)
+![Forks](https://img.shields.io/github/forks/ojbkxc/ds2api.svg)
+[![Release](https://img.shields.io/github/v/release/ojbkxc/ds2api?display_name=tag)](https://github.com/ojbkxc/ds2api/releases)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docs/DEPLOY.en.md)
 [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/L4CFHP)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/CJackHwang/ds2api)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/ojbkxc/ds2api)
 
 Language: [‰∏≠Êñá](README.MD) | [English](README.en.md)
 
@@ -22,11 +22,11 @@ Documentation entry: [Docs Index](docs/README.md) / [Architecture](docs/ARCHITEC
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=cjackhwang%2Fds2api&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=ojbkxc%2Fds2api&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=cjackhwang/ds2api&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=cjackhwang/ds2api&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=cjackhwang/ds2api&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=ojbkxc/ds2api&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=ojbkxc/ds2api&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=ojbkxc/ds2api&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -66,7 +66,7 @@ Documentation entry: [Docs Index](docs/README.md) / [Architecture](docs/ARCHITEC
 
 ```mermaid
 flowchart LR
-    Client["üñ•Ô∏?Clients / SDKs\n(OpenAI / Claude / Gemini)"]
+    Client["üñ•ÔøΩ?Clients / SDKs\n(OpenAI / Claude / Gemini)"]
     Upstream["‚òÅÔ∏è DeepSeek API"]
 
     subgraph DS2API["DS2API 4.x (Modular HTTP Surface + PromptCompat Core)"]
@@ -147,12 +147,12 @@ OpenAI `/v1/*` routes remain canonical, and DS2API also accepts root shortcuts s
 
 | Tier | Platform | Status |
 | --- | --- | --- |
-| P0 | Codex CLI/SDK (`wire_api=chat` / `wire_api=responses`) | ‚ú?|
-| P0 | OpenAI SDK (JS/Python, chat + responses) | ‚ú?|
-| P0 | Vercel AI SDK (openai-compatible) | ‚ú?|
-| P0 | Anthropic SDK (messages) | ‚ú?|
-| P0 | Google Gemini SDK (generateContent) | ‚ú?|
-| P1 | LangChain / LlamaIndex / OpenWebUI (OpenAI-compatible integration) | ‚ú?|
+| P0 | Codex CLI/SDK (`wire_api=chat` / `wire_api=responses`) | ÔøΩ?|
+| P0 | OpenAI SDK (JS/Python, chat + responses) | ÔøΩ?|
+| P0 | Vercel AI SDK (openai-compatible) | ÔøΩ?|
+| P0 | Anthropic SDK (messages) | ÔøΩ?|
+| P0 | Google Gemini SDK (generateContent) | ÔøΩ?|
+| P1 | LangChain / LlamaIndex / OpenWebUI (OpenAI-compatible integration) | ÔøΩ?|
 
 ## Model Support
 
@@ -160,11 +160,11 @@ OpenAI `/v1/*` routes remain canonical, and DS2API also accepts root shortcuts s
 
 | Family | Model ID | thinking | search |
 | --- | --- | --- | --- |
-| default | `deepseek-v4-flash` | enabled by default, request-controlled | ‚ù?|
-| expert | `deepseek-v4-pro` | enabled by default, request-controlled | ‚ù?|
-| default | `deepseek-v4-flash-search` | enabled by default, request-controlled | ‚ú?|
-| expert | `deepseek-v4-pro-search` | enabled by default, request-controlled | ‚ú?|
-| vision | `deepseek-v4-vision` | enabled by default, request-controlled | ‚ù?|
+| default | `deepseek-v4-flash` | enabled by default, request-controlled | ÔøΩ?|
+| expert | `deepseek-v4-pro` | enabled by default, request-controlled | ÔøΩ?|
+| default | `deepseek-v4-flash-search` | enabled by default, request-controlled | ÔøΩ?|
+| expert | `deepseek-v4-pro-search` | enabled by default, request-controlled | ÔøΩ?|
+| vision | `deepseek-v4-vision` | enabled by default, request-controlled | ÔøΩ?|
 
 Besides native IDs, DS2API also accepts common aliases as input (for example `gpt-4.1`, `gpt-5`, `gpt-5-codex`, `o3`, `claude-*`, `gemini-*`), but `/v1/models` returns normalized DeepSeek native model IDs. The complete alias behavior is documented in [API.en.md](API.en.md#model-alias-resolution) and `config.example.json`.
 Current upstream vision support exposes only the `vision` lane and does not provide a separate search-enabled vision variant.
@@ -189,7 +189,7 @@ Besides the primary aliases above, `/anthropic/v1/models` also returns Claude 4.
 
 ### Gemini Endpoint
 
-The Gemini adapter maps model names to DeepSeek native models via `model_aliases` or exact built-in aliases (covering common `gemini-2.5-*`, `gemini-3*`, and `gemini-pro-vision` names), supporting both `generateContent` and `streamGenerateContent` call patterns with full Tool Calling support (`functionDeclarations` ‚Ü?`functionCall` output). If the Gemini model name has a `-nothinking` suffix, such as `gemini-2.5-pro-nothinking`, it maps to the corresponding forced no-thinking model.
+The Gemini adapter maps model names to DeepSeek native models via `model_aliases` or exact built-in aliases (covering common `gemini-2.5-*`, `gemini-3*`, and `gemini-pro-vision` names), supporting both `generateContent` and `streamGenerateContent` call patterns with full Tool Calling support (`functionDeclarations` ÔøΩ?`functionCall` output). If the Gemini model name has a `-nothinking` suffix, such as `gemini-2.5-pro-nothinking`, it maps to the corresponding forced no-thinking model.
 
 ## Quick Start
 
@@ -215,7 +215,7 @@ Recommended per deployment mode:
 - Local run: read `config.json` directly
 - Docker / Vercel: generate Base64 from `config.json` and inject as `DS2API_CONFIG_JSON`, or paste raw JSON directly
 
-The WebUI admin panel‚Äôs ‚ÄúFull configuration template‚Ä?is loaded from the same `config.example.json`, so updating that file keeps the frontend template in sync.
+The WebUI admin panel‚Äôs ‚ÄúFull configuration templateÔøΩ?is loaded from the same `config.example.json`, so updating that file keeps the frontend template in sync.
 
 ### Option 1: Download Release Binaries
 
@@ -234,10 +234,10 @@ cp config.example.json config.json
 
 ```bash
 # Pull prebuilt image
-docker pull ghcr.io/cjackhwang/ds2api:latest
+docker pull ghcr.io/ojbkxc/ds2api:latest
 
 # Or run a pinned version
-# docker pull ghcr.io/cjackhwang/ds2api:v3.0.0
+# docker pull ghcr.io/ojbkxc/ds2api:v3.0.0
 
 # Prepare env file and config file
 cp .env.example .env
@@ -247,14 +247,43 @@ cp config.example.json config.json
 docker-compose up -d
 ```
 
-The default `docker-compose.yml` uses `ghcr.io/cjackhwang/ds2api:latest` and maps host port `6011` to container port `5001`. If you want `5001` exposed directly, set `DS2API_HOST_PORT=5001` (or adjust the `ports` mapping).
+The default `docker-compose.yml` uses `ghcr.io/ojbkxc/ds2api:latest` and maps host port `6011` to container port `5001`. If you want `5001` exposed directly, set `DS2API_HOST_PORT=5001` (or adjust the `ports` mapping).
 It also mounts `./config.json` to `/data/config.json` and sets `DS2API_CONFIG_PATH=/data/config.json` by default, which avoids runtime token persistence failures caused by read-only `/app`.
 
 Rebuild after updates: `docker-compose up -d --build`
 
+#### Option 2.2: Pull image directly
+
+**Pull from GHCR (recommended, no extra config needed)**:
+```bash
+docker pull ghcr.io/ojbkxc/ds2api:latest
+
+docker run -d \
+  --name ds2api \
+  -p 6011:5001 \
+  -v ./config.json:/data/config.json \
+  -e DS2API_CONFIG_PATH=/data/config.json \
+  -e DS2API_ADMIN_KEY=your-strong-password \
+  ghcr.io/ojbkxc/ds2api:latest
+```
+
+**Pull from Docker Hub**:
+```bash
+docker pull ojbkxc/ds2api:latest
+
+docker run -d \
+  --name ds2api \
+  -p 6011:5001 \
+  -v ./config.json:/data/config.json \
+  -e DS2API_CONFIG_PATH=/data/config.json \
+  -e DS2API_ADMIN_KEY=your-strong-password \
+  ojbkxc/ds2api:latest
+```
+
+
 #### Zeabur One-Click (Dockerfile)
 
-1. Click the ‚ÄúDeploy on Zeabur‚Ä?button above to deploy.
+1. Click the ‚ÄúDeploy on ZeaburÔøΩ?button above to deploy.
 2. After deployment, open `/admin` and login with `DS2API_ADMIN_KEY` shown in Zeabur env/template instructions.
 3. Import / edit config in Admin UI (it will be written and persisted to `/data/config.json`).
 
@@ -294,7 +323,7 @@ For detailed deployment instructions, see the [Deployment Guide](docs/DEPLOY.en.
 
 ```bash
 # 1. Clone
-git clone https://github.com/CJackHwang/ds2api.git
+git clone https://github.com/ojbkxc/ds2api.git
 cd ds2api
 
 # 2. Configure
@@ -346,10 +375,10 @@ Gemini routes also accept `x-goog-api-key`, or `?key=` / `?api_key=` when no aut
 Per-account inflight = DS2API_ACCOUNT_MAX_INFLIGHT (default 2)
 Recommended concurrency = account_count √ó per_account_inflight
 Queue limit = DS2API_ACCOUNT_MAX_QUEUE (default = recommended concurrency)
-429 threshold = inflight + queue ‚â?account_count √ó 4
+429 threshold = inflight + queue ÔøΩ?account_count √ó 4
 ```
 
-- When inflight slots are full, requests enter a waiting queue ‚Ä?**no immediate 429**
+- When inflight slots are full, requests enter a waiting queue ÔøΩ?**no immediate 429**
 - 429 is returned only when total load exceeds inflight + queue capacity; current responses do not include `Retry-After`
 - Completion empty-output 429s first get the same-account compensation retry; managed-account mode also tries one alternate-account fresh retry before returning the final 429
 - `GET /admin/queue/status` returns real-time concurrency state
@@ -359,12 +388,12 @@ Queue limit = DS2API_ACCOUNT_MAX_QUEUE (default = recommended concurrency)
 When `tools` is present in the request, DS2API performs anti-leak handling:
 
 1. Toolcall feature matching is enabled only in **non-code-block context** (fenced examples are ignored)
-2. The parser treats the halfwidth-pipe DSML shell as the recommended executable tool-calling syntax: `<|DSML|tool_calls>` ‚Ü?`<|DSML|invoke name="...">` ‚Ü?`<|DSML|parameter name="...">`; it also accepts legacy canonical XML `<tool_calls>` ‚Ü?`<invoke name="...">` ‚Ü?`<parameter name="...">`, plus common DSML prefix/separator drift. DSML is a shell alias and internal parsing remains XML-based; legacy `<tools>` / `<tool_call>` / `<tool_name>` / `<param>`, `<function_call>`, `tool_use`, antml variants, and standalone JSON `tool_calls` payloads are treated as plain text, and complete but malformed wrappers are released as plain text too
+2. The parser treats the halfwidth-pipe DSML shell as the recommended executable tool-calling syntax: `<|DSML|tool_calls>` ÔøΩ?`<|DSML|invoke name="...">` ÔøΩ?`<|DSML|parameter name="...">`; it also accepts legacy canonical XML `<tool_calls>` ÔøΩ?`<invoke name="...">` ÔøΩ?`<parameter name="...">`, plus common DSML prefix/separator drift. DSML is a shell alias and internal parsing remains XML-based; legacy `<tools>` / `<tool_call>` / `<tool_name>` / `<param>`, `<function_call>`, `tool_use`, antml variants, and standalone JSON `tool_calls` payloads are treated as plain text, and complete but malformed wrappers are released as plain text too
 3. `responses` streaming strictly uses official item lifecycle events (`response.output_item.*`, `response.content_part.*`, `response.function_call_arguments.*`)
 4. `responses` supports and enforces `tool_choice` (`auto`/`none`/`required`/forced function); `required` violations return `422` for non-stream and `response.failed` for stream
 5. The output protocol follows the client request (OpenAI / Claude / Gemini native shapes); model-side prompting can prefer XML, and the compatibility layer handles the protocol-specific translation
 
-> Note: the current parser still prioritizes ‚Äúparse successfully whenever possible‚Ä? hard allow-list rejection for undeclared tool names is not enabled yet.
+> Note: the current parser still prioritizes ‚Äúparse successfully whenever possibleÔøΩ? hard allow-list rejection for undeclared tool names is not enabled yet.
 > Explicit empty strings or whitespace-only parameters are preserved by the parser; prompting tells the model not to emit blank parameters, and missing/empty argument rejection belongs in the tool executor or client schema validation.
 
 ## Local Dev Packet Capture
@@ -430,7 +459,7 @@ Workflow: `.github/workflows/release-artifacts.yml`
 
 - **Trigger**: by default only on GitHub Release `published`; you can also run it manually via `workflow_dispatch` and pass `release_tag` to rerun / backfill
 - **Outputs**: multi-platform binary archives (`linux/amd64`, `linux/arm64`, `linux/armv7`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`, `windows/arm64`), Linux Docker image export tarballs, and `sha256sums.txt`
-- **Container publishing**: GHCR only (`ghcr.io/cjackhwang/ds2api`)
+- **Container publishing**: GHCR only (`ghcr.io/ojbkxc/ds2api`)
 - **Each binary archive includes**: the `ds2api` executable, `static/admin`, `config.example.json`, `.env.example`, `README.MD`, `README.en.md`, and `LICENSE`
 
 ## Disclaimer
