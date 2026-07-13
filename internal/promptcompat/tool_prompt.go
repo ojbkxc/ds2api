@@ -10,21 +10,6 @@ import (
 	"ds2api/internal/toolcall"
 )
 
-var toolsFilenamePrefixes = []string{
-	"tools",
-	"functions",
-	"actions",
-	"api",
-	"commands",
-	"methods",
-	"operations",
-	"utilities",
-	"helpers",
-	"library",
-	"toolbox",
-	"kit",
-}
-
 func randomToolsFilename() string {
 	return "tools.txt"
 }
@@ -69,17 +54,6 @@ var readToolCacheGuards = []string{
 	"Cache-aware reading: If a file read tool indicates content is stale, already present, or not provided, treat this as missing. Do not loop on the same request. Get fresh content or notify the user.",
 	"Read operation guard: When read tools report unchanged, cached, or empty results, treat as missing content. Skip redundant calls. Fetch complete content or ask user to provide the file again.",
 	"Content retrieval safeguard: If read tool results show no new data or unavailable content, consider it missing. Avoid repeated identical requests. Obtain full content or inform the user accordingly.",
-}
-
-var toolsReferencePrompts = []string{
-	"Refer to %s for tool definitions and schemas. Only use tools defined there.",
-	"Tool specifications are in %s. Use only the tools listed in that file.",
-	"See %s for available tools and their parameters. Stick to those tools only.",
-	"%s contains the tool catalog. Use only tools defined in that reference.",
-	"Check %s for tool definitions. Only call tools specified there.",
-	"Tool schemas are documented in %s. Use those tools and follow their specifications.",
-	"Refer to %s for available functions. Only use tools defined in that file.",
-	"%s has the tool specifications. Use only the tools listed there.",
 }
 
 func buildToolsReferencePrompt(filename string) string {

@@ -10,7 +10,6 @@ import (
 
 var markdownImagePattern = regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
-
 const ClaudeDefaultModel = "claude-sonnet-4-6"
 
 type Message struct {
@@ -68,11 +67,12 @@ func MessagesPrepare(messages []map[string]any) string {
 		default:
 			roleName = "<|" + strings.ToUpper(roleName) + "|>"
 		}
-		if m.Role == "tool" {
+		switch m.Role {
+		case "tool":
 			parts = append(parts, roleName+m.Text+"<|end▁of▁toolresults|>")
-		} else if m.Role == "assistant" {
+		case "assistant":
 			parts = append(parts, roleName+m.Text+"<|end▁of▁sentence|>")
-		} else {
+		default:
 			parts = append(parts, roleName+m.Text)
 		}
 	}
