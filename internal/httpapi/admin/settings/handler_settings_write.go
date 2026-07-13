@@ -30,6 +30,10 @@ func (h *Handler) updateSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	currentInputEnabledSet := hasNestedSettingsKey(req, "current_input_file", "enabled")
 	currentInputMinCharsSet := hasNestedSettingsKey(req, "current_input_file", "min_chars")
+	currentInputFilenameTemplateSet := hasNestedSettingsKey(req, "current_input_file", "filename_template")
+	currentInputDisabledModelsSet := hasNestedSettingsKey(req, "current_input_file", "disabled_models")
+	currentInputVisionAccountsSet := hasNestedSettingsKey(req, "current_input_file", "vision_accounts")
+	currentInputDisabledAccountsSet := hasNestedSettingsKey(req, "current_input_file", "disabled_accounts")
 	thinkingInjectionEnabledSet := hasNestedSettingsKey(req, "thinking_injection", "enabled")
 	thinkingInjectionPromptSet := hasNestedSettingsKey(req, "thinking_injection", "prompt")
 
@@ -69,6 +73,18 @@ func (h *Handler) updateSettings(w http.ResponseWriter, r *http.Request) {
 			}
 			if currentInputMinCharsSet {
 				c.CurrentInputFile.MinChars = currentInputCfg.MinChars
+			}
+			if currentInputFilenameTemplateSet {
+				c.CurrentInputFile.FilenameTemplate = currentInputCfg.FilenameTemplate
+			}
+			if currentInputDisabledModelsSet {
+				c.CurrentInputFile.DisabledModels = currentInputCfg.DisabledModels
+			}
+			if currentInputVisionAccountsSet {
+				c.CurrentInputFile.VisionAccounts = currentInputCfg.VisionAccounts
+			}
+			if currentInputDisabledAccountsSet {
+				c.CurrentInputFile.DisabledAccounts = currentInputCfg.DisabledAccounts
 			}
 		}
 		if thinkingInjCfg != nil {

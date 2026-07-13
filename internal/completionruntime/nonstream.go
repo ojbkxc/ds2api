@@ -90,7 +90,11 @@ func ExecuteNonStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.R
 	if startErr != nil {
 		return NonStreamResult{SessionID: start.SessionID, Payload: start.Payload}, startErr
 	}
-	stdReq = start.Request
+	return ExecuteNonStreamStartedWithRetry(ctx, ds, a, start, opts)
+}
+
+func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth, start StartResult, opts Options) (NonStreamResult, *assistantturn.OutputError) {
+	stdReq := start.Request
 	maxAttempts := opts.MaxAttempts
 	if maxAttempts <= 0 {
 		maxAttempts = 3
@@ -108,6 +112,24 @@ func ExecuteNonStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.R
 	for {
 		turn, outErr := collectAttempt(currentResp, stdReq, usagePrompt, opts)
 		if outErr != nil {
+			if canRetryOnAlternateAccount(ctx, a, outErr, opts.RetryEnabled, nil) {
+				switched, switchErr := startStandardCompletionOnAlternateAccount(ctx, ds, a, stdReq, opts, maxAttempts)
+				if switchErr != nil {
+					return NonStreamResult{SessionID: sessionID, Payload: payload, Attempts: attempts}, switchErr
+				}
+				if switched.Response != nil {
+					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after 429", "surface", stdReq.Surface, "stream", false, "account", a.AccountID)
+					sessionID = switched.SessionID
+					payload = switched.Payload
+					pow = switched.Pow
+					currentResp = switched.Response
+					usagePrompt = stdReq.PromptTokenText
+					accumulatedThinking = ""
+					accumulatedRawThinking = ""
+					accumulatedToolDetectionThinking = ""
+					continue
+				}
+			}
 			return NonStreamResult{SessionID: sessionID, Payload: payload, Attempts: attempts}, outErr
 		}
 		accumulatedThinking += sse.TrimContinuationOverlap(accumulatedThinking, turn.Thinking)
@@ -130,6 +152,47 @@ func ExecuteNonStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.R
 			retryMax = shared.EmptyOutputRetryMaxAttempts()
 		}
 		if !opts.RetryEnabled || !assistantturn.ShouldRetryEmptyOutput(turn, attempts, retryMax) {
+			lastErr := turn.Error
+			if lastErr == nil && strings.TrimSpace(turn.Text) == "" {
+				status, message, code := assistantturn.UpstreamEmptyOutputDetail(turn.ContentFilter, turn.Text, turn.Thinking)
+				lastErr = &assistantturn.OutputError{Status: status, Message: message, Code: code}
+			}
+			if canRetryOnAlternateAccount(ctx, a, lastErr, opts.RetryEnabled, nil) {
+				switched, switchErr := startStandardCompletionOnAlternateAccount(ctx, ds, a, stdReq, opts, maxAttempts)
+				if switchErr != nil {
+					return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, switchErr
+				}
+				if switched.Response != nil {
+					config.Logger.Info("[completion_runtime_account_switch_retry] retrying after error", "surface", stdReq.Surface, "stream", false, "account", a.AccountID, "status", lastErr.Status)
+					sessionID = switched.SessionID
+					payload = switched.Payload
+					pow = switched.Pow
+					currentResp = switched.Response
+					usagePrompt = stdReq.PromptTokenText
+					accumulatedThinking = ""
+					accumulatedRawThinking = ""
+					accumulatedToolDetectionThinking = ""
+					continue
+				}
+			}
+			// 如果没有备用账户，但错误是可重试的（5xx），使用同一个账户重试
+			if lastErr != nil && lastErr.Status >= 500 && opts.RetryEnabled {
+				config.Logger.Info("[completion_runtime_same_account_retry] retrying after 5xx error", "surface", stdReq.Surface, "stream", false, "account", a.AccountID, "status", lastErr.Status, "attempt", attempts)
+				retryPow, powErr := ds.GetPow(ctx, a, maxAttempts)
+				if powErr != nil {
+					config.Logger.Warn("[completion_runtime_same_account_retry] retry PoW fetch failed", "surface", stdReq.Surface, "error", powErr)
+					retryPow = pow
+				}
+				nextResp, err := ds.CallCompletion(ctx, a, payload, retryPow, maxAttempts)
+				if err == nil && nextResp.StatusCode == http.StatusOK {
+					currentResp = nextResp
+					pow = retryPow
+					accumulatedThinking = ""
+					accumulatedRawThinking = ""
+					accumulatedToolDetectionThinking = ""
+					continue
+				}
+			}
 			return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, turn.Error
 		}
 
@@ -148,6 +211,74 @@ func ExecuteNonStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.R
 		usagePrompt = shared.UsagePromptWithEmptyOutputRetry(usagePrompt, attempts)
 		currentResp = nextResp
 	}
+}
+
+func canRetryOnAlternateAccount(ctx context.Context, a *auth.RequestAuth, outErr *assistantturn.OutputError, retryEnabled bool, _ *bool) bool {
+	if outErr == nil {
+		return false
+	}
+	if !isAccountSwitchRetryable(outErr) {
+		return false
+	}
+	if !retryEnabled {
+		return false
+	}
+	if a == nil || !a.UseConfigToken {
+		return false
+	}
+	return a.SwitchAccount(ctx)
+}
+
+func isAccountSwitchRetryable(outErr *assistantturn.OutputError) bool {
+	if outErr == nil {
+		return false
+	}
+	switch outErr.Status {
+	case http.StatusTooManyRequests:
+		return true
+	case http.StatusForbidden:
+		return true
+	case http.StatusUnauthorized:
+		return true
+	}
+	if outErr.Status >= 500 {
+		return true
+	}
+	return false
+}
+
+func startStandardCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth, stdReq promptcompat.StandardRequest, opts Options, maxAttempts int) (StartResult, *assistantturn.OutputError) {
+	var prepErr *assistantturn.OutputError
+	stdReq, prepErr = reuploadCurrentInputFileForAccount(ctx, ds, a, stdReq, opts)
+	if prepErr != nil {
+		return StartResult{Request: stdReq}, prepErr
+	}
+	sessionID, err := ds.CreateSession(ctx, a, maxAttempts)
+	if err != nil {
+		return StartResult{}, authOutputError(a)
+	}
+	pow, err := ds.GetPow(ctx, a, maxAttempts)
+	if err != nil {
+		return StartResult{SessionID: sessionID}, &assistantturn.OutputError{Status: http.StatusUnauthorized, Message: "Failed to get PoW (invalid token or unknown error).", Code: "error"}
+	}
+	payload := stdReq.CompletionPayload(sessionID)
+	resp, err := ds.CallCompletion(ctx, a, payload, pow, maxAttempts)
+	if err != nil {
+		return StartResult{SessionID: sessionID, Payload: payload, Pow: pow}, &assistantturn.OutputError{Status: http.StatusInternalServerError, Message: "Failed to get completion.", Code: "error"}
+	}
+	return StartResult{SessionID: sessionID, Payload: payload, Pow: pow, Response: resp, Request: stdReq}, nil
+}
+
+func reuploadCurrentInputFileForAccount(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth, stdReq promptcompat.StandardRequest, opts Options) (promptcompat.StandardRequest, *assistantturn.OutputError) {
+	if opts.CurrentInputFile == nil || !stdReq.CurrentInputFileApplied {
+		return stdReq, nil
+	}
+	out, err := (history.Service{Store: opts.CurrentInputFile, DS: ds}).ReuploadAppliedCurrentInputFile(ctx, a, stdReq)
+	if err != nil {
+		status, message := history.MapError(err)
+		return out, &assistantturn.OutputError{Status: status, Message: message, Code: "error"}
+	}
+	return out, nil
 }
 
 func collectAttempt(resp *http.Response, stdReq promptcompat.StandardRequest, usagePrompt string, opts Options) (assistantturn.Turn, *assistantturn.OutputError) {

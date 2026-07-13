@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -62,6 +63,10 @@ func (streamStatusAuthStub) DetermineCaller(_ *http.Request) (*auth.RequestAuth,
 	return (&streamStatusAuthStub{}).Determine(nil)
 }
 
+func (streamStatusAuthStub) EnsureModelSupport(_ context.Context, _ *auth.RequestAuth, _ string) error {
+	return nil
+}
+
 func (streamStatusAuthStub) Release(_ *auth.RequestAuth) {}
 
 type streamStatusManagedAuthStub struct{}
@@ -78,6 +83,10 @@ func (streamStatusManagedAuthStub) Determine(_ *http.Request) (*auth.RequestAuth
 
 func (streamStatusManagedAuthStub) DetermineCaller(_ *http.Request) (*auth.RequestAuth, error) {
 	return (&streamStatusManagedAuthStub{}).Determine(nil)
+}
+
+func (streamStatusManagedAuthStub) EnsureModelSupport(_ context.Context, _ *auth.RequestAuth, _ string) error {
+	return nil
 }
 
 func (streamStatusManagedAuthStub) Release(_ *auth.RequestAuth) {}
@@ -148,8 +157,12 @@ func (m *inlineUploadDSStub) UploadFile(ctx context.Context, _ *auth.RequestAuth
 	if m.uploadErr != nil {
 		return nil, m.uploadErr
 	}
+	id := "file-inline-1"
+	if len(m.uploadCalls) > 1 {
+		id = "file-inline-" + fmt.Sprint(len(m.uploadCalls))
+	}
 	return &dsclient.UploadFileResult{
-		ID:       "file-inline-1",
+		ID:       id,
 		Filename: req.Filename,
 		Bytes:    int64(len(req.Data)),
 		Status:   "uploaded",

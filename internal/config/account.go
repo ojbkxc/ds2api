@@ -11,3 +11,16 @@ func (a Account) Identifier() string {
 	}
 	return ""
 }
+
+func (a Account) SupportsModel(model string) bool {
+	if len(a.AllowedModels) == 0 {
+		return true
+	}
+	lower := strings.ToLower(strings.TrimSpace(model))
+	for _, m := range a.AllowedModels {
+		if strings.ToLower(strings.TrimSpace(m)) == lower {
+			return true
+		}
+	}
+	return false
+}

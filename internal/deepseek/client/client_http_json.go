@@ -23,6 +23,7 @@ func (c *Client) postJSON(ctx context.Context, doer trans.Doer, fallback trans.D
 }
 
 func (c *Client) postJSONWithStatus(ctx context.Context, doer trans.Doer, fallback trans.Doer, url string, headers map[string]string, payload any) (map[string]any, int, error) {
+	ctx = ctxWithFingerprintFromContext(ctx)
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, 0, err
@@ -38,7 +39,7 @@ func (c *Client) postJSONWithStatus(ctx context.Context, doer trans.Doer, fallba
 	resp, err := doer.Do(req)
 	if err != nil {
 		config.Logger.Warn("[deepseek] fingerprint request failed, fallback to std transport", "url", url, "error", err)
-		req2, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))
+		req2, reqErr := http.NewRequestWithContext(trans.WithoutFingerprintSeed(ctx), http.MethodPost, url, bytes.NewReader(b))
 		if reqErr != nil {
 			return nil, 0, reqErr
 		}
@@ -65,6 +66,7 @@ func (c *Client) postJSONWithStatus(ctx context.Context, doer trans.Doer, fallba
 }
 
 func (c *Client) getJSONWithStatus(ctx context.Context, doer trans.Doer, url string, headers map[string]string) (map[string]any, int, error) {
+	ctx = ctxWithFingerprintFromContext(ctx)
 	clients := c.requestClientsFromContext(ctx)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -76,7 +78,7 @@ func (c *Client) getJSONWithStatus(ctx context.Context, doer trans.Doer, url str
 	resp, err := doer.Do(req)
 	if err != nil {
 		config.Logger.Warn("[deepseek] fingerprint GET request failed, fallback to std transport", "url", url, "error", err)
-		req2, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		req2, reqErr := http.NewRequestWithContext(trans.WithoutFingerprintSeed(ctx), http.MethodGet, url, nil)
 		if reqErr != nil {
 			return nil, 0, reqErr
 		}

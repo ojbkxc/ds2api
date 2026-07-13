@@ -44,6 +44,7 @@ func LoadStoreWithError() (*Store, error) {
 func loadStore() (*Store, error) {
 	cfg, fromEnv, err := loadConfig()
 	cfg.NormalizeCredentials()
+	cfg.SyncDisabledFromList()
 	if validateErr := ValidateConfig(cfg); validateErr != nil {
 		err = errors.Join(err, validateErr)
 	}
@@ -128,6 +129,7 @@ func loadConfigFromFile(path string) (Config, error) {
 		return Config{}, err
 	}
 	cfg.NormalizeCredentials()
+	cfg.SyncDisabledFromList()
 	cfg.DropInvalidAccounts()
 	if strings.Contains(string(content), `"test_status"`) && !IsVercel() {
 		if b, err := json.MarshalIndent(cfg, "", "  "); err == nil {
@@ -252,6 +254,7 @@ func (s *Store) Save() error {
 		return nil
 	}
 	persistCfg := s.cfg.Clone()
+	persistCfg.SyncDisabledToList()
 	persistCfg.ClearAccountTokens()
 	b, err := json.MarshalIndent(persistCfg, "", "  ")
 	if err != nil {
@@ -270,6 +273,7 @@ func (s *Store) saveLocked() error {
 		return nil
 	}
 	persistCfg := s.cfg.Clone()
+	persistCfg.SyncDisabledToList()
 	persistCfg.ClearAccountTokens()
 	b, err := json.MarshalIndent(persistCfg, "", "  ")
 	if err != nil {
@@ -300,6 +304,7 @@ func (s *Store) ExportJSONAndBase64() (string, string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	exportCfg := s.cfg.Clone()
+	exportCfg.SyncDisabledToList()
 	exportCfg.ClearAccountTokens()
 	b, err := json.Marshal(exportCfg)
 	if err != nil {

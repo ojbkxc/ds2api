@@ -31,8 +31,12 @@ func (h *Handler) getSettings(w http.ResponseWriter, _ *http.Request) {
 		"embeddings":  snap.Embeddings,
 		"auto_delete": snap.AutoDelete,
 		"current_input_file": map[string]any{
-			"enabled":   h.Store.CurrentInputFileEnabled(),
-			"min_chars": h.Store.CurrentInputFileMinChars(),
+			"enabled":           h.Store.CurrentInputFileEnabled(),
+			"min_chars":         h.Store.CurrentInputFileMinChars(),
+			"filename_template": h.Store.CurrentInputFileFilenameTemplate(),
+			"disabled_models":   h.Store.CurrentInputFileDisabledModels(),
+			"vision_accounts":   h.Store.CurrentInputFileVisionAccounts(),
+			"disabled_accounts": h.Store.CurrentInputFileDisabledAccounts(),
 		},
 		"thinking_injection": map[string]any{
 			"enabled":        h.Store.ThinkingInjectionEnabled(),

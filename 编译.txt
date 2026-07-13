@@ -1,0 +1,43 @@
+
+
+编译
+
+Dockerfile文件的RUN go mod download改为RUN go env -w GOPROXY=https://goproxy.cn,direct && go mod download
+
+docker build --no-cache --network=host -t ds2api:custom .
+
+查看本地镜像
+docker images | grep ds2api
+
+删除镜像
+docker rmi ds2api:custom ghcr.io/cjackhwang/ds2api:latest
+
+# 修改 docker-compose.yml 使用本地镜像
+sed -i 's|ghcr.io/cjackhwang/ds2api:latest|ds2api:custom|' docker-compose.yml
+
+# 启动服务
+docker compose up -d
+
+ docker compose down
+
+# 查看容器是否运行
+docker compose ps
+
+# 查看日志
+docker compose logs -f
+
+
+
+导出
+docker save ds2api:custom | gzip > ds2api-custom.tar.gz
+
+
+docker save -o ds2api-custom.tar 4c756d006df8
+
+导入
+docker load -i ./ds2api_custom.tar
+
+给本地镜像打一个符合 docker-compose.yml 的标签
+docker tag ds2api:custom ghcr.io/cjackhwang/ds2api:latest
+
+

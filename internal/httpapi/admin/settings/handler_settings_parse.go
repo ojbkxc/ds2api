@@ -21,6 +21,21 @@ func boolFrom(v any) bool {
 	}
 }
 
+func parseCommaSeparatedList(s string) []string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}
+
 func parseSettingsUpdateRequest(req map[string]any) (*config.AdminConfig, *config.RuntimeConfig, *config.ResponsesConfig, *config.EmbeddingsConfig, *config.AutoDeleteConfig, *config.CurrentInputFileConfig, *config.ThinkingInjectionConfig, map[string]string, error) {
 	var (
 		adminCfg        *config.AdminConfig
@@ -149,6 +164,50 @@ func parseSettingsUpdateRequest(req map[string]any) (*config.AdminConfig, *confi
 				return nil, nil, nil, nil, nil, nil, nil, nil, err
 			}
 			cfg.MinChars = n
+		}
+		if v, exists := raw["filename_template"]; exists {
+			cfg.FilenameTemplate = strings.TrimSpace(fmt.Sprintf("%v", v))
+		}
+		if v, exists := raw["disabled_models"]; exists {
+			if s, ok := v.(string); ok {
+				cfg.DisabledModels = parseCommaSeparatedList(s)
+			} else if arr, ok := v.([]any); ok {
+				models := make([]string, 0, len(arr))
+				for _, item := range arr {
+					if s, ok := item.(string); ok {
+						if trimmed := strings.TrimSpace(s); trimmed != "" {
+							models = append(models, trimmed)
+						}
+					}
+				}
+				cfg.DisabledModels = models
+			}
+		}
+		if v, exists := raw["vision_accounts"]; exists {
+			if arr, ok := v.([]any); ok {
+				accounts := make([]string, 0, len(arr))
+				for _, item := range arr {
+					if s, ok := item.(string); ok {
+						if trimmed := strings.TrimSpace(s); trimmed != "" {
+							accounts = append(accounts, trimmed)
+						}
+					}
+				}
+				cfg.VisionAccounts = accounts
+			}
+		}
+		if v, exists := raw["disabled_accounts"]; exists {
+			if arr, ok := v.([]any); ok {
+				accounts := make([]string, 0, len(arr))
+				for _, item := range arr {
+					if s, ok := item.(string); ok {
+						if trimmed := strings.TrimSpace(s); trimmed != "" {
+							accounts = append(accounts, trimmed)
+						}
+					}
+				}
+				cfg.DisabledAccounts = accounts
+			}
 		}
 		if err := config.ValidateCurrentInputFileConfig(*cfg); err != nil {
 			return nil, nil, nil, nil, nil, nil, nil, nil, err

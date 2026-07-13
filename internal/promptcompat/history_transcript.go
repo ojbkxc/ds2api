@@ -2,13 +2,176 @@ package promptcompat
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 )
 
-const CurrentInputContextFilename = "DS2API_HISTORY.txt"
+var contextFilenamePrefixesForTitle = []string{
+	"context",
+	"chat",
+	"history",
+	"session",
+	"conversation",
+	"dialog",
+	"message",
+	"transcript",
+	"log",
+	"notes",
+	"record",
+	"trace",
+	"output",
+	"result",
+	"data",
+}
 
-const historyTranscriptTitle = "# DS2API_HISTORY.txt"
-const historyTranscriptSummary = "Prior conversation history and tool progress."
+func randomHistoryFilename() string {
+	prefix := contextFilenamePrefixesForTitle[rand.Intn(len(contextFilenamePrefixesForTitle))]
+	suffix := fmt.Sprintf("%04d", rand.Intn(10000))
+	return prefix + "_" + suffix + ".txt"
+}
+
+var historyTranscriptTitles = []string{
+	"# context transcript",
+	"# chat history",
+	"# conversation log",
+	"# session record",
+	"# dialog trace",
+	"# message archive",
+	"# transcript file",
+	"# chat output",
+	"# history dump",
+	"# conversation data",
+}
+
+func randomHistoryTranscriptTitle() string {
+	return historyTranscriptTitles[rand.Intn(len(historyTranscriptTitles))]
+}
+
+// CurrentInputContextFilename is the fallback filename when no template is configured.
+const CurrentInputContextFilename = "deepseek.txt"
+
+var historyTranscriptSummaries = []string{
+	"Prior conversation history and tool progress.",
+	"Conversation context and interaction history.",
+	"Previous chat messages and tool interactions.",
+	"History of the conversation so far.",
+	"Chat transcript and tool usage history.",
+	"Context from prior messages and actions.",
+	"Record of previous conversation turns.",
+	"Full chat history and tool results.",
+	"Conversation log with prior interactions.",
+	"Historical context from the dialogue.",
+	"Previous exchanges and tool calls.",
+	"Chat history with tool execution records.",
+}
+
+var contextFilenamePrefixes = []string{
+	"context",
+	"chat",
+	"history",
+	"session",
+	"conversation",
+	"dialog",
+	"message",
+	"transcript",
+	"log",
+	"notes",
+}
+
+var messageSeparatorFormats = []string{
+	"=== %d. %s ===",
+	"--- %d. %s ---",
+	"## %d. %s",
+	"**%d. %s**",
+	"[%d] %s",
+	"%d> %s",
+	"{%d} %s",
+	"// %d. %s",
+}
+
+var roleLabels = map[string][]string{
+	"user": {
+		"USER",
+		"HUMAN",
+		"PERSON",
+		"CLIENT",
+		"REQUESTER",
+		"Questioner",
+		"Customer",
+		"Visitor",
+	},
+	"assistant": {
+		"ASSISTANT",
+		"AI",
+		"BOT",
+		"AGENT",
+		"HELPER",
+		"RESPONDER",
+		"SERVANT",
+		"ADVISOR",
+	},
+	"system": {
+		"SYSTEM",
+		"INSTRUCTIONS",
+		"CONFIG",
+		"SETUP",
+		"DIRECTIVES",
+		"GUIDELINES",
+		"RULES",
+		"SYSTEM_MSG",
+	},
+	"tool": {
+		"TOOL",
+		"FUNCTION",
+		"ACTION",
+		"EXECUTION",
+		"RESULT",
+		"RESPONSE",
+		"OUTPUT",
+		"CALL",
+	},
+	"unknown": {
+		"UNKNOWN",
+		"OTHER",
+		"UNDEFINED",
+		"MISC",
+		"UNKNOWN_ROLE",
+		"UNLABELED",
+		"UNCLASSIFIED",
+		"UNKNOWN_MSG",
+	},
+}
+
+func getRandomRoleLabel(role string) string {
+	role = strings.ToLower(strings.TrimSpace(role))
+	labels, exists := roleLabels[role]
+	if !exists {
+		return strings.ToUpper(role)
+	}
+	return labels[rand.Intn(len(labels))]
+}
+
+func GenerateCurrentInputFilename(template string) string {
+	if template == "" {
+		return CurrentInputContextFilename
+	}
+	timestamp := time.Now().Unix()
+	last4 := fmt.Sprintf("%04d", timestamp%10000)
+	result := strings.ReplaceAll(template, "{time}", last4)
+	result = strings.ReplaceAll(result, "{timestamp}", fmt.Sprintf("%d", timestamp))
+	result = strings.ReplaceAll(result, "{rand}", fmt.Sprintf("%04d", rand.Intn(10000)))
+	result = strings.ReplaceAll(result, "{prefix}", contextFilenamePrefixes[rand.Intn(len(contextFilenamePrefixes))])
+	return result
+}
+
+func HistoryTranscriptTitle(filename string) string {
+	name := strings.TrimSpace(filename)
+	if name == "" {
+		name = CurrentInputContextFilename
+	}
+	return "# " + name
+}
 
 func BuildOpenAIHistoryTranscript(messages []any) string {
 	return buildOpenAIHistoryTranscript(messages)
@@ -24,19 +187,32 @@ func BuildOpenAICurrentUserInputTranscript(text string) string {
 }
 
 func BuildOpenAICurrentInputContextTranscript(messages []any) string {
-	return buildOpenAIHistoryTranscript(messages)
+	return buildOpenAIHistoryTranscriptWithTitle(messages, "")
+}
+
+func BuildOpenAICurrentInputContextTranscriptWithFilename(messages []any, filename string) string {
+	return buildOpenAIHistoryTranscriptWithTitle(messages, filename)
+}
+
+func buildOpenAIHistoryTranscriptWithTitle(messages []any, filename string) string {
+	return buildOpenAIHistoryTranscriptImpl(messages, HistoryTranscriptTitle(filename))
 }
 
 func buildOpenAIHistoryTranscript(messages []any) string {
+	return buildOpenAIHistoryTranscriptImpl(messages, randomHistoryTranscriptTitle())
+}
+
+func buildOpenAIHistoryTranscriptImpl(messages []any, title string) string {
 	if len(messages) == 0 {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString(historyTranscriptTitle)
+	b.WriteString(title)
 	b.WriteString("\n")
-	b.WriteString(historyTranscriptSummary)
+	b.WriteString(historyTranscriptSummaries[rand.Intn(len(historyTranscriptSummaries))])
 	b.WriteString("\n\n")
 
+	separatorFormat := messageSeparatorFormats[rand.Intn(len(messageSeparatorFormats))]
 	entry := 0
 	for _, raw := range messages {
 		msg, ok := raw.(map[string]any)
@@ -49,7 +225,7 @@ func buildOpenAIHistoryTranscript(messages []any) string {
 			continue
 		}
 		entry++
-		fmt.Fprintf(&b, "=== %d. %s ===\n%s\n\n", entry, strings.ToUpper(roleLabelForHistory(role)), content)
+		fmt.Fprintf(&b, separatorFormat+"\n%s\n\n", entry, roleLabelForHistory(role), content)
 	}
 
 	transcript := strings.TrimSpace(b.String())
@@ -99,10 +275,10 @@ func roleLabelForHistory(role string) string {
 	role = strings.ToLower(strings.TrimSpace(role))
 	switch role {
 	case "function":
-		return "tool"
+		return getRandomRoleLabel("tool")
 	case "":
-		return "unknown"
+		return getRandomRoleLabel("unknown")
 	default:
-		return role
+		return getRandomRoleLabel(role)
 	}
 }

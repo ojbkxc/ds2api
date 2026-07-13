@@ -1,0 +1,18 @@
+{
+    "deepseek": "deepseek-v4-flash",
+    "deepseek-chat": "deepseek-v4-flash",
+    "deepseek-flash": "deepseek-v4-flash",
+    "deepseek-pro": "deepseek-v4-pro",
+    "deepseek-pro-search": "deepseek-v4-pro-search",
+    "deepseek-reasoner": "deepseek-v4-pro",
+    "deepseek-search": "deepseek-v4-flash-search",
+    "deepseek-vision": "deepseek-v4-vision",
+    
+    "deepseek": "claude-haiku-4-5",
+    "deepseek-chat": "claude-haiku-4-5",
+    "deepseek-flash": "claude-haiku-4-5",
+    "deepseek-pro": "claude-opus-4-6",
+    "deepseek-pro-search": "claude-opus-4-6",
+    "deepseek-reasoner": "claude-opus-4-6",
+    "deepseek-search": "claude-haiku-4-5"
+}

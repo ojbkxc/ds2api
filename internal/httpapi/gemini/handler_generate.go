@@ -79,6 +79,16 @@ func (h *Handler) handleGeminiDirect(w http.ResponseWriter, r *http.Request, str
 		return true
 	}
 	defer h.Auth.Release(a)
+	if err := h.Auth.EnsureModelSupport(r.Context(), a, stdReq.ResolvedModel); err != nil {
+		status := http.StatusTooManyRequests
+		detail := "no account available for model " + stdReq.ResolvedModel
+		if err != auth.ErrNoAccount {
+			status = http.StatusUnauthorized
+			detail = err.Error()
+		}
+		writeGeminiError(w, status, detail)
+		return true
+	}
 	stdReq, err = h.applyCurrentInputFile(r.Context(), a, stdReq)
 	if err != nil {
 		status, message := mapCurrentInputFileError(err)
@@ -137,7 +147,7 @@ func (h *Handler) handleGeminiDirectStream(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	streamReq := start.Request
-	h.handleStreamGenerateContent(w, r, start.Response, streamReq.ResponseModel, streamReq.PromptTokenText, streamReq.Thinking, streamReq.Search, streamReq.ToolNames, streamReq.ToolsRaw, historySession)
+	h.handleStreamGenerateContentWithRetry(w, r, a, start.Response, start.Payload, start.Pow, streamReq, streamReq.ResponseModel, streamReq.PromptTokenText, streamReq.Thinking, streamReq.Search, streamReq.ToolNames, streamReq.ToolsRaw, historySession)
 }
 
 func (h *Handler) proxyViaOpenAI(w http.ResponseWriter, r *http.Request, stream bool) bool {

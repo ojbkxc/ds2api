@@ -15,6 +15,25 @@ func (p *Pool) canQueueLocked(target string, exclude map[string]bool) bool {
 	return len(p.waiters) < p.maxQueueSize
 }
 
+func (p *Pool) canQueueForModelLocked(model string, target string, exclude map[string]bool) bool {
+	if target != "" {
+		if exclude[target] {
+			return false
+		}
+		acc, ok := p.store.FindAccount(target)
+		if !ok {
+			return false
+		}
+		if !p.accountSupportsModel(acc, model) {
+			return false
+		}
+	}
+	if p.maxQueueSize <= 0 {
+		return false
+	}
+	return len(p.waiters) < p.maxQueueSize
+}
+
 func (p *Pool) notifyWaiterLocked() {
 	if len(p.waiters) == 0 {
 		return

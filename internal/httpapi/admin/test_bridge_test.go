@@ -59,6 +59,10 @@ func (m *testingDSMock) GetPow(_ context.Context, _ *auth.RequestAuth, _ int) (s
 	return "pow", nil
 }
 
+func (m *testingDSMock) UploadFile(_ context.Context, _ *auth.RequestAuth, _ dsclient.UploadFileRequest, _ int) (*dsclient.UploadFileResult, error) {
+	return &dsclient.UploadFileResult{ID: "file-test"}, nil
+}
+
 func (m *testingDSMock) CallCompletion(_ context.Context, _ *auth.RequestAuth, _ map[string]any, _ string, _ int) (*http.Response, error) {
 	return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
 }

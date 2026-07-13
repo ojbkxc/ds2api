@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX, ToggleLeft, ToggleRight } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function AccountsTable({
@@ -12,6 +12,7 @@ export default function AccountsTable({
     sessionCounts,
     deletingSessions,
     updatingProxy,
+    togglingDisabled,
     totalAccounts,
     page,
     pageSize,
@@ -25,6 +26,7 @@ export default function AccountsTable({
     onDeleteAccount,
     onDeleteAllSessions,
     onUpdateAccountProxy,
+    onToggleDisabled,
     onPrevPage,
     onNextPage,
     onPageSizeChange,
@@ -108,12 +110,18 @@ export default function AccountsTable({
                         const id = resolveAccountIdentifier(acc)
                         const assignedProxy = proxies.find(proxy => proxy.id === acc.proxy_id)
                         const runtimeUnknown = envBacked && !acc.test_status
+                        const isBanned = acc.test_status === 'banned'
                         const isActive = acc.test_status === 'ok' || acc.has_token
                         return (
-                            <div key={i} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
+                            <div key={i} className={clsx(
+                                "p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-muted/50 transition-colors",
+                                acc.disabled && "opacity-50"
+                            )}>
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className={clsx(
                                         "w-2 h-2 rounded-full shrink-0",
+                                        acc.disabled ? "bg-gray-400 shadow-[0_0_8px_rgba(156,163,175,0.5)]" :
+                                        acc.test_status === 'banned' ? "bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" :
                                         acc.test_status === 'failed' ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" :
                                         isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
                                         runtimeUnknown ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" : "bg-amber-500"
@@ -134,7 +142,11 @@ export default function AccountsTable({
                                             <div className="text-xs text-muted-foreground truncate mt-0.5">{acc.remark}</div>
                                         )}
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                            <span>{acc.test_status === 'failed' ? t('accountManager.testStatusFailed') : isActive ? t('accountManager.sessionActive') : runtimeUnknown ? t('accountManager.runtimeStatusUnknown') : t('accountManager.reauthRequired')}</span>
+                                            {acc.disabled ? (
+                                                <span className="font-mono bg-gray-500/10 text-gray-400 px-1.5 py-0.5 rounded text-[10px]">{t('accountManager.disableAccount')}</span>
+                                            ) : (
+                                                <span>{isBanned ? t('accountManager.accountBanned') : acc.test_status === 'failed' ? t('accountManager.testStatusFailed') : isActive ? t('accountManager.sessionActive') : runtimeUnknown ? t('accountManager.runtimeStatusUnknown') : t('accountManager.reauthRequired')}</span>
+                                            )}
                                             {acc.token_preview && (
                                                 <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px]">
                                                     {acc.token_preview}
@@ -168,6 +180,25 @@ export default function AccountsTable({
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 self-start lg:self-auto ml-5 lg:ml-0">
+                                    <button
+                                        onClick={() => onToggleDisabled(id, acc.disabled)}
+                                        disabled={togglingDisabled?.[id]}
+                                        className={clsx(
+                                            "p-1.5 lg:p-2 rounded-md transition-colors disabled:opacity-50",
+                                            acc.disabled
+                                                ? "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                                                : "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
+                                        )}
+                                        title={acc.disabled ? t('accountManager.enableAccount') : t('accountManager.disableAccount')}
+                                    >
+                                        {togglingDisabled?.[id] ? (
+                                            <span className="animate-spin text-sm">⟳</span>
+                                        ) : acc.disabled ? (
+                                            <ToggleLeft className="w-5 h-5 lg:w-6 lg:h-6" />
+                                        ) : (
+                                            <ToggleRight className="w-5 h-5 lg:w-6 lg:h-6" />
+                                        )}
+                                    </button>
                                     <select
                                         value={acc.proxy_id || ''}
                                         onChange={e => onUpdateAccountProxy(id, e.target.value)}

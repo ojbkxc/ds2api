@@ -105,6 +105,7 @@ type StartParams struct {
 
 type UpdateParams struct {
 	Status           string
+	AccountID        string
 	ReasoningContent string
 	Content          string
 	Error            string
@@ -313,6 +314,9 @@ func (s *Store) Update(id string, params UpdateParams) (Entry, error) {
 	item.UpdatedAt = now
 	if params.Status != "" {
 		item.Status = params.Status
+	}
+	if strings.TrimSpace(params.AccountID) != "" {
+		item.AccountID = strings.TrimSpace(params.AccountID)
 	}
 	if params.ReasoningContent != "" || item.ReasoningContent == "" {
 		item.ReasoningContent = params.ReasoningContent

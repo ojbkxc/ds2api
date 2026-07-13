@@ -29,9 +29,10 @@ type claudeStreamRuntime struct {
 	bufferToolContent     bool
 	stripReferenceMarkers bool
 
-	messageID string
-	thinking  strings.Builder
-	text      strings.Builder
+	messageID         string
+	thinking          strings.Builder
+	text              strings.Builder
+	responseMessageID int
 
 	sieve                 toolstream.State
 	rawText               strings.Builder
@@ -47,6 +48,9 @@ type claudeStreamRuntime struct {
 	textEmitted        bool
 	ended              bool
 	upstreamErr        string
+	lastErrorStatus    int
+	lastErrorMessage   string
+	lastErrorCode      string
 	history            *responsehistory.Session
 }
 
@@ -91,6 +95,9 @@ func (s *claudeStreamRuntime) onParsed(parsed sse.LineResult) streamengine.Parse
 	if parsed.ErrorMessage != "" {
 		s.upstreamErr = parsed.ErrorMessage
 		return streamengine.ParsedDecision{Stop: true, StopReason: streamengine.StopReason("upstream_error")}
+	}
+	if parsed.ResponseMessageID > 0 {
+		s.responseMessageID = parsed.ResponseMessageID
 	}
 	if parsed.Stop {
 		return streamengine.ParsedDecision{Stop: true}

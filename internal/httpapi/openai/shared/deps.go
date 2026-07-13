@@ -21,6 +21,7 @@ const (
 type AuthResolver interface {
 	Determine(req *http.Request) (*auth.RequestAuth, error)
 	DetermineCaller(req *http.Request) (*auth.RequestAuth, error)
+	EnsureModelSupport(ctx context.Context, a *auth.RequestAuth, model string) error
 	Release(a *auth.RequestAuth)
 }
 
@@ -43,6 +44,8 @@ type ConfigReader interface {
 	AutoDeleteSessions() bool
 	CurrentInputFileEnabled() bool
 	CurrentInputFileMinChars() int
+	CurrentInputFileFilenameTemplate() string
+	CurrentInputFileDisabledModels() []string
 	ThinkingInjectionEnabled() bool
 	ThinkingInjectionPrompt() string
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	dsprotocol "ds2api/internal/deepseek/protocol"
 	"fmt"
+	"hash/fnv"
 	"net"
 	"net/http"
 	"strconv"
@@ -167,6 +168,23 @@ func (c *Client) requestClientsForAccount(acc config.Account) requestClients {
 	c.proxyClients[key] = bundle
 	c.proxyClientsMu.Unlock()
 	return bundle
+}
+
+func ctxWithAccountFingerprint(ctx context.Context, acc config.Account) context.Context {
+	id := acc.Identifier()
+	if id == "" {
+		return ctx
+	}
+	h := fnv.New32a()
+	h.Write([]byte(id))
+	return trans.WithFingerprintSeed(ctx, h.Sum32())
+}
+
+func ctxWithFingerprintFromContext(ctx context.Context) context.Context {
+	if a, ok := auth.FromContext(ctx); ok {
+		return ctxWithAccountFingerprint(ctx, a.Account)
+	}
+	return ctx
 }
 
 func applyProxyConnectivityHeaders(req *http.Request) {

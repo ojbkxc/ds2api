@@ -1,0 +1,19 @@
+services:
+  ds2api:
+    image: ghcr.io/cjackhwang/ds2api:latest
+    container_name: ds2api
+    restart: always
+    # 强制以root运行，彻底解决文件权限问题
+    user: "0:0"
+    env_file:
+      - .env
+    ports:
+      # 通过 .env 中的 DS2API_HOST_PORT 控制对外端口，容器内固定 5001
+      - "${DS2API_HOST_PORT:-6011}:5001"
+    volumes:
+      - ./config.json:/data/config.json
+    environment:
+      - TZ=Asia/Shanghai
+      - LOG_LEVEL=INFO
+      - DS2API_ADMIN_KEY=${DS2API_ADMIN_KEY:-ds2api}
+      - DS2API_CONFIG_PATH=/data/config.json

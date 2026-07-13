@@ -28,6 +28,10 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 		h.handleVercelStreamPow(w, r)
 		return
 	}
+	if isVercelStreamSwitchRequest(r) {
+		h.handleVercelStreamSwitch(w, r)
+		return
+	}
 	if isVercelStreamPrepareRequest(r) {
 		h.handleVercelStreamPrepare(w, r)
 		return
@@ -68,6 +72,16 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 	stdReq, err := promptcompat.NormalizeOpenAIChatRequest(h.Store, req, requestTraceID(r))
 	if err != nil {
 		writeOpenAIError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := h.Auth.EnsureModelSupport(r.Context(), a, stdReq.ResolvedModel); err != nil {
+		status := http.StatusTooManyRequests
+		detail := "no account available for model " + stdReq.ResolvedModel
+		if err != auth.ErrNoAccount {
+			status = http.StatusUnauthorized
+			detail = err.Error()
+		}
+		writeOpenAIError(w, status, detail)
 		return
 	}
 	stdReq, err = h.applyCurrentInputFile(r.Context(), a, stdReq)
@@ -114,7 +128,7 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 	}
 	streamReq := start.Request
 	refFileTokens := streamReq.RefFileTokens
-	h.handleStreamWithRetry(w, r, a, start.Response, start.Payload, start.Pow, sessionID, streamReq.ResponseModel, streamReq.PromptTokenText, refFileTokens, streamReq.Thinking, streamReq.Search, streamReq.ToolNames, streamReq.ToolsRaw, streamReq.ToolChoice, historySession)
+	h.handleStreamWithRetry(w, r, a, start.Response, start.Payload, start.Pow, sessionID, &sessionID, streamReq, streamReq.ResponseModel, streamReq.PromptTokenText, refFileTokens, streamReq.Thinking, streamReq.Search, streamReq.ToolNames, streamReq.ToolsRaw, streamReq.ToolChoice, historySession)
 }
 
 func (h *Handler) autoDeleteRemoteSession(ctx context.Context, a *auth.RequestAuth, sessionID string) {
@@ -277,4 +291,86 @@ func (h *Handler) handleStream(w http.ResponseWriter, r *http.Request, resp *htt
 			}
 		},
 	})
+}
+
+func executeWithToolCalls(ctx context.Context, ds completionruntime.DeepSeekCaller, store history.CurrentInputConfigReader, a *auth.RequestAuth, stdReq promptcompat.StandardRequest) (completionruntime.NonStreamResult, *assistantturn.OutputError) {
+	maxToolIterations := 5
+	for i := 0; i < maxToolIterations; i++ {
+		result, outErr := completionruntime.ExecuteNonStreamWithRetry(ctx, ds, a, stdReq, completionruntime.Options{
+			RetryEnabled:     true,
+			CurrentInputFile: store,
+		})
+		if outErr != nil {
+			return result, outErr
+		}
+		if len(result.Turn.ToolCalls) == 0 {
+			return result, nil
+		}
+		toolResults, execErr := executeToolCalls(result.Turn.ToolCalls)
+		if execErr != nil {
+			return result, &assistantturn.OutputError{Status: http.StatusInternalServerError, Message: execErr.Error(), Code: "tool_execution_error"}
+		}
+		stdReq = appendToolResultsToMessages(stdReq, result.Turn.ToolCalls, toolResults)
+	}
+	result, outErr := completionruntime.ExecuteNonStreamWithRetry(ctx, ds, a, stdReq, completionruntime.Options{
+		RetryEnabled:     true,
+		CurrentInputFile: store,
+	})
+	return result, outErr
+}
+
+func executeToolCalls(calls []toolcall.ParsedToolCall) ([]*localtool.ToolResult, error) {
+	results := make([]*localtool.ToolResult, 0, len(calls))
+	for _, call := range calls {
+		result, err := localtool.Execute(localtool.ToolCall{
+			ID:      call.ID,
+			Name:    call.Name,
+			Payload: call.Arguments,
+		})
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
+func appendToolResultsToMessages(stdReq promptcompat.StandardRequest, calls []toolcall.ParsedToolCall, results []*localtool.ToolResult) promptcompat.StandardRequest {
+	if len(calls) == 0 || len(results) == 0 {
+		return stdReq
+	}
+	for i, call := range calls {
+		if i >= len(results) {
+			break
+		}
+		result := results[i]
+		content := ""
+		if result.Ok {
+			if result.Detail != "" {
+				content = result.Detail
+			} else if result.Summary != "" {
+				content = result.Summary
+			}
+		} else {
+			if result.Error != nil {
+				content = "Error: " + result.Error.Message
+			} else if result.Detail != "" {
+				content = "Error: " + result.Detail
+			}
+		}
+		stdReq.Messages = append(stdReq.Messages, map[string]any{
+			"role":       "assistant",
+			"tool_calls": []map[string]any{{"id": call.ID, "type": "function", "function": map[string]any{"name": call.Name, "arguments": call.Arguments}}},
+		})
+		stdReq.Messages = append(stdReq.Messages, map[string]any{
+			"role":       "tool",
+			"tool_call_id": call.ID,
+			"content":    content,
+		})
+	}
+	finalPrompt, toolNames := promptcompat.BuildOpenAIPrompt(stdReq.Messages, stdReq.ToolsRaw, "", stdReq.ToolChoice, stdReq.Thinking)
+	stdReq.FinalPrompt = finalPrompt
+	stdReq.PromptTokenText = finalPrompt
+	stdReq.ToolNames = toolNames
+	return stdReq
 }

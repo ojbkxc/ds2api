@@ -19,6 +19,13 @@ func (h *Handler) getConfig(w http.ResponseWriter, _ *http.Request) {
 		"env_writeback_enabled": h.Store.IsEnvWritebackEnabled(),
 		"config_path":           h.Store.ConfigPath(),
 		"model_aliases":         snap.ModelAliases,
+		"current_input_file": map[string]any{
+			"enabled":           h.Store.CurrentInputFileEnabled(),
+			"min_chars":         h.Store.CurrentInputFileMinChars(),
+			"filename_template": h.Store.CurrentInputFileFilenameTemplate(),
+			"disabled_models":   h.Store.CurrentInputFileDisabledModels(),
+			"vision_accounts":   h.Store.CurrentInputFileVisionAccounts(),
+		},
 		"vercel": map[string]any{
 			"has_token":     strings.TrimSpace(snap.Vercel.Token) != "",
 			"token_preview": maskSecretPreview(snap.Vercel.Token),

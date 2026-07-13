@@ -41,6 +41,10 @@ func (m *testingDSMock) GetPow(_ context.Context, _ *auth.RequestAuth, _ int) (s
 	return "", errors.New("should not call GetPow in this test")
 }
 
+func (m *testingDSMock) UploadFile(_ context.Context, _ *auth.RequestAuth, _ dsclient.UploadFileRequest, _ int) (*dsclient.UploadFileResult, error) {
+	return &dsclient.UploadFileResult{ID: "file-test"}, nil
+}
+
 func (m *testingDSMock) CallCompletion(_ context.Context, _ *auth.RequestAuth, _ map[string]any, _ string, _ int) (*http.Response, error) {
 	m.callCompletionCalls++
 	return nil, errors.New("should not call CallCompletion in this test")

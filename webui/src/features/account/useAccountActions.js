@@ -17,6 +17,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
     const [sessionCounts, setSessionCounts] = useState({})
     const [deletingSessions, setDeletingSessions] = useState({})
     const [updatingProxy, setUpdatingProxy] = useState({})
+    const [togglingDisabled, setTogglingDisabled] = useState({})
 
     const openAddKey = () => {
         setEditingKey(null)
@@ -345,6 +346,34 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         }
     }
 
+    const toggleAccountDisabled = async (identifier, currentDisabled) => {
+        const accountID = String(identifier || '').trim()
+        if (!accountID) {
+            onMessage('error', t('accountManager.invalidIdentifier'))
+            return
+        }
+        setTogglingDisabled(prev => ({ ...prev, [accountID]: true }))
+        try {
+            const res = await apiFetch(`/admin/accounts/${encodeURIComponent(accountID)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ disabled: !currentDisabled }),
+            })
+            const data = await res.json()
+            if (!res.ok) {
+                onMessage('error', data.detail || t('messages.requestFailed'))
+                return
+            }
+            onMessage('success', currentDisabled ? t('accountManager.accountEnabled') : t('accountManager.accountDisabled'))
+            fetchAccounts()
+            onRefresh()
+        } catch (_err) {
+            onMessage('error', t('messages.networkError'))
+        } finally {
+            setTogglingDisabled(prev => ({ ...prev, [accountID]: false }))
+        }
+    }
+
     return {
         showAddKey,
         openAddKey,
@@ -373,6 +402,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         sessionCounts,
         deletingSessions,
         updatingProxy,
+        togglingDisabled,
         addKey,
         deleteKey,
         addAccount,
@@ -382,5 +412,6 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         testAllAccounts,
         deleteAllSessions,
         updateAccountProxy,
+        toggleAccountDisabled,
     }
 }

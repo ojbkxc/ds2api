@@ -9,7 +9,7 @@ func EmptyOutputRetryEnabled() bool {
 }
 
 func EmptyOutputRetryMaxAttempts() int {
-	return 1
+	return 3
 }
 
 func ClonePayloadWithEmptyOutputRetryPrompt(payload map[string]any) map[string]any {

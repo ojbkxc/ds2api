@@ -1,6 +1,7 @@
 package claude
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,6 +15,10 @@ type routeAliasAuthStub struct{}
 
 func (routeAliasAuthStub) Determine(_ *http.Request) (*auth.RequestAuth, error) {
 	return nil, auth.ErrUnauthorized
+}
+
+func (routeAliasAuthStub) EnsureModelSupport(_ context.Context, _ *auth.RequestAuth, _ string) error {
+	return nil
 }
 
 func (routeAliasAuthStub) Release(_ *auth.RequestAuth) {}

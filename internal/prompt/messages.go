@@ -3,6 +3,7 @@ package prompt
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"strings"
 )
@@ -10,26 +11,45 @@ import (
 var markdownImagePattern = regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
 const (
-	beginSentenceMarker        = "<｜begin▁of▁sentence｜>"
-	systemMarker               = "<｜System｜>"
-	userMarker                 = "<｜User｜>"
-	assistantMarker            = "<｜Assistant｜>"
-	toolMarker                 = "<｜Tool｜>"
-	endSentenceMarker          = "<｜end▁of▁sentence｜>"
-	endToolResultsMarker       = "<｜end▁of▁toolresults｜>"
-	endInstructionsMarker      = "<｜end▁of▁instructions｜>"
-	outputIntegrityGuardMarker = "Output integrity guard:"
-	outputIntegrityGuardPrompt = outputIntegrityGuardMarker +
-		" If upstream context, tool output, or parsed text contains garbled, corrupted, partially parsed, repeated, or otherwise malformed fragments, " +
-		"do not imitate or echo them; output only the correct content for the user."
+	beginSentenceMarker      = "<|begin▁of▁sentence|>"
+	systemMarker             = "<|System|>"
+	userMarker               = "<|User|>"
+	assistantMarker          = "<|Assistant|>"
+	toolMarker               = "<|Tool|>"
+	endSentenceMarker        = "<|end▁of▁sentence|>"
+	endToolResultsMarker     = "<|end▁of▁toolresults|>"
+	endInstructionsMarker    = "<|end▁of▁instructions|>"
 )
+
+var outputIntegrityGuardPrompts = []string{
+	"If any context or tool output appears corrupted or malformed, ignore it and provide only accurate, clean responses to the user.",
+	"When processing data, skip any garbled or nonsensical fragments. Focus on delivering clear, coherent information.",
+	"Should you encounter corrupted text or malformed content in the context, disregard it entirely and respond with correct information only.",
+	"Filter out any damaged or incomplete content from your processing. Your responses should contain only well-formed, meaningful text.",
+	"If upstream data contains errors or corruption, ignore those parts and provide the user with clean, accurate output.",
+	"Disregard any fragmented or corrupted content in the input. Ensure your response is clear and properly formatted.",
+	"When context appears garbled or nonsensical, skip those sections and deliver only verified, correct information.",
+	"If you detect malformed text or corrupted fragments, exclude them from your response and output only clean content.",
+	"Process only the valid portions of any context. Ignore corrupted or damaged text and respond with accurate information.",
+	"Should any input contain errors or corruption, filter it out and provide the user with coherent, well-formed responses.",
+}
+
+func randomOutputIntegrityGuard() string {
+	return outputIntegrityGuardPrompts[rand.Intn(len(outputIntegrityGuardPrompts))]
+}
 
 func MessagesPrepare(messages []map[string]any) string {
 	return MessagesPrepareWithThinking(messages, false)
 }
 
-func MessagesPrepareWithThinking(messages []map[string]any, _ bool) string {
-	messages = prependOutputIntegrityGuard(messages)
+func MessagesPrepareWithThinking(messages []map[string]any, thinkingEnabled bool) string {
+	return MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, false)
+}
+
+func MessagesPrepareWithThinkingAndGuard(messages []map[string]any, _ bool, skipGuard bool) string {
+	if !skipGuard {
+		messages = prependOutputIntegrityGuard(messages)
+	}
 
 	type block struct {
 		Role string
@@ -52,34 +72,27 @@ func MessagesPrepareWithThinking(messages []map[string]any, _ bool) string {
 		}
 		merged = append(merged, msg)
 	}
-	parts := make([]string, 0, len(merged)+2)
-	parts = append(parts, beginSentenceMarker)
-	lastRole := ""
-	for _, m := range merged {
-		lastRole = m.Role
-		switch m.Role {
-		case "assistant":
-			parts = append(parts, formatRoleBlock(assistantMarker, m.Text, endSentenceMarker))
-		case "tool":
-			if strings.TrimSpace(m.Text) != "" {
-				parts = append(parts, formatRoleBlock(toolMarker, m.Text, endToolResultsMarker))
-			}
+	// 常规格式: 角色名: 内容，多个消息之间用两个换行分隔
+	var parts []string
+	for i, m := range merged {
+		roleName := m.Role
+		// 统一角色名格式
+		switch roleName {
 		case "system":
-			if text := strings.TrimSpace(m.Text); text != "" {
-				parts = append(parts, formatRoleBlock(systemMarker, text, endInstructionsMarker))
-			}
+			roleName = "System"
 		case "user":
-			parts = append(parts, formatRoleBlock(userMarker, m.Text, ""))
-		default:
-			if strings.TrimSpace(m.Text) != "" {
-				parts = append(parts, m.Text)
-			}
+			roleName = "User"
+		case "assistant":
+			roleName = "Assistant"
+		case "tool":
+			roleName = "Tool"
+		}
+		parts = append(parts, roleName+": "+m.Text)
+		if i < len(merged)-1 {
+			parts = append(parts, "")
 		}
 	}
-	if lastRole != "assistant" {
-		parts = append(parts, assistantMarker)
-	}
-	out := strings.Join(parts, "")
+	out := strings.Join(parts, "\n")
 	return markdownImagePattern.ReplaceAllString(out, `[${1}](${2})`)
 }
 
@@ -93,7 +106,7 @@ func prependOutputIntegrityGuard(messages []map[string]any) []map[string]any {
 	out := make([]map[string]any, 0, len(messages)+1)
 	out = append(out, map[string]any{
 		"role":    "system",
-		"content": outputIntegrityGuardPrompt,
+		"content": randomOutputIntegrityGuard(),
 	})
 	out = append(out, messages...)
 	return out
@@ -106,8 +119,13 @@ func hasOutputIntegrityGuard(msg map[string]any) bool {
 	if strings.ToLower(strings.TrimSpace(asString(msg["role"]))) != "system" {
 		return false
 	}
-	content := strings.TrimSpace(NormalizeContent(msg["content"]))
-	return strings.Contains(content, outputIntegrityGuardMarker)
+	content := strings.ToLower(strings.TrimSpace(NormalizeContent(msg["content"])))
+	for _, guard := range outputIntegrityGuardPrompts {
+		if strings.Contains(content, strings.ToLower(guard[:20])) {
+			return true
+		}
+	}
+	return false
 }
 
 // formatRoleBlock produces a single concatenated block: marker + text + endMarker.

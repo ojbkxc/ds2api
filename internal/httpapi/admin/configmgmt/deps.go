@@ -1,6 +1,8 @@
 package configmgmt
 
 import (
+	"encoding/json"
+
 	"ds2api/internal/chathistory"
 	"ds2api/internal/config"
 	adminshared "ds2api/internal/httpapi/admin/shared"
@@ -47,4 +49,17 @@ func requestErrorDetail(err error) (string, bool) {
 func normalizeSettingsConfig(c *config.Config) { adminshared.NormalizeSettingsConfig(c) }
 func validateSettingsConfig(c config.Config) error {
 	return adminshared.ValidateSettingsConfig(c)
+}
+func toInt(v any) (int, bool) {
+	switch n := v.(type) {
+	case int:
+		return n, true
+	case float64:
+		return int(n), true
+	case json.Number:
+		i, err := n.Int64()
+		return int(i), err == nil
+	default:
+		return 0, false
+	}
 }

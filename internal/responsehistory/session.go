@@ -245,6 +245,16 @@ func (s *Session) persistUpdate(params chathistory.UpdateParams) {
 	}
 }
 
+func (s *Session) UpdateAccountID(accountID string) {
+	if s == nil || s.store == nil || s.disabled || accountID == "" {
+		return
+	}
+	s.startParams.AccountID = accountID
+	s.persistUpdate(chathistory.UpdateParams{
+		AccountID: accountID,
+	})
+}
+
 func (s *Session) handlePersistError(params chathistory.UpdateParams, err error) {
 	if err == nil || s == nil {
 		return

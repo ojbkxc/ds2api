@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"strings"
 
 	"ds2api/internal/config"
 )
@@ -46,6 +47,46 @@ func (p *Pool) AcquireWait(ctx context.Context, target string, exclude map[strin
 	}
 }
 
+func (p *Pool) AcquireForModel(model string, target string, exclude map[string]bool) (config.Account, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.acquireLockedForModel(model, target, normalizeExclude(exclude))
+}
+
+func (p *Pool) AcquireWaitForModel(ctx context.Context, model string, target string, exclude map[string]bool) (config.Account, bool) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	exclude = normalizeExclude(exclude)
+	for {
+		if ctx.Err() != nil {
+			return config.Account{}, false
+		}
+
+		p.mu.Lock()
+		if acc, ok := p.acquireLockedForModel(model, target, exclude); ok {
+			p.mu.Unlock()
+			return acc, true
+		}
+		if !p.canQueueForModelLocked(model, target, exclude) {
+			p.mu.Unlock()
+			return config.Account{}, false
+		}
+		waiter := make(chan struct{})
+		p.waiters = append(p.waiters, waiter)
+		p.mu.Unlock()
+
+		select {
+		case <-ctx.Done():
+			p.mu.Lock()
+			p.removeWaiterLocked(waiter)
+			p.mu.Unlock()
+			return config.Account{}, false
+		case <-waiter:
+		}
+	}
+}
+
 func (p *Pool) acquireLocked(target string, exclude map[string]bool) (config.Account, bool) {
 	if target != "" {
 		if exclude[target] || !p.canAcquireIDLocked(target) {
@@ -63,10 +104,33 @@ func (p *Pool) acquireLocked(target string, exclude map[string]bool) (config.Acc
 	return p.tryAcquire(exclude)
 }
 
+func (p *Pool) acquireLockedForModel(model string, target string, exclude map[string]bool) (config.Account, bool) {
+	if target != "" {
+		if exclude[target] || !p.canAcquireIDLocked(target) {
+			return config.Account{}, false
+		}
+		acc, ok := p.store.FindAccount(target)
+		if !ok {
+			return config.Account{}, false
+		}
+		if !p.accountSupportsModel(acc, model) {
+			return config.Account{}, false
+		}
+		p.inUse[target]++
+		p.bumpQueue(target)
+		return acc, true
+	}
+
+	return p.tryAcquireForModel(exclude, model)
+}
+
 func (p *Pool) tryAcquire(exclude map[string]bool) (config.Account, bool) {
 	for i := 0; i < len(p.queue); i++ {
 		id := p.queue[i]
 		if exclude[id] || !p.canAcquireIDLocked(id) {
+			continue
+		}
+		if p.isAccountBanned(id) || p.isAccountDisabled(id) {
 			continue
 		}
 		acc, ok := p.store.FindAccount(id)
@@ -78,6 +142,62 @@ func (p *Pool) tryAcquire(exclude map[string]bool) (config.Account, bool) {
 		return acc, true
 	}
 	return config.Account{}, false
+}
+
+func (p *Pool) tryAcquireForModel(exclude map[string]bool, model string) (config.Account, bool) {
+	for i := 0; i < len(p.queue); i++ {
+		id := p.queue[i]
+		if exclude[id] || !p.canAcquireIDLocked(id) {
+			continue
+		}
+		if p.isAccountBanned(id) || p.isAccountDisabled(id) {
+			continue
+		}
+		acc, ok := p.store.FindAccount(id)
+		if !ok {
+			continue
+		}
+		if !p.accountSupportsModel(acc, model) {
+			continue
+		}
+		p.inUse[id]++
+		p.bumpQueue(id)
+		return acc, true
+	}
+	return config.Account{}, false
+}
+
+func (p *Pool) accountSupportsModel(acc config.Account, model string) bool {
+	if !acc.SupportsModel(model) {
+		return false
+	}
+	if modelType, ok := config.GetModelType(model); ok && modelType == "vision" {
+		visionAccounts := p.store.CurrentInputFileVisionAccounts()
+		if len(visionAccounts) > 0 {
+			identifier := acc.Identifier()
+			found := false
+			for _, va := range visionAccounts {
+				if strings.EqualFold(strings.TrimSpace(va), identifier) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (p *Pool) isAccountBanned(id string) bool {
+	status, ok := p.store.AccountTestStatus(id)
+	return ok && status == "banned"
+}
+
+func (p *Pool) isAccountDisabled(id string) bool {
+	acc, ok := p.store.FindAccount(id)
+	return ok && acc.Disabled
 }
 
 func (p *Pool) bumpQueue(accountID string) {

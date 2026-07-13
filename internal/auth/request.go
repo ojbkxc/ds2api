@@ -28,6 +28,7 @@ type RequestAuth struct {
 	DeepSeekToken  string
 	CallerID       string
 	AccountID      string
+	TargetAccount  string
 	Account        config.Account
 	TriedAccounts  map[string]bool
 	resolver       *Resolver
@@ -99,6 +100,7 @@ func (r *Resolver) acquireManagedRequestAuth(ctx context.Context, callerID, targ
 			UseConfigToken: true,
 			CallerID:       callerID,
 			AccountID:      acc.Identifier(),
+			TargetAccount:  target,
 			Account:        acc,
 			TriedAccounts:  tried,
 			resolver:       r,
@@ -185,6 +187,9 @@ func (r *Resolver) SwitchAccount(ctx context.Context, a *RequestAuth) bool {
 	if !a.UseConfigToken {
 		return false
 	}
+	if strings.TrimSpace(a.TargetAccount) != "" {
+		return false
+	}
 	if a.TriedAccounts == nil {
 		a.TriedAccounts = map[string]bool{}
 	}
@@ -206,6 +211,79 @@ func (r *Resolver) SwitchAccount(ctx context.Context, a *RequestAuth) bool {
 		}
 		return true
 	}
+}
+
+func (r *Resolver) SwitchAccountForModel(ctx context.Context, a *RequestAuth, model string) bool {
+	if !a.UseConfigToken {
+		return false
+	}
+	if strings.TrimSpace(a.TargetAccount) != "" {
+		return false
+	}
+	if a.TriedAccounts == nil {
+		a.TriedAccounts = map[string]bool{}
+	}
+	if a.AccountID != "" {
+		a.TriedAccounts[a.AccountID] = true
+		r.Pool.Release(a.AccountID)
+	}
+	for {
+		acc, ok := r.Pool.AcquireForModel(model, "", a.TriedAccounts)
+		if !ok {
+			return false
+		}
+		a.Account = acc
+		a.AccountID = acc.Identifier()
+		if err := r.ensureManagedToken(ctx, a); err != nil {
+			a.TriedAccounts[a.AccountID] = true
+			r.Pool.Release(a.AccountID)
+			continue
+		}
+		return true
+	}
+}
+
+func (r *Resolver) EnsureModelSupport(ctx context.Context, a *RequestAuth, model string) error {
+	if a == nil || !a.UseConfigToken {
+		return nil
+	}
+	if r.accountSupportsModel(a.Account, model) {
+		return nil
+	}
+	if r.SwitchAccountForModel(ctx, a, model) {
+		return nil
+	}
+	return ErrNoAccount
+}
+
+func (r *Resolver) accountSupportsModel(acc config.Account, model string) bool {
+	if !acc.SupportsModel(model) {
+		return false
+	}
+	if modelType, ok := config.GetModelType(model); ok && modelType == "vision" {
+		visionAccounts := r.Store.CurrentInputFileVisionAccounts()
+		if len(visionAccounts) > 0 {
+			identifier := acc.Identifier()
+			found := false
+			for _, va := range visionAccounts {
+				if strings.EqualFold(strings.TrimSpace(va), identifier) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (a *RequestAuth) SwitchAccount(ctx context.Context) bool {
+	if a == nil || a.resolver == nil {
+		return false
+	}
+	return a.resolver.SwitchAccount(ctx, a)
 }
 
 func (r *Resolver) Release(a *RequestAuth) {

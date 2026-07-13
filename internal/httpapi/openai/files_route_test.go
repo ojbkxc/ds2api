@@ -38,6 +38,10 @@ func (managedFilesAuthStub) DetermineCaller(_ *http.Request) (*auth.RequestAuth,
 	}, nil
 }
 
+func (managedFilesAuthStub) EnsureModelSupport(_ context.Context, _ *auth.RequestAuth, _ string) error {
+	return nil
+}
+
 func (managedFilesAuthStub) Release(_ *auth.RequestAuth) {}
 
 type filesRouteDSStub struct {

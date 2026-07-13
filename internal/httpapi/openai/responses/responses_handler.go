@@ -88,6 +88,16 @@ func (h *Handler) Responses(w http.ResponseWriter, r *http.Request) {
 		writeOpenAIError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if err := h.Auth.EnsureModelSupport(r.Context(), a, stdReq.ResolvedModel); err != nil {
+		status := http.StatusTooManyRequests
+		detail := "no account available for model " + stdReq.ResolvedModel
+		if err != auth.ErrNoAccount {
+			status = http.StatusUnauthorized
+			detail = err.Error()
+		}
+		writeOpenAIError(w, status, detail)
+		return
+	}
 	stdReq, err = h.applyCurrentInputFile(r.Context(), a, stdReq)
 	if err != nil {
 		status, message := mapCurrentInputFileError(err)
@@ -138,7 +148,7 @@ func (h *Handler) Responses(w http.ResponseWriter, r *http.Request) {
 
 	streamReq := start.Request
 	refFileTokens := streamReq.RefFileTokens
-	h.handleResponsesStreamWithRetry(w, r, a, start.Response, start.Payload, start.Pow, owner, responseID, streamReq.ResponseModel, streamReq.PromptTokenText, refFileTokens, streamReq.Thinking, streamReq.Search, streamReq.ToolNames, streamReq.ToolsRaw, streamReq.ToolChoice, traceID, historySession)
+	h.handleResponsesStreamWithRetry(w, r, a, start.Response, start.Payload, start.Pow, owner, responseID, streamReq, streamReq.ResponseModel, streamReq.PromptTokenText, refFileTokens, streamReq.Thinking, streamReq.Search, streamReq.ToolNames, streamReq.ToolsRaw, streamReq.ToolChoice, traceID, historySession)
 }
 
 func (h *Handler) handleResponsesNonStream(w http.ResponseWriter, resp *http.Response, owner, responseID, model, finalPrompt string, refFileTokens int, thinkingEnabled, searchEnabled bool, toolNames []string, toolsRaw any, toolChoice promptcompat.ToolChoicePolicy, traceID string) {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 
 	authn "ds2api/internal/auth"
 	"ds2api/internal/config"
+	dsclient "ds2api/internal/deepseek/client"
+	"ds2api/internal/httpapi/openai/history"
 	"ds2api/internal/prompt"
 	"ds2api/internal/promptcompat"
 	"ds2api/internal/sse"
@@ -119,6 +122,11 @@ func (h *Handler) testAccount(ctx context.Context, acc config.Account, model, me
 	token, err := h.DS.Login(ctx, acc)
 	if err != nil {
 		result["message"] = "登录失败: " + err.Error()
+		if errors.Is(err, dsclient.ErrAccountBanned) {
+			result["message"] = "账号已被封禁: " + err.Error()
+			_ = h.Store.UpdateAccountTestStatus(identifier, "banned")
+			return result
+		}
 		return result
 	}
 	if err := h.Store.UpdateAccountToken(acc.Identifier(), token); err != nil {
@@ -176,12 +184,25 @@ func (h *Handler) testAccount(ctx context.Context, acc config.Account, model, me
 		result["message"] = "获取 PoW 失败: " + err.Error()
 		return result
 	}
-	payload := promptcompat.StandardRequest{
+	msgList := []map[string]any{{"role": "user", "content": message}}
+	msgAny := make([]any, len(msgList))
+	for i, m := range msgList {
+		msgAny[i] = m
+	}
+	stdReq := promptcompat.StandardRequest{
 		ResolvedModel: model,
-		FinalPrompt:   prompt.MessagesPrepare([]map[string]any{{"role": "user", "content": message}}),
+		FinalPrompt:   prompt.MessagesPrepare(msgList),
+		Messages:      msgAny,
 		Thinking:      thinking,
 		Search:        search,
-	}.CompletionPayload(sessionID)
+	}
+	cifSvc := history.Service{Store: h.Store, DS: h.DS}
+	stdReq, cifErr := cifSvc.ApplyCurrentInputFile(proxyCtx, authCtx, stdReq)
+	if cifErr != nil {
+		result["message"] = "上传上下文文件失败: " + cifErr.Error()
+		return result
+	}
+	payload := stdReq.CompletionPayload(sessionID)
 	resp, err := h.DS.CallCompletion(proxyCtx, authCtx, payload, pow, 1)
 	if err != nil {
 		result["message"] = "请求失败: " + err.Error()

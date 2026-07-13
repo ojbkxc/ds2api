@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"net/http"
 	"time"
@@ -21,6 +22,31 @@ type Client struct {
 	http *http.Client
 }
 
+var browserFingerprints = []utls.ClientHelloID{
+	utls.HelloChrome_Auto,
+	utls.HelloFirefox_Auto,
+	utls.HelloSafari_Auto,
+	utls.HelloEdge_Auto,
+	utls.HelloIOS_Auto,
+}
+
+type fingerprintSeedKey struct{}
+
+func WithFingerprintSeed(ctx context.Context, seed uint32) context.Context {
+	return context.WithValue(ctx, fingerprintSeedKey{}, seed)
+}
+
+func WithoutFingerprintSeed(ctx context.Context) context.Context {
+	return context.WithValue(ctx, fingerprintSeedKey{}, nil)
+}
+
+func selectFingerprint(ctx context.Context) utls.ClientHelloID {
+	if seed, ok := ctx.Value(fingerprintSeedKey{}).(uint32); ok {
+		return browserFingerprints[seed%uint32(len(browserFingerprints))]
+	}
+	return browserFingerprints[rand.IntN(len(browserFingerprints))]
+}
+
 func New(timeout time.Duration) *Client {
 	return NewWithDialContext(timeout, nil)
 }
@@ -36,7 +62,7 @@ func NewWithDialContext(timeout time.Duration, dialContext DialContextFunc) *Cli
 		MaxIdleConnsPerHost: 100,
 		IdleConnTimeout:     90 * time.Second,
 		DialContext:         dialContext,
-		DialTLSContext:      safariTLSDialer(dialContext),
+		DialTLSContext:      newTLSDialer(dialContext),
 		TLSClientConfig:     &tls.Config{MinVersion: tls.VersionTLS12},
 	}
 	if useEnvProxy {
@@ -68,7 +94,7 @@ func NewFallbackClient(timeout time.Duration, dialContext DialContextFunc) *http
 	return &http.Client{Timeout: timeout, Transport: base}
 }
 
-func safariTLSDialer(dialContext DialContextFunc) func(ctx context.Context, network, addr string) (net.Conn, error) {
+func newTLSDialer(dialContext DialContextFunc) func(ctx context.Context, network, addr string) (net.Conn, error) {
 	if dialContext == nil {
 		dialContext = (&net.Dialer{Timeout: 15 * time.Second, KeepAlive: 30 * time.Second}).DialContext
 	}
@@ -79,7 +105,8 @@ func safariTLSDialer(dialContext DialContextFunc) func(ctx context.Context, netw
 		}
 		host, _, _ := net.SplitHostPort(addr)
 		uCfg := &utls.Config{ServerName: host}
-		uConn := utls.UClient(plainConn, uCfg, utls.HelloSafari_Auto)
+		selectedID := selectFingerprint(ctx)
+		uConn := utls.UClient(plainConn, uCfg, selectedID)
 		if err := forceHTTP11ALPN(uConn); err != nil {
 			_ = plainConn.Close()
 			return nil, err

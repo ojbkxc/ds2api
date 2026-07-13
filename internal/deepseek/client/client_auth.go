@@ -13,7 +13,25 @@ import (
 	"ds2api/internal/config"
 )
 
+var ErrAccountBanned = errors.New("account_banned")
+
+var banKeywords = []string{
+	"禁言", "封禁", "禁用", "违规", "限制使用", "已被限制",
+	"banned", "suspended", "disabled", "restricted", "violat",
+}
+
+func isAccountBanned(msg string) bool {
+	lower := strings.ToLower(msg)
+	for _, kw := range banKeywords {
+		if strings.Contains(lower, strings.ToLower(kw)) {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) {
+	ctx = ctxWithAccountFingerprint(ctx, acc)
 	clients := c.requestClientsForAccount(acc)
 	payload := map[string]any{
 		"password":  strings.TrimSpace(acc.Password),
@@ -35,11 +53,19 @@ func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) 
 	}
 	code := intFrom(resp["code"])
 	if code != 0 {
-		return "", fmt.Errorf("login failed: %v", resp["msg"])
+		msg := fmt.Sprintf("%v", resp["msg"])
+		if isAccountBanned(msg) {
+			return "", fmt.Errorf("%w: %s", ErrAccountBanned, msg)
+		}
+		return "", fmt.Errorf("login failed: %s", msg)
 	}
 	data, _ := resp["data"].(map[string]any)
 	if intFrom(data["biz_code"]) != 0 {
-		return "", fmt.Errorf("login failed: %v", data["biz_msg"])
+		bizMsg := fmt.Sprintf("%v", data["biz_msg"])
+		if isAccountBanned(bizMsg) {
+			return "", fmt.Errorf("%w: %s", ErrAccountBanned, bizMsg)
+		}
+		return "", fmt.Errorf("login failed: %s", bizMsg)
 	}
 	bizData, _ := data["biz_data"].(map[string]any)
 	user, _ := bizData["user"].(map[string]any)
@@ -54,6 +80,7 @@ func (c *Client) CreateSession(ctx context.Context, a *auth.RequestAuth, maxAtte
 	if maxAttempts <= 0 {
 		maxAttempts = c.maxRetries
 	}
+	ctx = ctxWithAccountFingerprint(ctx, a.Account)
 	clients := c.requestClientsForAuth(ctx, a)
 	attempts := 0
 	refreshed := false
@@ -103,6 +130,7 @@ func (c *Client) GetPowForTarget(ctx context.Context, a *auth.RequestAuth, targe
 	if targetPath == "" {
 		targetPath = dsprotocol.DeepSeekCompletionTargetPath
 	}
+	ctx = ctxWithAccountFingerprint(ctx, a.Account)
 	clients := c.requestClientsForAuth(ctx, a)
 	attempts := 0
 	refreshed := false

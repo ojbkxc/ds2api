@@ -187,6 +187,16 @@ func (s *chatHistorySession) stopped(thinking, content, finishReason string) {
 	})
 }
 
+func (s *chatHistorySession) updateAccountID(accountID string) {
+	if s == nil || s.store == nil || s.disabled || accountID == "" {
+		return
+	}
+	s.startParams.AccountID = accountID
+	s.persistUpdate(chathistory.UpdateParams{
+		AccountID: accountID,
+	})
+}
+
 func historyTextForArchive(raw, visible string) string {
 	if strings.TrimSpace(raw) != "" {
 		return raw
