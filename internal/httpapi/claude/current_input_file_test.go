@@ -23,6 +23,7 @@ type claudeHistoryConfig struct {
 func (m claudeHistoryConfig) ModelAliases() map[string]string { return m.aliases }
 func (claudeHistoryConfig) CurrentInputFileEnabled() bool     { return false }
 func (claudeHistoryConfig) CurrentInputFileMinChars() int     { return 0 }
+func (claudeHistoryConfig) CurrentInputFileDisabledModels() []string { return nil }
 
 func (claudeCurrentInputAuth) Determine(*http.Request) (*auth.RequestAuth, error) {
 	return &auth.RequestAuth{
@@ -77,6 +78,7 @@ func TestClaudeDirectRecordsResponseHistory(t *testing.T) {
 }
 
 func (claudeCurrentInputAuth) Release(*auth.RequestAuth) {}
+func (claudeCurrentInputAuth) EnsureModelSupport(_ context.Context, _ *auth.RequestAuth, _ string) error { return nil }
 
 type claudeCurrentInputDS struct {
 	uploads []dsclient.UploadFileRequest

@@ -155,6 +155,10 @@ func (m *completionPayloadDSMock) GetPow(_ context.Context, _ *auth.RequestAuth,
 	return "pow-ok", nil
 }
 
+func (m *completionPayloadDSMock) UploadFile(_ context.Context, _ *auth.RequestAuth, _ dsclient.UploadFileRequest, _ int) (*dsclient.UploadFileResult, error) {
+	return &dsclient.UploadFileResult{ID: "file-test"}, nil
+}
+
 func (m *completionPayloadDSMock) CallCompletion(_ context.Context, _ *auth.RequestAuth, payload map[string]any, _ string, _ int) (*http.Response, error) {
 	m.payload = payload
 	return &http.Response{
