@@ -42,9 +42,9 @@ func (c Config) MarshalJSON() ([]byte, error) {
 		m["embeddings"] = c.Embeddings
 	}
 	m["auto_delete"] = c.AutoDelete
-	if c.CurrentInputFile.Enabled != nil || c.CurrentInputFile.MinChars != 0 || 
-		strings.TrimSpace(c.CurrentInputFile.FilenameTemplate) != "" || 
-		len(c.CurrentInputFile.DisabledModels) > 0 || 
+	if c.CurrentInputFile.Enabled != nil || c.CurrentInputFile.MinChars != 0 ||
+		strings.TrimSpace(c.CurrentInputFile.FilenameTemplate) != "" ||
+		len(c.CurrentInputFile.DisabledModels) > 0 ||
 		len(c.CurrentInputFile.VisionAccounts) > 0 ||
 		len(c.CurrentInputFile.DisabledAccounts) > 0 {
 		m["current_input_file"] = c.CurrentInputFile

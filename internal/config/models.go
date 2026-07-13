@@ -135,14 +135,14 @@ func IsNoThinkingModel(model string) bool {
 func DefaultModelAliases() map[string]string {
 	return map[string]string{
 		// DeepSeek legacy model names (backward compatibility)
-		"deepseek-chat":           "deepseek-v4-flash",
-		"deepseek-reasoner":       "deepseek-v4-pro",
-		"deepseek-chat-search":    "deepseek-v4-flash",
+		"deepseek-chat":            "deepseek-v4-flash",
+		"deepseek-reasoner":        "deepseek-v4-pro",
+		"deepseek-chat-search":     "deepseek-v4-flash",
 		"deepseek-reasoner-search": "deepseek-v4-pro",
-		"deepseek-expert-chat":    "deepseek-v4-pro",
+		"deepseek-expert-chat":     "deepseek-v4-pro",
 		"deepseek-expert-reasoner": "deepseek-v4-pro",
-		"deepseek-vision-chat":    "deepseek-v4-vision",
-		"deepseek-vision":         "deepseek-v4-vision",
+		"deepseek-vision-chat":     "deepseek-v4-vision",
+		"deepseek-vision":          "deepseek-v4-vision",
 		"deepseek-v4-flash-search": "deepseek-v4-flash",
 		"deepseek-v4-pro-search":   "deepseek-v4-pro",
 

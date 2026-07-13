@@ -20,9 +20,9 @@ type claudeHistoryConfig struct {
 	aliases map[string]string
 }
 
-func (m claudeHistoryConfig) ModelAliases() map[string]string { return m.aliases }
-func (claudeHistoryConfig) CurrentInputFileEnabled() bool     { return false }
-func (claudeHistoryConfig) CurrentInputFileMinChars() int     { return 0 }
+func (m claudeHistoryConfig) ModelAliases() map[string]string        { return m.aliases }
+func (claudeHistoryConfig) CurrentInputFileEnabled() bool            { return false }
+func (claudeHistoryConfig) CurrentInputFileMinChars() int            { return 0 }
 func (claudeHistoryConfig) CurrentInputFileDisabledModels() []string { return nil }
 func (claudeHistoryConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
 
@@ -79,7 +79,9 @@ func TestClaudeDirectRecordsResponseHistory(t *testing.T) {
 }
 
 func (claudeCurrentInputAuth) Release(*auth.RequestAuth) {}
-func (claudeCurrentInputAuth) EnsureModelSupport(_ context.Context, _ *auth.RequestAuth, _ string) error { return nil }
+func (claudeCurrentInputAuth) EnsureModelSupport(_ context.Context, _ *auth.RequestAuth, _ string) error {
+	return nil
+}
 
 type claudeCurrentInputDS struct {
 	uploads []dsclient.UploadFileRequest

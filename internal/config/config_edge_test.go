@@ -107,9 +107,9 @@ func TestGetModelTypeDefaultExpertAndVision(t *testing.T) {
 
 func TestGetModelTypeLegacyDeepSeekIDs(t *testing.T) {
 	cases := []struct {
-		model     string
-		wantType  string
-		wantOk    bool
+		model    string
+		wantType string
+		wantOk   bool
 	}{
 		{"deepseek-chat", "default", true},
 		{"deepseek-reasoner", "expert", true},

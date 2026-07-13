@@ -71,7 +71,7 @@ func (e *WebFetchExecutor) Execute(call ToolCall, context ToolExecutionContext) 
 	if err != nil {
 		return &ToolResult{Ok: false, Name: call.Name, CallId: call.ID, Summary: "Failed to fetch", Error: &ToolError{Code: "fetch_failed", Message: err.Error(), Retryable: true}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return &ToolResult{Ok: false, Name: call.Name, CallId: call.ID, Summary: "HTTP error", Error: &ToolError{Code: "http_error", Message: "HTTP status " + resp.Status, Retryable: resp.StatusCode >= 500}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil

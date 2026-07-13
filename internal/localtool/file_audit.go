@@ -134,7 +134,7 @@ func (a *DefaultFileAuditor) AuditFile(filePath string, maxSizeBytes int64) *Fil
 		result.Error = &ToolError{Code: "file_open_failed", Message: err.Error(), Retryable: false}
 		return result
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
