@@ -17,6 +17,8 @@ import (
 	"ds2api/internal/util"
 )
 
+var largeTestInput = strings.Repeat("this is a large input to trigger file upload with first-message threshold. ", 40)
+
 func historySplitTestMessages() []any {
 	toolCalls := []any{
 		map[string]any{
@@ -228,7 +230,7 @@ func TestApplyCurrentInputFileUploadsFirstTurnWithNumberedHistoryTranscript(t *t
 	req := map[string]any{
 		"model": "deepseek-v4-flash",
 		"messages": []any{
-			map[string]any{"role": "user", "content": "first turn content that is long enough"},
+			map[string]any{"role": "user", "content": largeTestInput},
 		},
 	}
 	stdReq, err := promptcompat.NormalizeOpenAIChatRequest(h.Store, req, "")

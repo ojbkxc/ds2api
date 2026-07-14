@@ -2,6 +2,7 @@ package responses
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +16,8 @@ import (
 	"ds2api/internal/chathistory"
 	dsclient "ds2api/internal/deepseek/client"
 )
+
+var largeResponsesInput = strings.Repeat("this is a large input to trigger file upload with first-message threshold. ", 40)
 
 type responsesHistoryDS struct {
 	payload map[string]any
@@ -64,7 +67,7 @@ func TestResponsesRecordsResponseHistory(t *testing.T) {
 	r := chi.NewRouter()
 	RegisterRoutes(r, h)
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/responses", strings.NewReader(`{"model":"deepseek-v4-flash","input":"hello responses"}`))
+	req := httptest.NewRequest(http.MethodPost, "/v1/responses", strings.NewReader(`{"model":"deepseek-v4-flash","input":"`+largeResponsesInput+`"}`))
 	req.Header.Set("Authorization", "Bearer direct-token")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -93,7 +96,7 @@ func TestResponsesRecordsResponseHistory(t *testing.T) {
 	if !strings.Contains(item.UserInput, "deepseek.txt") {
 		t.Fatalf("unexpected user input: %q", item.UserInput)
 	}
-	if !strings.Contains(item.HistoryText, "hello responses") {
+	if !strings.Contains(item.HistoryText, "this is a large input") {
 		t.Fatalf("expected original input in persisted history text, got %q", item.HistoryText)
 	}
 	if item.Content != "ok" {

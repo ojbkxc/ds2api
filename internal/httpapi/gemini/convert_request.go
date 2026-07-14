@@ -34,7 +34,7 @@ func normalizeGeminiRequest(store ConfigReader, routeModel string, req map[strin
 	toolsRaw := convertGeminiTools(req["tools"])
 	var finalPrompt string
 	var toolNames []string
-	if store.CurrentInputFileEnabled() && len(toolsRaw) > 0 {
+	if store.CurrentInputFileEnabled() && len(toolsRaw) > 0 && config.ModelSupportsFileUpload(resolvedModel) {
 		finalPrompt, toolNames = promptcompat.BuildOpenAIPromptWithToolInstructionsOnly(messagesRaw, toolsRaw, "", promptcompat.DefaultToolChoicePolicy(), thinkingEnabled)
 	} else {
 		finalPrompt, toolNames = promptcompat.BuildOpenAIPromptForAdapter(messagesRaw, toolsRaw, "", thinkingEnabled)

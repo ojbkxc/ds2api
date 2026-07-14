@@ -24,6 +24,9 @@ func (m claudeHistoryConfig) ModelAliases() map[string]string        { return m.
 func (claudeHistoryConfig) CurrentInputFileEnabled() bool            { return false }
 func (claudeHistoryConfig) CurrentInputFileMinChars() int            { return 0 }
 func (claudeHistoryConfig) CurrentInputFileDisabledModels() []string { return nil }
+func (claudeHistoryConfig) RuntimeMaxAccountSwitches() int          { return 3 }
+func (claudeHistoryConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
+func (claudeHistoryConfig) DisableAccount(identifier string) error   { return nil }
 func (claudeHistoryConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
 
 func (claudeCurrentInputAuth) Determine(*http.Request) (*auth.RequestAuth, error) {

@@ -16,6 +16,8 @@ import (
 	"ds2api/internal/promptcompat"
 )
 
+var largePrepareInput = strings.Repeat("this is a large input to trigger file upload with first-message threshold. ", 40)
+
 func TestIsVercelStreamPrepareRequest(t *testing.T) {
 	req := httptest.NewRequest("POST", "/v1/chat/completions?__stream_prepare=1", nil)
 	if !isVercelStreamPrepareRequest(req) {
@@ -160,7 +162,7 @@ func TestHandleVercelStreamPrepareUsesHalfwidthDSMLToolPrompt(t *testing.T) {
 	reqBody, _ := json.Marshal(map[string]any{
 		"model": "deepseek-v4-flash",
 		"messages": []any{
-			map[string]any{"role": "user", "content": "search docs"},
+			map[string]any{"role": "user", "content": largePrepareInput},
 		},
 		"tools": []any{
 			map[string]any{
@@ -334,7 +336,7 @@ func TestHandleVercelStreamPrepareUploadsToolsSeparately(t *testing.T) {
 	reqBody, _ := json.Marshal(map[string]any{
 		"model": "deepseek-v4-flash",
 		"messages": []any{
-			map[string]any{"role": "user", "content": "search docs"},
+			map[string]any{"role": "user", "content": largePrepareInput},
 		},
 		"tools": []any{
 			map[string]any{

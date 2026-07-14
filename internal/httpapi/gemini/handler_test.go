@@ -244,8 +244,8 @@ func TestGeminiCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 	if !strings.Contains(prompt, "TOOL CALL FORMAT") {
 		t.Fatalf("expected live prompt to retain format instructions, got %q", prompt)
 	}
-	if strings.Contains(prompt, "Description: eval") {
-		t.Fatalf("live prompt should not inline tool descriptions, got %q", prompt)
+	if !strings.Contains(prompt, "Description: eval") {
+		t.Fatalf("expected prompt to inline tool descriptions for pro model, got %q", prompt)
 	}
 }
 
