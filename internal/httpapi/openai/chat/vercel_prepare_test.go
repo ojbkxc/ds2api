@@ -209,7 +209,8 @@ func TestHandleVercelStreamPrepareUsesHalfwidthDSMLToolPrompt(t *testing.T) {
 		}
 	}
 	toolNames, _ := body["tool_names"].([]any)
-	if len(toolNames) != 1 || toolNames[0] != "search" {
+	// Local web tools (web_search, web_fetch) are now prepended for supported models
+	if len(toolNames) != 3 || toolNames[0] != "web_search" || toolNames[1] != "web_fetch" || toolNames[2] != "search" {
 		t.Fatalf("expected prepared tool names to align with request tools, got %#v", body["tool_names"])
 	}
 }
