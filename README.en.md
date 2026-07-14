@@ -237,7 +237,7 @@ cp config.example.json config.json
 docker pull ghcr.io/ojbkxc/ds2api:latest
 
 # Or run a pinned version
-# docker pull ghcr.io/ojbkxc/ds2api:v3.0.0
+# docker pull ghcr.io/ojbkxc/ds2api:v1.0.1
 
 # Prepare env file and config file
 cp .env.example .env

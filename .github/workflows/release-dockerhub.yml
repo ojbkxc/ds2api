@@ -15,7 +15,7 @@ on:
       custom_version:
         description: '自定义版本号（例如 1.0.1）。留空则按版本类型自动递增'
         required: false
-        default: ''
+        default: '1.0.1'
         type: string
 
 permissions:
