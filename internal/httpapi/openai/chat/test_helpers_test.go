@@ -13,16 +13,16 @@ import (
 )
 
 type mockOpenAIConfig struct {
-	aliases             map[string]string
-	autoDeleteMode      string
-	toolMode            string
-	earlyEmit           string
-	responsesTTL        int
-	embedProv           string
+	aliases map[string]string
+	autoDeleteMode string
+	toolMode string
+	earlyEmit string
+	responsesTTL int
+	embedProv string
 	currentInputEnabled bool
-	currentInputMin     int
-	thinkingInjection   *bool
-	thinkingPrompt      string
+	currentInputMin int
+	thinkingInjection *bool
+	thinkingPrompt string
 }
 
 func (m mockOpenAIConfig) ModelAliases() map[string]string { return m.aliases }
@@ -143,11 +143,11 @@ func makeOpenAISSEHTTPResponse(lines ...string) *http.Response {
 }
 
 type inlineUploadDSStub struct {
-	uploadCalls    []dsclient.UploadFileRequest
-	lastCtx        context.Context
-	completionReq  map[string]any
-	createSession  string
-	uploadErr      error
+	uploadCalls []dsclient.UploadFileRequest
+	lastCtx context.Context
+	completionReq map[string]any
+	createSession string
+	uploadErr error
 	completionResp *http.Response
 }
 

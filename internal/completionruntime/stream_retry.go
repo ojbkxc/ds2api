@@ -15,28 +15,28 @@ import (
 )
 
 type StreamRetryOptions struct {
-	Surface             string
-	Stream              bool
-	RetryEnabled        bool
-	RetryMaxAttempts    int
-	MaxAttempts         int
-	UsagePrompt         string
-	Request             promptcompat.StandardRequest
-	CurrentInputFile    history.CurrentInputConfigReader
-	MaxAccountSwitches  int
-	Store               AccountDisabler
-	SessionPool         SessionPoolAccessor
+	Surface string
+	Stream bool
+	RetryEnabled bool
+	RetryMaxAttempts int
+	MaxAttempts int
+	UsagePrompt string
+	Request promptcompat.StandardRequest
+	CurrentInputFile history.CurrentInputConfigReader
+	MaxAccountSwitches int
+	Store AccountDisabler
+	SessionPool SessionPoolAccessor
 }
 
 type StreamRetryHooks struct {
-	ConsumeAttempt   func(resp *http.Response, allowDeferEmpty bool) (terminalWritten bool, retryable bool)
-	Finalize         func(attempts int)
-	ParentMessageID  func() int
-	OnRetry          func(attempts int)
-	OnRetryPrompt    func(prompt string)
-	OnRetryFailure   func(status int, message, code string)
-	OnAccountSwitch  func(sessionID string)
-	OnTerminal       func(attempts int)
+	ConsumeAttempt func(resp *http.Response, allowDeferEmpty bool) (terminalWritten bool, retryable bool)
+	Finalize func(attempts int)
+	ParentMessageID func() int
+	OnRetry func(attempts int)
+	OnRetryPrompt func(prompt string)
+	OnRetryFailure func(status int, message, code string)
+	OnAccountSwitch func(sessionID string)
+	OnTerminal func(attempts int)
 	LastAttemptError func() *assistantturn.OutputError
 }
 

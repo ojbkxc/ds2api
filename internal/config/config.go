@@ -8,48 +8,48 @@ import (
 )
 
 type Config struct {
-	Keys              []string                `json:"keys,omitempty"`
-	APIKeys           []APIKey                `json:"api_keys,omitempty"`
-	Accounts          []Account               `json:"accounts,omitempty"`
-	Proxies           []Proxy                 `json:"proxies,omitempty"`
-	ModelAliases      map[string]string       `json:"model_aliases,omitempty"`
-	Admin             AdminConfig             `json:"admin,omitempty"`
-	Runtime           RuntimeConfig           `json:"runtime,omitempty"`
-	Responses         ResponsesConfig         `json:"responses,omitempty"`
-	Embeddings        EmbeddingsConfig        `json:"embeddings,omitempty"`
-	AutoDelete        AutoDeleteConfig        `json:"auto_delete"`
-	CurrentInputFile  CurrentInputFileConfig  `json:"current_input_file,omitempty"`
+	Keys []string `json:"keys,omitempty"`
+	APIKeys []APIKey `json:"api_keys,omitempty"`
+	Accounts []Account `json:"accounts,omitempty"`
+	Proxies []Proxy `json:"proxies,omitempty"`
+	ModelAliases map[string]string `json:"model_aliases,omitempty"`
+	Admin AdminConfig `json:"admin,omitempty"`
+	Runtime RuntimeConfig `json:"runtime,omitempty"`
+	Responses ResponsesConfig `json:"responses,omitempty"`
+	Embeddings EmbeddingsConfig `json:"embeddings,omitempty"`
+	AutoDelete AutoDeleteConfig `json:"auto_delete"`
+	CurrentInputFile CurrentInputFileConfig `json:"current_input_file,omitempty"`
 	ThinkingInjection ThinkingInjectionConfig `json:"thinking_injection,omitempty"`
-	Vercel            VercelConfig            `json:"vercel,omitempty"`
-	VercelSyncHash    string                  `json:"_vercel_sync_hash,omitempty"`
-	VercelSyncTime    int64                   `json:"_vercel_sync_time,omitempty"`
-	AdditionalFields  map[string]any          `json:"-"`
+	Vercel VercelConfig `json:"vercel,omitempty"`
+	VercelSyncHash string `json:"_vercel_sync_hash,omitempty"`
+	VercelSyncTime int64 `json:"_vercel_sync_time,omitempty"`
+	AdditionalFields map[string]any `json:"-"`
 }
 
 type Account struct {
-	Name          string   `json:"name,omitempty"`
-	Remark        string   `json:"remark,omitempty"`
-	Email         string   `json:"email,omitempty"`
-	Mobile        string   `json:"mobile,omitempty"`
-	Password      string   `json:"password,omitempty"`
-	Token         string   `json:"token,omitempty"`
-	ProxyID       string   `json:"proxy_id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Remark string `json:"remark,omitempty"`
+	Email string `json:"email,omitempty"`
+	Mobile string `json:"mobile,omitempty"`
+	Password string `json:"password,omitempty"`
+	Token string `json:"token,omitempty"`
+	ProxyID string `json:"proxy_id,omitempty"`
 	AllowedModels []string `json:"allowed_models,omitempty"`
-	Disabled      bool     `json:"disabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 }
 
 type APIKey struct {
-	Key    string `json:"key"`
-	Name   string `json:"name,omitempty"`
+	Key string `json:"key"`
+	Name string `json:"name,omitempty"`
 	Remark string `json:"remark,omitempty"`
 }
 
 type Proxy struct {
-	ID       string `json:"id,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Type     string `json:"type,omitempty"`
-	Host     string `json:"host,omitempty"`
-	Port     int    `json:"port,omitempty"`
+	ID string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Type string `json:"type,omitempty"`
+	Host string `json:"host,omitempty"`
+	Port int `json:"port,omitempty"`
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 }
@@ -190,18 +190,18 @@ func (c *Config) normalizeModelAliases() {
 }
 
 type AdminConfig struct {
-	PasswordHash      string `json:"password_hash,omitempty"`
-	JWTExpireHours    int    `json:"jwt_expire_hours,omitempty"`
-	JWTValidAfterUnix int64  `json:"jwt_valid_after_unix,omitempty"`
+	PasswordHash string `json:"password_hash,omitempty"`
+	JWTExpireHours int `json:"jwt_expire_hours,omitempty"`
+	JWTValidAfterUnix int64 `json:"jwt_valid_after_unix,omitempty"`
 }
 
 type RuntimeConfig struct {
-	AccountMaxInflight        int `json:"account_max_inflight,omitempty"`
-	AccountMaxQueue           int `json:"account_max_queue,omitempty"`
-	GlobalMaxInflight         int `json:"global_max_inflight,omitempty"`
+	AccountMaxInflight int `json:"account_max_inflight,omitempty"`
+	AccountMaxQueue int `json:"account_max_queue,omitempty"`
+	GlobalMaxInflight int `json:"global_max_inflight,omitempty"`
 	TokenRefreshIntervalHours int `json:"token_refresh_interval_hours,omitempty"`
-	MaxAccountSwitches        int `json:"max_account_switches,omitempty"`
-	MaxMessagesPerSession     int `json:"max_messages_per_session,omitempty"`
+	MaxAccountSwitches int `json:"max_account_switches,omitempty"`
+	MaxMessagesPerSession int `json:"max_messages_per_session,omitempty"`
 }
 
 type ResponsesConfig struct {
@@ -213,29 +213,29 @@ type EmbeddingsConfig struct {
 }
 
 type AutoDeleteConfig struct {
-	Mode         string `json:"mode,omitempty"`
-	Sessions     bool   `json:"sessions,omitempty"`
-	DelayHours   int    `json:"delay_hours,omitempty"`
+	Mode string `json:"mode,omitempty"`
+	Sessions bool `json:"sessions,omitempty"`
+	DelayHours int `json:"delay_hours,omitempty"`
 }
 
 type CurrentInputFileConfig struct {
-	Enabled          *bool    `json:"enabled,omitempty"`
-	MinChars         int      `json:"min_chars,omitempty"`
-	FilenameTemplate string   `json:"filename_template,omitempty"`
-	DisabledModels   []string `json:"disabled_models,omitempty"`
-	VisionAccounts   []string `json:"vision_accounts,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
+	MinChars int `json:"min_chars,omitempty"`
+	FilenameTemplate string `json:"filename_template,omitempty"`
+	DisabledModels []string `json:"disabled_models,omitempty"`
+	VisionAccounts []string `json:"vision_accounts,omitempty"`
 	DisabledAccounts []string `json:"disabled_accounts,omitempty"`
 }
 
 type ThinkingInjectionConfig struct {
-	Enabled *bool  `json:"enabled,omitempty"`
-	Prompt  string `json:"prompt,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
+	Prompt string `json:"prompt,omitempty"`
 }
 
 type VercelConfig struct {
-	Token     string `json:"token,omitempty"`
+	Token string `json:"token,omitempty"`
 	ProjectID string `json:"project_id,omitempty"`
-	TeamID    string `json:"team_id,omitempty"`
+	TeamID string `json:"team_id,omitempty"`
 }
 
 func NormalizeVercelConfig(v VercelConfig) VercelConfig {

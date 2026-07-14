@@ -20,13 +20,13 @@ const (
 
 // pooledSession 会话池中的单个会话
 type pooledSession struct {
-	SessionID     string
-	MessageCount  int
+	SessionID string
+	MessageCount int
 	LastMessageID int
-	CreatedAt     time.Time
-	LastUsedAt    time.Time
-	TTL           time.Duration
-	ready         chan struct{} // 关闭表示会话已创建完成（sessionID 已填充）
+	CreatedAt time.Time
+	LastUsedAt time.Time
+	TTL time.Duration
+	ready chan struct{} // 关闭表示会话已创建完成（sessionID 已填充）
 }
 
 func (s *pooledSession) isExpired() bool {
@@ -39,9 +39,9 @@ func (s *pooledSession) isFull(maxMessages int) bool {
 
 // SessionPool 按账号管理会话复用
 type SessionPool struct {
-	mu       sync.RWMutex
-	entries  map[string]*pooledSession // key: accountID
-	stopCh   chan struct{}
+	mu sync.RWMutex
+	entries map[string]*pooledSession // key: accountID
+	stopCh chan struct{}
 	stopOnce sync.Once
 }
 

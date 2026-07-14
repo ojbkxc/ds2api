@@ -277,7 +277,7 @@ func TestApplyCurrentInputFileUploadsFirstTurnWithNumberedHistoryTranscript(t *t
 	if len(out.RefFileIDs) != 1 || out.RefFileIDs[0] != "file-inline-1" {
 		t.Fatalf("expected current input file id in ref_file_ids, got %#v", out.RefFileIDs)
 	}
-	if !strings.Contains(out.PromptTokenText, "first turn content that is long enough") {
+	if !strings.Contains(out.PromptTokenText, "this is a large input") {
 		t.Fatalf("expected prompt token text to preserve original full context, got %q", out.PromptTokenText)
 	}
 	if !strings.Contains(out.PromptTokenText, "# deepseek.txt") {

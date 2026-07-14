@@ -26,7 +26,7 @@ var _ ConfigReader = (*claudeProxyStoreStub)(nil)
 
 type openAIProxyStub struct {
 	status int
-	body   string
+	body string
 }
 
 func TestClaudeProxyViaOpenAIPrefersGlobalAliasMapping(t *testing.T) {
@@ -61,7 +61,7 @@ func (s openAIProxyStub) ChatCompletions(w http.ResponseWriter, _ *http.Request)
 
 type openAIProxyCaptureStub struct {
 	seenModel string
-	seenReq   map[string]any
+	seenReq map[string]any
 }
 
 func (s *openAIProxyCaptureStub) ChatCompletions(w http.ResponseWriter, r *http.Request) {

@@ -32,7 +32,7 @@ func (testGeminiConfig) DisableAccount(identifier string) error { return nil }
 var _ ConfigReader = (*testGeminiConfig)(nil)
 
 type testGeminiAuth struct {
-	a   *auth.RequestAuth
+	a *auth.RequestAuth
 	err error
 }
 
@@ -59,10 +59,10 @@ func (testGeminiAuth) Release(_ *auth.RequestAuth) {}
 
 //nolint:unused // reserved test double for native Gemini DS-call path coverage.
 type testGeminiDS struct {
-	resp        *http.Response
-	err         error
+	resp *http.Response
+	err error
 	uploadCalls []dsclient.UploadFileRequest
-	payloads    []map[string]any
+	payloads []map[string]any
 }
 
 //nolint:unused // reserved test double for native Gemini DS-call path coverage.
@@ -98,8 +98,8 @@ func (m *testGeminiDS) CallCompletion(_ context.Context, _ *auth.RequestAuth, pa
 func (m *testGeminiDS) SessionPool() *dsclient.SessionPool { return nil }
 
 type geminiOpenAIErrorStub struct {
-	status  int
-	body    string
+	status int
+	body string
 	headers map[string]string
 }
 
@@ -113,8 +113,8 @@ func (s geminiOpenAIErrorStub) ChatCompletions(w http.ResponseWriter, _ *http.Re
 }
 
 type geminiOpenAISuccessStub struct {
-	stream  bool
-	body    string
+	stream bool
+	body string
 	seenReq map[string]any
 }
 
