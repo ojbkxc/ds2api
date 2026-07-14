@@ -12,8 +12,8 @@ const (
 	defaultMaxMessagesPerSession = 50
 	// 会话池过期清理间隔
 	poolCleanupInterval = 5 * time.Minute
-	// 会话默认 TTL（与 DeepSeek 返回的 ttl_seconds 一致：3天）
-	defaultSessionTTL = 72 * time.Hour
+	// 会话默认 TTL（12小时，与 auto_delete delay_hours 保持一致）
+	defaultSessionTTL = 12 * time.Hour
 )
 
 // pooledSession 会话池中的单个会话
