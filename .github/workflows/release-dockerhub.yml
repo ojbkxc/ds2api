@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: '版本类型'
+        description: '版本类型（仅在未指定自定义版本时生效）'
         required: true
         default: 'patch'
         type: choice
@@ -12,6 +12,11 @@ on:
           - patch
           - minor
           - major
+      custom_version:
+        description: '自定义版本号（例如 1.0.1）。留空则按版本类型自动递增'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -53,26 +58,31 @@ jobs:
         id: next_version
         env:
           VERSION_TYPE: ${{ github.event.inputs.version_type }}
+          CUSTOM_VERSION: ${{ github.event.inputs.custom_version }}
         run: |
-          VERSION="${{ steps.get_version.outputs.current_version }}"
-          BASE_VERSION=$(echo "$VERSION" | sed 's/-.*$//')
+          if [ -n "$CUSTOM_VERSION" ]; then
+            NEW_VERSION="$CUSTOM_VERSION"
+          else
+            VERSION="${{ steps.get_version.outputs.current_version }}"
+            BASE_VERSION=$(echo "$VERSION" | sed 's/-.*$//')
 
-          IFS='.' read -r -a version_parts <<< "$BASE_VERSION"
-          MAJOR="${version_parts[0]:-0}"
-          MINOR="${version_parts[1]:-0}"
-          PATCH="${version_parts[2]:-0}"
+            IFS='.' read -r -a version_parts <<< "$BASE_VERSION"
+            MAJOR="${version_parts[0]:-0}"
+            MINOR="${version_parts[1]:-0}"
+            PATCH="${version_parts[2]:-0}"
 
-          case "$VERSION_TYPE" in
-            major)
-              NEW_VERSION="$((MAJOR + 1)).0.0"
-              ;;
-            minor)
-              NEW_VERSION="${MAJOR}.$((MINOR + 1)).0"
-              ;;
-            *)
-              NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
-              ;;
-          esac
+            case "$VERSION_TYPE" in
+              major)
+                NEW_VERSION="$((MAJOR + 1)).0.0"
+                ;;
+              minor)
+                NEW_VERSION="${MAJOR}.$((MINOR + 1)).0"
+                ;;
+              *)
+                NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+                ;;
+            esac
+          fi
 
           echo "New version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
@@ -93,8 +103,12 @@ jobs:
           fi
 
           NEW_TAG="${{ steps.next_version.outputs.new_tag }}"
-          git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
-          git push origin HEAD:main "$NEW_TAG"
+          if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
+            echo "Tag $NEW_TAG already exists, skipping tag creation"
+          else
+            git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
+            git push origin HEAD:main "$NEW_TAG"
+          fi
 
       # Docker 构建并推送到 Docker Hub
       - name: Set up QEMU
