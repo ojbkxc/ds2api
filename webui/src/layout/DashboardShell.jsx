@@ -86,10 +86,12 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
 
 
     const [versionInfo, setVersionInfo] = useState(null)
+    const [versionLoading, setVersionLoading] = useState(true)
 
     useEffect(() => {
         let disposed = false
         async function loadVersion() {
+            setVersionLoading(true)
             try {
                 const res = await authFetch('/admin/version')
                 const data = await res.json()
@@ -99,6 +101,10 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
             } catch (_err) {
                 if (!disposed) {
                     setVersionInfo(null)
+                }
+            } finally {
+                if (!disposed) {
+                    setVersionLoading(false)
                 }
             }
         }
@@ -145,9 +151,12 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
                 style={{ background: 'var(--ds-card)', borderColor: 'var(--ds-border)' }}>
                 <div className="p-6">
                     <div className="flex items-center gap-2.5 font-bold text-xl tracking-tight" style={{ color: 'var(--ds-text)' }}>
-                        <div className="w-8 h-8 flex items-center justify-center" style={{ background: 'var(--ds-blue)', borderRadius: 'var(--radius-ctrl)', color: 'var(--ds-text-on-primary)' }}>
-                            <LayoutDashboard className="w-5 h-5" />
-                        </div>
+                        <img
+                            src="/favicon.png"
+                            alt="DS2API"
+                            className="w-8 h-8 object-contain"
+                            style={{ borderRadius: 'var(--radius-ctrl)' }}
+                        />
                         <span>DS2API</span>
                     </div>
                     <div className="flex items-center justify-between mt-2">
@@ -219,17 +228,40 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
                         </div>
                         <div className="p-3 border" style={{ background: 'var(--ds-bg)', borderRadius: 'var(--radius-card)', borderColor: 'var(--ds-border)' }}>
                             <div className="text-[9px] font-bold uppercase tracking-wider mb-1 opacity-70" style={{ color: 'var(--ds-text-tertiary)' }}>{t('sidebar.version')}</div>
-                            <div className="text-xs font-semibold" style={{ color: 'var(--ds-text)' }}>{versionInfo?.current_tag || '-'}</div>
-                            {versionInfo?.has_update && (
-                                <a
-                                    className="inline-flex mt-1 text-[10px] hover:underline"
-                                    style={{ color: 'var(--ds-warning)' }}
-                                    href={versionInfo?.release_url || 'https://github.com/ojbkxc/ds2api/releases/latest'}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    {t('sidebar.updateAvailable', { latest: versionInfo.latest_tag || '' })}
-                                </a>
+                            {versionLoading ? (
+                                <div className="flex items-center gap-1.5">
+                                    <Loader2 className="w-3 h-3 animate-spin" style={{ color: 'var(--ds-text-tertiary)' }} />
+                                    <span className="text-[10px]" style={{ color: 'var(--ds-text-tertiary)' }}>{t('sidebar.checkingUpdate')}</span>
+                                </div>
+                            ) : versionInfo ? (
+                                <>
+                                    <div className="text-xs font-semibold" style={{ color: 'var(--ds-text)' }}>{versionInfo?.current_tag || '-'}</div>
+                                    {versionInfo?.has_update && (
+                                        <a
+                                            className="inline-flex mt-1 text-[10px] hover:underline items-center gap-1"
+                                            style={{ color: 'var(--ds-warning)' }}
+                                            href={versionInfo?.release_url || 'https://github.com/ojbkxc/ds2api/releases/latest'}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--ds-warning)' }}></span>
+                                            {t('sidebar.updateAvailable', { latest: versionInfo.latest_tag || '' })}
+                                        </a>
+                                    )}
+                                    {!versionInfo?.has_update && versionInfo?.latest_tag && (
+                                        <div className="mt-1 text-[10px] flex items-center gap-1" style={{ color: 'var(--ds-success)' }}>
+                                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--ds-success)' }}></span>
+                                            {t('sidebar.upToDate')}
+                                        </div>
+                                    )}
+                                    {versionInfo?.check_error && (
+                                        <div className="mt-1 text-[10px]" style={{ color: 'var(--ds-text-tertiary)' }}>
+                                            {t('sidebar.updateCheckFailed')}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>{t('sidebar.versionUnknown')}</div>
                             )}
                         </div>
                         <button
@@ -257,9 +289,12 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                 <header className="lg:hidden h-14 flex items-center justify-between px-4 border-b" style={{ borderColor: 'var(--ds-border)', background: 'var(--ds-card)' }}>
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 flex items-center justify-center" style={{ background: 'var(--ds-blue)', borderRadius: 'var(--radius-ctrl)', color: 'var(--ds-text-on-primary)' }}>
-                            <LayoutDashboard className="w-3.5 h-3.5" />
-                        </div>
+                        <img
+                            src="/favicon.png"
+                            alt="DS2API"
+                            className="w-6 h-6 object-contain"
+                            style={{ borderRadius: 'var(--radius-ctrl)' }}
+                        />
                         <span className="font-semibold text-sm" style={{ color: 'var(--ds-text)' }}>DS2API</span>
                     </div>
                     <div className="flex items-center gap-2">

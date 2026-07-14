@@ -42,7 +42,11 @@
         "keys": "Keys",
         "signOut": "Sign out",
         "version": "Version",
-        "updateAvailable": "Update available: {latest}"
+        "updateAvailable": "Update available: {latest}",
+        "checkingUpdate": "Checking for updates...",
+        "upToDate": "Up to date",
+        "updateCheckFailed": "Update check failed",
+        "versionUnknown": "Version unknown"
     },
     "auth": {
         "expired": "Authentication expired. Please sign in again.",

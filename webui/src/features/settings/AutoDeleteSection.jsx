@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { Trash2, AlertTriangle } from 'lucide-react'
 
 export default function AutoDeleteSection({ t, form, setForm }) {
     const mode = form.auto_delete?.mode || 'none'
@@ -11,7 +11,14 @@ export default function AutoDeleteSection({ t, form, setForm }) {
     return (
         <div className="ds-card p-5 space-y-4">
             <div className="flex items-center gap-2">
-                <Trash2 className="w-4 h-4" style={{ color: 'var(--ds-text-tertiary)' }} />
+                <div style={{
+                    padding: '6px',
+                    borderRadius: 'var(--radius-ctrl)',
+                    background: 'var(--ds-danger-bg)',
+                    border: '1px solid var(--ds-danger-border)',
+                }}>
+                    <Trash2 className="w-4 h-4" style={{ color: 'var(--ds-danger)' }} />
+                </div>
                 <h3 className="font-semibold" style={{ color: 'var(--ds-text)' }}>{t('settings.autoDeleteTitle')}</h3>
             </div>
             <p className="text-sm" style={{ color: 'var(--ds-text-secondary)' }}>{t('settings.autoDeleteDesc')}</p>
@@ -30,13 +37,26 @@ export default function AutoDeleteSection({ t, form, setForm }) {
                     <option value="all">{t('settings.autoDeleteAll')}</option>
                 </select>
             </div>
-            <p className="text-xs" style={{ color: mode === 'none' ? 'var(--ds-text-tertiary)' : 'var(--ds-warning)' }}>
-                {t(descKey)}
-            </p>
-            {mode !== 'none' && (
-                <p className="text-xs flex items-center gap-1" style={{ color: 'var(--ds-warning)' }}>
-                    {t('settings.autoDeleteWarning')}
+            <div className="p-3 border" style={{
+                borderRadius: 'var(--radius-ctrl)',
+                borderColor: mode === 'none' ? 'var(--ds-border)' : 'var(--ds-warning-border)',
+                background: mode === 'none' ? 'var(--ds-bg)' : 'var(--ds-warning-bg)',
+            }}>
+                <p className="text-xs" style={{ color: mode === 'none' ? 'var(--ds-text-tertiary)' : 'var(--ds-warning)' }}>
+                    {t(descKey)}
                 </p>
+            </div>
+            {mode !== 'none' && (
+                <div className="flex items-start gap-2 p-3 border" style={{
+                    borderRadius: 'var(--radius-ctrl)',
+                    borderColor: 'var(--ds-danger-border)',
+                    background: 'var(--ds-danger-bg)',
+                }}>
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--ds-danger)' }} />
+                    <p className="text-xs" style={{ color: 'var(--ds-danger)' }}>
+                        {t('settings.autoDeleteWarning')}
+                    </p>
+                </div>
             )}
         </div>
     )

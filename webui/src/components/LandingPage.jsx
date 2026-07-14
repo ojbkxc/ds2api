@@ -68,16 +68,17 @@ const LandingPage = ({ onEnter }) => {
                         onClick={onEnter}
                         className="text-white px-8 py-3 font-bold transition-all flex items-center gap-2"
                         style={{
-                            background: 'linear-gradient(135deg, #4D6BFE, #6366f1)',
+                            background: 'var(--ds-blue)',
                             borderRadius: 'var(--radius-ctrl)',
-                            boxShadow: '0 4px 15px rgba(77,107,254,0.4)',
+                            border: '1px solid var(--ds-blue)',
+                            boxShadow: 'var(--ds-elevate-1)',
                         }}
                         onMouseEnter={e => {
-                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(77,107,254,0.6)'
-                            e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)'
+                            e.currentTarget.style.background = 'var(--ds-blue-hover)'
+                            e.currentTarget.style.transform = 'translateY(-1px)'
                         }}
                         onMouseLeave={e => {
-                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(77,107,254,0.4)'
+                            e.currentTarget.style.background = 'var(--ds-blue)'
                             e.currentTarget.style.transform = 'none'
                         }}
                     >
@@ -86,21 +87,20 @@ const LandingPage = ({ onEnter }) => {
                     <a
                         href="/v1/models"
                         target="_blank"
-                        className="text-white px-8 py-3 font-semibold transition-all flex items-center gap-2"
+                        className="px-8 py-3 font-semibold transition-all flex items-center gap-2"
                         style={{
-                            background: 'var(--ds-card)',
+                            background: 'transparent',
                             border: '1px solid var(--ds-border)',
                             borderRadius: 'var(--radius-ctrl)',
+                            color: 'var(--ds-text-secondary)',
                         }}
                         onMouseEnter={e => {
                             e.currentTarget.style.borderColor = 'var(--ds-blue)'
-                            e.currentTarget.style.background = 'var(--ds-surface)'
-                            e.currentTarget.style.transform = 'translateY(-3px)'
+                            e.currentTarget.style.color = 'var(--ds-text)'
                         }}
                         onMouseLeave={e => {
                             e.currentTarget.style.borderColor = 'var(--ds-border)'
-                            e.currentTarget.style.background = 'var(--ds-card)'
-                            e.currentTarget.style.transform = 'none'
+                            e.currentTarget.style.color = 'var(--ds-text-secondary)'
                         }}
                     >
                         <span>{t('landing.apiStatus')}</span>
@@ -108,21 +108,20 @@ const LandingPage = ({ onEnter }) => {
                     <a
                         href="https://github.com/ojbkxc/ds2api"
                         target="_blank"
-                        className="text-white px-8 py-3 font-semibold transition-all flex items-center gap-2"
+                        className="px-8 py-3 font-semibold transition-all flex items-center gap-2"
                         style={{
-                            background: 'var(--ds-card)',
+                            background: 'transparent',
                             border: '1px solid var(--ds-border)',
                             borderRadius: 'var(--radius-ctrl)',
+                            color: 'var(--ds-text-secondary)',
                         }}
                         onMouseEnter={e => {
                             e.currentTarget.style.borderColor = 'var(--ds-blue)'
-                            e.currentTarget.style.background = 'var(--ds-surface)'
-                            e.currentTarget.style.transform = 'translateY(-3px)'
+                            e.currentTarget.style.color = 'var(--ds-text)'
                         }}
                         onMouseLeave={e => {
                             e.currentTarget.style.borderColor = 'var(--ds-border)'
-                            e.currentTarget.style.background = 'var(--ds-card)'
-                            e.currentTarget.style.transform = 'none'
+                            e.currentTarget.style.color = 'var(--ds-text-secondary)'
                         }}
                     >
                         <span>GitHub</span>

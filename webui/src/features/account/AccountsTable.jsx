@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import { Trash2, Edit3, Copy, Plus, Key, Ban, Search } from 'lucide-react'
+import { Trash2, Edit3, Copy, Plus, Key, Ban, Search, ToggleLeft, ToggleRight } from 'lucide-react'
 import clsx from 'clsx'
 import { useI18n } from '../../i18n'
 import StatusDot from '../../components/ui/StatusDot'
@@ -8,7 +8,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 
 const PAGE_SIZE = 20
 
-export default function AccountsTable({ accounts, onEdit, onDelete, onAddKey, onAddAccount }) {
+export default function AccountsTable({ accounts, onEdit, onDelete, onAddKey, onAddAccount, onToggleDisabled, togglingDisabled }) {
     const { t } = useI18n()
     const [search, setSearch] = useState('')
     const [deleteTarget, setDeleteTarget] = useState(null)
@@ -149,6 +149,20 @@ export default function AccountsTable({ accounts, onEdit, onDelete, onAddKey, on
                                                 >
                                                     <Edit3 className="w-3.5 h-3.5" />
                                                 </button>
+                                                {onToggleDisabled && (
+                                                    <button
+                                                        onClick={() => onToggleDisabled(account)}
+                                                        disabled={togglingDisabled === account.email}
+                                                        className="ds-action-btn p-1.5"
+                                                        title={account.disabled ? t('accounts.enable') : t('accounts.disable')}
+                                                        style={{
+                                                            borderRadius: 'var(--radius-ctrl)',
+                                                            color: account.disabled ? 'var(--ds-text-tertiary)' : 'var(--ds-warning)',
+                                                        }}
+                                                    >
+                                                        {account.disabled ? <ToggleLeft className="w-3.5 h-3.5" /> : <ToggleRight className="w-3.5 h-3.5" />}
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => setDeleteTarget(account)}
                                                     className="ds-action-btn p-1.5"

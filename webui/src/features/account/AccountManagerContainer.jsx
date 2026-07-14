@@ -116,36 +116,13 @@ export default function AccountManagerContainer({ config, onRefresh, onMessage, 
             />
 
             <AccountsTable
-                t={t}
                 accounts={accounts}
-                loadingAccounts={loadingAccounts}
-                testing={testing}
-                testingAll={testingAll}
-                batchProgress={batchProgress}
-                sessionCounts={sessionCounts}
-                deletingSessions={deletingSessions}
-                updatingProxy={updatingProxy}
+                onEdit={openEditAccount}
+                onDelete={deleteAccount}
+                onAddKey={openAddKey}
+                onAddAccount={openAddAccount}
+                onToggleDisabled={(account) => toggleAccountDisabled(resolveAccountIdentifier(account), account.disabled)}
                 togglingDisabled={togglingDisabled}
-                totalAccounts={totalAccounts}
-                page={page}
-                pageSize={pageSize}
-                totalPages={totalPages}
-                resolveAccountIdentifier={resolveAccountIdentifier}
-                proxies={config?.proxies || []}
-                onTestAll={testAllAccounts}
-                onShowAddAccount={openAddAccount}
-                onEditAccount={openEditAccount}
-                onTestAccount={testAccount}
-                onDeleteAccount={deleteAccount}
-                onDeleteAllSessions={deleteAllSessions}
-                onUpdateAccountProxy={updateAccountProxy}
-                onToggleDisabled={toggleAccountDisabled}
-                onPrevPage={() => fetchAccounts(page - 1)}
-                onNextPage={() => fetchAccounts(page + 1)}
-                onPageSizeChange={changePageSize}
-                searchQuery={searchQuery}
-                onSearchChange={handleSearchChange}
-                envBacked={Boolean(config?.env_backed)}
             />
 
             <AddKeyModal
