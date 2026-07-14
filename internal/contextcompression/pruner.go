@@ -3,6 +3,7 @@ package contextcompression
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 )
 
 // CompressionLevel represents the aggressiveness of compression.
@@ -153,7 +154,9 @@ func (p *Pruner) snipToolOutputs(messages []map[string]any) []map[string]any {
 			continue
 		}
 		content, _ := msg["content"].(string)
-		if len(content) <= p.config.MaxToolResultLen {
+		// Use rune count to avoid false positives on multi-byte text (e.g. Chinese)
+		// where byte length can be 3x the rune count.
+		if utf8.RuneCountInString(content) <= p.config.MaxToolResultLen {
 			continue
 		}
 
@@ -228,8 +231,8 @@ func snipContent(content string, headLines, tailLines, headChars, tailChars int)
 		headEnd = len(lines)
 	}
 	for _, line := range lines[:headEnd] {
-		if len(line) > headChars {
-			b.WriteString(line[:headChars])
+		if utf8.RuneCountInString(line) > headChars {
+			b.WriteString(truncateRunes(line, headChars))
 			b.WriteString("...\n")
 		} else {
 			b.WriteString(line)
@@ -245,8 +248,8 @@ func snipContent(content string, headLines, tailLines, headChars, tailChars int)
 		tailStart = headEnd
 	}
 	for _, line := range lines[tailStart:] {
-		if len(line) > tailChars {
-			b.WriteString(line[:tailChars])
+		if utf8.RuneCountInString(line) > tailChars {
+			b.WriteString(truncateRunes(line, tailChars))
 			b.WriteString("...\n")
 		} else {
 			b.WriteString(line)
@@ -258,8 +261,18 @@ func snipContent(content string, headLines, tailLines, headChars, tailChars int)
 }
 
 func truncateStr(s string, maxLen int) string {
-	if len(s) <= maxLen {
+	if utf8.RuneCountInString(s) <= maxLen {
 		return s
 	}
-	return s[:maxLen] + "..."
+	return truncateRunes(s, maxLen) + "..."
+}
+
+// truncateRunes safely truncates a string to at most maxRunes runes,
+// avoiding multi-byte character corruption.
+func truncateRunes(s string, maxRunes int) string {
+	runes := []rune(s)
+	if len(runes) <= maxRunes {
+		return s
+	}
+	return string(runes[:maxRunes])
 }

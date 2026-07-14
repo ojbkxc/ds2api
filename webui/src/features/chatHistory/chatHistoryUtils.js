@@ -62,13 +62,13 @@ export function previewText(item) {
 export function statusTone(status) {
     switch (status) {
         case 'success':
-            return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
+            return 'border-ds-success-border bg-ds-success-bg text-ds-success'
         case 'error':
-            return 'border-destructive/20 bg-destructive/10 text-destructive'
+            return 'border-ds-danger-border bg-ds-danger-bg text-ds-danger'
         case 'stopped':
-            return 'border-amber-500/20 bg-amber-500/10 text-amber-600'
+            return 'border-ds-warning-border bg-ds-warning-bg text-ds-warning'
         default:
-            return 'border-border bg-secondary/60 text-muted-foreground'
+            return 'border-ds-border bg-ds-surface text-ds-text-tertiary'
     }
 }
 

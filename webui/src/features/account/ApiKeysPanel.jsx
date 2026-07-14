@@ -68,24 +68,25 @@ export default function ApiKeysPanel({
     }
 
     return (
-        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+        <div className="ds-card overflow-hidden">
             <div
-                className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none hover:bg-muted/30 transition-colors"
+                className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none transition-colors"
+                style={{ borderRadius: 'var(--radius-card)' }}
                 onClick={() => setKeysExpanded(!keysExpanded)}
             >
                 <div className="flex items-center gap-3">
                     <ChevronDown className={clsx(
-                        "w-5 h-5 text-muted-foreground transition-transform duration-200",
+                        "w-5 h-5 transition-transform duration-200",
                         keysExpanded ? "rotate-0" : "-rotate-90"
-                    )} />
+                    )} style={{ color: 'var(--ds-text-secondary)' }} />
                     <div>
-                        <h2 className="text-lg font-semibold">{t('accountManager.apiKeysTitle')}</h2>
-                        <p className="text-sm text-muted-foreground">{t('accountManager.apiKeysDesc')} ({apiKeys.length || 0})</p>
+                        <h2 className="text-lg font-semibold" style={{ color: 'var(--ds-text)' }}>{t('accountManager.apiKeysTitle')}</h2>
+                        <p className="text-sm" style={{ color: 'var(--ds-text-secondary)' }}>{t('accountManager.apiKeysDesc')} ({apiKeys.length || 0})</p>
                     </div>
                 </div>
                 <button
                     onClick={(e) => { e.stopPropagation(); onAddKey() }}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm shadow-sm"
+                    className="ds-btn-primary text-sm font-medium"
                 >
                     <Plus className="w-4 h-4" />
                     {t('accountManager.addKey')}
@@ -93,45 +94,49 @@ export default function ApiKeysPanel({
             </div>
 
             {keysExpanded && (
-                <div className="divide-y divide-border border-t border-border">
+                <div className="divide-y border-t" style={{ borderColor: 'var(--ds-border)' }}>
                     {apiKeys.length > 0 ? (
                         apiKeys.map((item, i) => (
-                            <div key={i} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors group">
+                            <div key={i} className="p-4 flex items-center justify-between transition-colors group" style={{ borderRadius: 'var(--radius-card)' }}>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1">
-                                    <div className="text-sm">{item.name || '-'}</div>
+                                    <div className="text-sm" style={{ color: 'var(--ds-text)' }}>{item.name || '-'}</div>
                                     <button
                                         onClick={() => handleCopyKey(item.key)}
-                                        className="font-mono text-sm bg-muted/50 px-3 py-1 rounded inline-block hover:bg-muted transition-colors"
+                                        className="font-mono text-sm px-3 py-1 rounded inline-block transition-colors"
+                                        style={{ backgroundColor: 'var(--ds-surface)' }}
                                         title={t('accountManager.copyKeyTitle')}
                                     >
                                         {maskSecret(item.key)}
                                     </button>
-                                    <div className="text-sm text-muted-foreground truncate">{item.remark || '-'}</div>
+                                    <div className="text-sm truncate" style={{ color: 'var(--ds-text-secondary)' }}>{item.remark || '-'}</div>
                                     {copiedKey === item.key && (
-                                        <span className="text-xs text-green-500 animate-pulse">{t('accountManager.copied')}</span>
+                                        <span className="text-xs animate-pulse" style={{ color: 'var(--ds-success)' }}>{t('accountManager.copied')}</span>
                                     )}
                                     {failedKey === item.key && (
-                                        <span className="text-xs text-destructive">{t('accountManager.copyFailed')}</span>
+                                        <span className="text-xs" style={{ color: 'var(--ds-danger)' }}>{t('accountManager.copyFailed')}</span>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => onEditKey(item)}
-                                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                                        className="p-2 rounded-md transition-colors"
+                                        style={{ color: 'var(--ds-text-tertiary)' }}
                                         title={t('accountManager.editKeyTitle')}
                                     >
                                         <Pencil className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => handleCopyKey(item.key)}
-                                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                                        className="p-2 rounded-md transition-colors"
+                                        style={{ color: 'var(--ds-text-tertiary)' }}
                                         title={t('accountManager.copyKeyTitle')}
                                     >
-                                        {copiedKey === item.key ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                        {copiedKey === item.key ? <Check className="w-4 h-4" style={{ color: 'var(--ds-success)' }} /> : <Copy className="w-4 h-4" />}
                                     </button>
                                     <button
                                         onClick={() => onDeleteKey(item.key)}
-                                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                                        className="p-2 rounded-md transition-colors"
+                                        style={{ color: 'var(--ds-text-tertiary)' }}
                                         title={t('accountManager.deleteKeyTitle')}
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -140,7 +145,7 @@ export default function ApiKeysPanel({
                             </div>
                         ))
                     ) : (
-                        <div className="p-8 text-center text-muted-foreground">{t('accountManager.noApiKeys')}</div>
+                        <div className="p-8 text-center" style={{ color: 'var(--ds-text-tertiary)' }}>{t('accountManager.noApiKeys')}</div>
                     )}
                 </div>
             )}

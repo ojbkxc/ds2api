@@ -262,6 +262,20 @@
         "enterMessage": "输入消息...",
         "adminConsoleLabel": "DeepSeek 管理员界面"
     },
+    "chat": {
+        "title": "对话测试",
+        "sending": "正在发送...",
+        "receiving": "正在接收...",
+        "response": "响应",
+        "placeholder": "输入消息后发送，响应将显示在此区域",
+        "copy": "复制",
+        "copied": "已复制",
+        "collapse": "收起",
+        "expand": "展开",
+        "send": "发送",
+        "cancel": "取消",
+        "clear": "清空"
+    },
     "chatHistory": {
         "loading": "正在加载对话记录...",
         "loadFailed": "加载对话记录失败",

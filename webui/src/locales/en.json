@@ -262,6 +262,20 @@
         "enterMessage": "Enter a message...",
         "adminConsoleLabel": "DeepSeek admin console"
     },
+    "chat": {
+        "title": "Chat Test",
+        "sending": "Sending...",
+        "receiving": "Receiving...",
+        "response": "Response",
+        "placeholder": "Type a message and send. The response will appear here.",
+        "copy": "Copy",
+        "copied": "Copied",
+        "collapse": "Collapse",
+        "expand": "Expand",
+        "send": "Send",
+        "cancel": "Cancel",
+        "clear": "Clear"
+    },
     "chatHistory": {
         "loading": "Loading conversation history...",
         "loadFailed": "Failed to load conversation history.",

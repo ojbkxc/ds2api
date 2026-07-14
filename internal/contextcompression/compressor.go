@@ -3,6 +3,7 @@ package contextcompression
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/sirupsen/logrus"
 )
@@ -93,12 +94,19 @@ func (c *Compressor) snipToolSections(prompt string) string {
 			return
 		}
 		content := sectionBuf.String()
-		if len(content) > maxSectionLen {
-			// Snip: keep head and tail
-			head := content[:maxSectionLen/2]
-			tail := content[len(content)-maxSectionLen/4:]
+		// Use rune count for consistent multi-byte text handling.
+		runeLen := utf8.RuneCountInString(content)
+		if runeLen > maxSectionLen {
+			headRunes := maxSectionLen / 2
+			tailRunes := maxSectionLen / 4
+			head := truncateRunes(content, headRunes)
+			tailStart := runeLen - tailRunes
+			if tailStart < 0 {
+				tailStart = 0
+			}
+			tail := string([]rune(content)[tailStart:])
 			result.WriteString(head)
-			result.WriteString(fmt.Sprintf("\n... [%d chars snipped] ...\n", len(content)-maxSectionLen/2-maxSectionLen/4))
+			result.WriteString(fmt.Sprintf("\n... [%d chars snipped] ...\n", runeLen-headRunes-tailRunes))
 			result.WriteString(tail)
 		} else {
 			result.WriteString(content)
@@ -248,7 +256,6 @@ func (c *Compressor) GetTokenCount(text string) int {
 	return EstimateTokensForPrompt(text)
 }
 
-
 // truncateToFit truncates the prompt to fit within maxTokens.
 func (c *Compressor) truncateToFit(prompt string, maxTokens int) string {
 	// Simple truncation: keep the beginning and end
@@ -261,17 +268,22 @@ func (c *Compressor) truncateToFit(prompt string, maxTokens int) string {
 	// Keep 60% from beginning, 40% from end
 	// This is a rough heuristic - better to keep the system prompt and recent messages
 	ratio := float64(maxTokens) / float64(currentTokens)
-	keepLen := int(float64(len(prompt)) * ratio * 0.9) // 10% safety margin
+	runeLen := utf8.RuneCountInString(prompt)
+	keepRunes := int(float64(runeLen) * ratio * 0.9) // 10% safety margin
 
-	headLen := int(float64(keepLen) * 0.6)
-	tailLen := keepLen - headLen
+	headRunes := int(float64(keepRunes) * 0.6)
+	tailRunes := keepRunes - headRunes
 
-	if headLen+tailLen >= len(prompt) {
+	if headRunes+tailRunes >= runeLen {
 		return prompt
 	}
 
-	head := prompt[:headLen]
-	tail := prompt[len(prompt)-tailLen:]
+	head := truncateRunes(prompt, headRunes)
+	tailStart := runeLen - tailRunes
+	if tailStart < 0 {
+		tailStart = 0
+	}
+	tail := string([]rune(prompt)[tailStart:])
 
 	return head + "\n\n... [content truncated to fit context window] ...\n\n" + tail
 }

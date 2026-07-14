@@ -1,8 +1,6 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { Send, Trash2, ChevronDown, ChevronUp, Loader2, Copy, Check, Maximize2, Minimize2 } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { Send, Trash2, ChevronDown, ChevronUp, Loader2, Copy, Check, Maximize2, Minimize2, Square } from 'lucide-react'
 import clsx from 'clsx'
-import { useI18n } from '../../i18n'
-import SegmentedControl from '../../components/ui/SegmentedControl'
 
 function StatusLabel({ message }) {
     return (
@@ -12,160 +10,108 @@ function StatusLabel({ message }) {
     )
 }
 
-export default function ChatPanel({ onSend, config, onClear, onMessage }) {
-    const { t } = useI18n()
-    const [prompt, setPrompt] = useState('')
-    const [reply, setReply] = useState('')
-    const [loading, setLoading] = useState(false)
+export default function ChatPanel({
+    t,
+    message,
+    setMessage,
+    model,
+    response,
+    isStreaming,
+    loading,
+    streamingThinking,
+    streamingContent,
+    onRunTest,
+    onStopGeneration,
+    hasAvailableModel,
+}) {
     const [collapsed, setCollapsed] = useState(false)
     const [copied, setCopied] = useState(false)
     const [expanded, setExpanded] = useState(false)
-    const [status, setStatus] = useState('')
-    const [advanceOpen, setAdvanceOpen] = useState(false)
-    const [modelMode, setModelMode] = useState(
-        config?.default_model || 'deepseek-v4'
-    )
-    const [stream, setStream] = useState(true)
-    const [temperature, setTemperature] = useState(0.7)
-    const [maxTokens, setMaxTokens] = useState(4096)
     const replyRef = useRef(null)
-    const abortRef = useRef(null)
 
-    const models = useMemo(() => {
-        const list = []
-        if (config?.models) {
-            Object.entries(config.models).forEach(([key, val]) => {
-                list.push({ key, label: val.display_name || key })
-            })
-        }
-        if (list.length === 0) {
-            list.push({ key: 'deepseek-v4', label: 'deepseek-v4' })
-        }
-        return list
-    }, [config])
+    const displayContent = isStreaming ? streamingContent : (response?.choices?.[0]?.message?.content || '')
+    const displayThinking = isStreaming ? streamingThinking : (response?.choices?.[0]?.message?.reasoning_content || '')
+    const hasResponse = !!displayContent || !!displayThinking
+    const isError = response && !response.success
+    const errorMessage = response?.error || ''
 
     useEffect(() => {
         if (replyRef.current) {
             replyRef.current.scrollTop = replyRef.current.scrollHeight
         }
-    }, [reply])
+    }, [displayContent, displayThinking])
 
     const handleCopy = useCallback(async () => {
-        if (!reply) return
+        const text = displayContent || displayThinking
+        if (!text) return
         try {
-            await navigator.clipboard.writeText(reply)
+            await navigator.clipboard.writeText(text)
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
         } catch { /* ignore */ }
-    }, [reply])
+    }, [displayContent, displayThinking])
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e?.preventDefault()
-        if (!prompt.trim() || loading) return
-
-        setLoading(true)
-        setReply('')
-        setStatus(t('chat.sending'))
-
-        const controller = new AbortController()
-        abortRef.current = controller
-
-        try {
-            const res = await fetch('/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: modelMode,
-                    messages: [{ role: 'user', content: prompt }],
-                    stream,
-                    temperature,
-                    max_tokens: maxTokens,
-                }),
-                signal: controller.signal,
-            })
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}))
-                throw new Error(err.detail || err.error?.message || `HTTP ${res.status}`)
-            }
-
-            if (stream) {
-                setStatus(t('chat.receiving'))
-                const reader = res.body.getReader()
-                const decoder = new TextDecoder()
-                let buffer = ''
-
-                while (true) {
-                    const { done, value } = await reader.read()
-                    if (done) break
-                    buffer += decoder.decode(value, { stream: true })
-                    const lines = buffer.split('\n')
-                    buffer = lines.pop() || ''
-                    for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue
-                        const data = line.slice(6)
-                        if (data === '[DONE]') continue
-                        try {
-                            const parsed = JSON.parse(data)
-                            const content = parsed.choices?.[0]?.delta?.content || ''
-                            setReply(prev => prev + content)
-                        } catch { /* skip bad JSON */ }
-                    }
-                }
-            } else {
-                const data = await res.json()
-                setReply(data.choices?.[0]?.message?.content || '')
-            }
-
-            setStatus('')
-        } catch (err) {
-            if (err.name !== 'AbortError') {
-                setReply(err.message)
-                onMessage?.('error', err.message)
-            }
-            setStatus('')
-        } finally {
-            setLoading(false)
-            abortRef.current = null
-        }
+        if (!message.trim() || loading || !hasAvailableModel) return
+        onRunTest?.()
     }
 
     const handleCancel = () => {
-        abortRef.current?.abort()
-        setLoading(false)
-        setStatus('')
+        onStopGeneration?.()
     }
 
     const handleClear = () => {
-        setPrompt('')
-        setReply('')
-        setStatus('')
-        onClear?.()
+        setMessage('')
+    }
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault()
+            handleSubmit(e)
+        }
     }
 
     return (
-        <div className="space-y-4">
-            <div className="border" style={{ borderColor: 'var(--ds-border)', borderRadius: 'var(--radius-card)', background: 'var(--ds-card)' }}>
+        <div className="lg:col-span-9 flex flex-col min-h-0">
+            <div className="border flex flex-col h-full min-h-0" style={{ borderColor: 'var(--ds-border)', borderRadius: 'var(--radius-card)', background: 'var(--ds-card)' }}>
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="w-full flex items-center justify-between px-5 py-3.5 transition-colors"
+                    className="w-full flex items-center justify-between px-5 py-3.5 transition-colors shrink-0"
                     style={{ borderBottom: collapsed ? 'none' : '1px solid var(--ds-border)' }}
                 >
                     <div className="flex items-center gap-2">
                         <Send className="w-4 h-4" style={{ color: 'var(--ds-blue)' }} />
                         <span className="text-sm font-bold" style={{ color: 'var(--ds-text)' }}>{t('chat.title')}</span>
+                        {model && (
+                            <span className="text-[10px] px-2 py-0.5 font-mono" style={{ color: 'var(--ds-text-tertiary)', background: 'var(--ds-bg)', borderRadius: 'var(--radius-ctrl)' }}>
+                                {model}
+                            </span>
+                        )}
                     </div>
                     {collapsed ? <ChevronDown className="w-4 h-4" style={{ color: 'var(--ds-text-tertiary)' }} /> : <ChevronUp className="w-4 h-4" style={{ color: 'var(--ds-text-tertiary)' }} />}
                 </button>
 
                 {!collapsed && (
-                    <div className="p-5 space-y-4">
-                        <div className="space-y-2">
-                            {status && <StatusLabel message={status} />}
+                    <div className="flex flex-col flex-1 min-h-0 p-5 gap-4">
+                        {/* Response area */}
+                        <div className="flex-1 min-h-0 flex flex-col gap-2">
+                            {loading && !isStreaming && (
+                                <StatusLabel message={t('chat.sending')} />
+                            )}
+                            {isStreaming && (
+                                <StatusLabel message={t('chat.receiving')} />
+                            )}
 
-                            {reply && (
-                                <div className="relative">
-                                    <div className="flex items-center justify-between mb-2">
+                            {isError && (
+                                <div className="p-3 text-sm" style={{ color: 'var(--ds-danger)', background: 'var(--ds-danger-bg)', border: '1px solid var(--ds-danger-border)', borderRadius: 'var(--radius-ctrl)' }}>
+                                    {errorMessage}
+                                </div>
+                            )}
+
+                            {hasResponse && (
+                                <div className="flex-1 min-h-0 flex flex-col">
+                                    <div className="flex items-center justify-between mb-2 shrink-0">
                                         <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.response')}</span>
                                         <div className="flex items-center gap-1">
                                             <button
@@ -186,10 +132,31 @@ export default function ChatPanel({ onSend, config, onClear, onMessage }) {
                                             </button>
                                         </div>
                                     </div>
+
+                                    {displayThinking && (
+                                        <details className="mb-3" open>
+                                            <summary className="text-[10px] font-semibold uppercase tracking-wider cursor-pointer" style={{ color: 'var(--ds-text-tertiary)' }}>
+                                                {t('apiTester.reasoningTrace')}
+                                            </summary>
+                                            <div
+                                                className="mt-2 p-3 text-xs leading-relaxed whitespace-pre-wrap overflow-auto custom-scrollbar max-h-[200px]"
+                                                style={{
+                                                    background: 'var(--ds-bg)',
+                                                    border: '1px solid var(--ds-border)',
+                                                    borderRadius: 'var(--radius-ctrl)',
+                                                    color: 'var(--ds-text-secondary)',
+                                                    fontStyle: 'italic',
+                                                }}
+                                            >
+                                                {displayThinking}
+                                            </div>
+                                        </details>
+                                    )}
+
                                     <div
                                         ref={replyRef}
                                         className={clsx(
-                                            "p-4 text-sm leading-relaxed whitespace-pre-wrap overflow-auto custom-scrollbar",
+                                            "p-4 text-sm leading-relaxed whitespace-pre-wrap overflow-auto custom-scrollbar flex-1 min-h-0",
                                             expanded ? "max-h-[600px]" : "max-h-[300px]"
                                         )}
                                         style={{
@@ -199,13 +166,26 @@ export default function ChatPanel({ onSend, config, onClear, onMessage }) {
                                             color: 'var(--ds-text)',
                                         }}
                                     >
-                                        {reply}
+                                        {displayContent || (
+                                            <span style={{ color: 'var(--ds-text-tertiary)' }}>
+                                                {isStreaming ? t('apiTester.generating') : ''}
+                                            </span>
+                                        )}
                                     </div>
+                                </div>
+                            )}
+
+                            {!hasResponse && !loading && (
+                                <div className="flex-1 flex items-center justify-center">
+                                    <span className="text-sm" style={{ color: 'var(--ds-text-tertiary)' }}>
+                                        {hasAvailableModel ? t('chat.placeholder') : t('apiTester.noModelsMessagePlaceholder')}
+                                    </span>
                                 </div>
                             )}
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-3">
+                        {/* Input area */}
+                        <form onSubmit={handleSubmit} className="shrink-0 space-y-3">
                             <textarea
                                 className="w-full p-3.5 text-sm resize-none"
                                 rows={3}
@@ -215,27 +195,15 @@ export default function ChatPanel({ onSend, config, onClear, onMessage }) {
                                     borderRadius: 'var(--radius-ctrl)',
                                     color: 'var(--ds-text)',
                                 }}
-                                placeholder={t('chat.placeholder')}
-                                value={prompt}
-                                onChange={e => setPrompt(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                                        e.preventDefault()
-                                        handleSubmit()
-                                    }
-                                }}
+                                placeholder={t('apiTester.enterMessage')}
+                                value={message}
+                                onChange={e => setMessage(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                disabled={!hasAvailableModel}
                             />
 
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setAdvanceOpen(!advanceOpen)}
-                                        className="ds-btn-secondary text-[10px] px-2 py-1"
-                                    >
-                                        {advanceOpen ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
-                                        {t('chat.advanced')}
-                                    </button>
                                     <button
                                         type="button"
                                         onClick={handleClear}
@@ -252,12 +220,13 @@ export default function ChatPanel({ onSend, config, onClear, onMessage }) {
                                             onClick={handleCancel}
                                             className="ds-btn-danger text-[10px] px-3 py-1.5"
                                         >
+                                            <Square className="w-3 h-3 mr-1" />
                                             {t('chat.cancel')}
                                         </button>
                                     ) : null}
                                     <button
                                         type="submit"
-                                        disabled={loading || !prompt.trim()}
+                                        disabled={loading || !message.trim() || !hasAvailableModel}
                                         className="ds-btn-primary text-[11px] px-3 py-1.5"
                                     >
                                         {loading ? (
@@ -271,78 +240,6 @@ export default function ChatPanel({ onSend, config, onClear, onMessage }) {
                                     </button>
                                 </div>
                             </div>
-
-                            {advanceOpen && (
-                                <div className="p-4 space-y-3" style={{ background: 'var(--ds-bg)', border: '1px solid var(--ds-border)', borderRadius: 'var(--radius-ctrl)' }}>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.model')}</label>
-                                            <SegmentedControl
-                                                options={models}
-                                                value={modelMode}
-                                                onChange={setModelMode}
-                                                size="sm"
-                                                ariaLabel={t('chat.model')}
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.stream')}</label>
-                                            <div className="flex items-center gap-2 h-8">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setStream(true)}
-                                                    className="text-[10px] px-2 py-1 font-medium border transition-colors"
-                                                    style={{
-                                                        borderRadius: 'var(--radius-ctrl)',
-                                                        background: stream ? 'var(--ds-blue)' : 'transparent',
-                                                        color: stream ? 'var(--ds-text-on-primary)' : 'var(--ds-text-secondary)',
-                                                        borderColor: stream ? 'var(--ds-blue)' : 'var(--ds-border)',
-                                                    }}
-                                                >
-                                                    {t('chat.streamOn')}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setStream(false)}
-                                                    className="text-[10px] px-2 py-1 font-medium border transition-colors"
-                                                    style={{
-                                                        borderRadius: 'var(--radius-ctrl)',
-                                                        background: !stream ? 'var(--ds-blue)' : 'transparent',
-                                                        color: !stream ? 'var(--ds-text-on-primary)' : 'var(--ds-text-secondary)',
-                                                        borderColor: !stream ? 'var(--ds-blue)' : 'var(--ds-border)',
-                                                    }}
-                                                >
-                                                    {t('chat.streamOff')}
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.temperature')}</label>
-                                            <input
-                                                type="number"
-                                                className="ds-input py-2 text-xs"
-                                                min={0}
-                                                max={2}
-                                                step={0.1}
-                                                value={temperature}
-                                                onChange={e => setTemperature(parseFloat(e.target.value) || 0)}
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.maxTokens')}</label>
-                                            <input
-                                                type="number"
-                                                className="ds-input py-2 text-xs"
-                                                min={1}
-                                                max={32768}
-                                                step={1}
-                                                value={maxTokens}
-                                                onChange={e => setMaxTokens(parseInt(e.target.value) || 1)}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </form>
                     </div>
                 )}

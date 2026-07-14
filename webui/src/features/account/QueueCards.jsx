@@ -7,7 +7,7 @@ export default function QueueCards({ queueStatus, t }) {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+            <div className="bg-card border border-border p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group" style={{ borderRadius: 'var(--radius-card)' }}>
                 <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <CheckCircle2 className="w-16 h-16" />
                 </div>
@@ -17,7 +17,7 @@ export default function QueueCards({ queueStatus, t }) {
                     <span className="text-xs text-muted-foreground">{t('accountManager.accountsUnit')}</span>
                 </div>
             </div>
-            <div className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+            <div className="bg-card border border-border p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group" style={{ borderRadius: 'var(--radius-card)' }}>
                 <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Server className="w-16 h-16" />
                 </div>
@@ -27,7 +27,7 @@ export default function QueueCards({ queueStatus, t }) {
                     <span className="text-xs text-muted-foreground">{t('accountManager.threadsUnit')}</span>
                 </div>
             </div>
-            <div className="bg-card border border-border rounded-xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group">
+            <div className="bg-card border border-border p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group" style={{ borderRadius: 'var(--radius-card)' }}>
                 <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <ShieldCheck className="w-16 h-16" />
                 </div>

@@ -34,7 +34,7 @@ export default function AppRoutes() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--ds-blue)', borderTopColor: 'transparent' }}></div>
                     <p className="text-muted-foreground animate-pulse">{t('auth.checking')}</p>
                 </div>
             </div>
@@ -61,16 +61,16 @@ export default function AppRoutes() {
                 ) : (
                     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px]"></div>
+                            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-ds-blue/5 rounded-full blur-[120px]"></div>
                             <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-accent/5 rounded-full blur-[120px]"></div>
                         </div>
 
                         {message && (
                             <div className={clsx(
-                                "fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg border animate-in slide-in-from-top-2 fade-in",
-                                message.type === 'error' ? "bg-destructive/10 border-destructive/20 text-destructive" :
-                                    "bg-primary/10 border-primary/20 text-primary"
-                            )}>
+                                "fixed top-4 right-4 z-50 px-4 py-3 border animate-in slide-in-from-top-2 fade-in",
+                                message.type === 'error' ? "bg-ds-danger-bg border-ds-danger-border text-ds-danger" :
+                                    "bg-ds-blue-light border-ds-blue border-opacity-50 text-ds-blue"
+                            )} style={{ borderRadius: 'var(--radius-ctrl)', boxShadow: 'var(--ds-shadow-lg)' }}>
                                 {message.text}
                             </div>
                         )}

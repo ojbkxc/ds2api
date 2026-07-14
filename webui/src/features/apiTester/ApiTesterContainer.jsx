@@ -211,11 +211,6 @@ export default function ApiTesterContainer({ config, onMessage, authFetch }) {
                 t={t}
                 message={message}
                 setMessage={setMessage}
-                attachedFiles={attachedFiles}
-                setAttachedFiles={setAttachedFiles}
-                setSelectedAccount={setSelectedAccount}
-                effectiveKey={effectiveKey}
-                selectedAccount={selectedAccount}
                 model={model}
                 onMessage={onMessage}
                 response={response}
