@@ -17,7 +17,6 @@ func (s claudeProxyStoreStub) ModelAliases() map[string]string { return s.aliase
 func (claudeProxyStoreStub) CurrentInputFileEnabled() bool { return true }
 func (claudeProxyStoreStub) CurrentInputFileMinChars() int { return 0 }
 func (claudeProxyStoreStub) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
-func (claudeProxyStoreStub) CurrentInputFileDisabledModels() []string { return nil }
 func (claudeProxyStoreStub) RuntimeMaxAccountSwitches() int { return 3 }
 func (claudeProxyStoreStub) RuntimeMaxMessagesPerSession() int { return 50 }
 func (claudeProxyStoreStub) DisableAccount(identifier string) error { return nil }

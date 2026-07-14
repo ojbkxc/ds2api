@@ -28,7 +28,6 @@ type ConfigReader interface {
 	CurrentInputFileEnabled() bool
 	CurrentInputFileMinChars() int
 	CurrentInputFileFilenameTemplate() string
-	CurrentInputFileDisabledModels() []string
 	RuntimeMaxAccountSwitches() int
 	RuntimeMaxMessagesPerSession() int
 	DisableAccount(identifier string) error

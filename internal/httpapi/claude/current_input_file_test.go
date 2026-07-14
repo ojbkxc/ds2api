@@ -25,7 +25,6 @@ type claudeHistoryConfig struct {
 func (m claudeHistoryConfig) ModelAliases() map[string]string { return m.aliases }
 func (claudeHistoryConfig) CurrentInputFileEnabled() bool { return false }
 func (claudeHistoryConfig) CurrentInputFileMinChars() int { return 0 }
-func (claudeHistoryConfig) CurrentInputFileDisabledModels() []string { return nil }
 func (claudeHistoryConfig) RuntimeMaxAccountSwitches() int { return 3 }
 func (claudeHistoryConfig) RuntimeMaxMessagesPerSession() int { return 50 }
 func (claudeHistoryConfig) DisableAccount(identifier string) error { return nil }

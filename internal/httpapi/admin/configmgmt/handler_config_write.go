@@ -79,45 +79,6 @@ func (h *Handler) updateConfig(w http.ResponseWriter, r *http.Request) {
 			if v, exists := cifRaw["filename_template"]; exists {
 				c.CurrentInputFile.FilenameTemplate = strings.TrimSpace(fmt.Sprintf("%v", v))
 			}
-			if v, exists := cifRaw["disabled_models"]; exists {
-				if arr, ok := v.([]any); ok {
-					models := make([]string, 0, len(arr))
-					for _, item := range arr {
-						if s, ok := item.(string); ok {
-							if trimmed := strings.TrimSpace(s); trimmed != "" {
-								models = append(models, trimmed)
-							}
-						}
-					}
-					c.CurrentInputFile.DisabledModels = models
-				}
-			}
-			if v, exists := cifRaw["vision_accounts"]; exists {
-				if arr, ok := v.([]any); ok {
-					accounts := make([]string, 0, len(arr))
-					for _, item := range arr {
-						if s, ok := item.(string); ok {
-							if trimmed := strings.TrimSpace(s); trimmed != "" {
-								accounts = append(accounts, trimmed)
-							}
-						}
-					}
-					c.CurrentInputFile.VisionAccounts = accounts
-				}
-			}
-			if v, exists := cifRaw["disabled_accounts"]; exists {
-				if arr, ok := v.([]any); ok {
-					accounts := make([]string, 0, len(arr))
-					for _, item := range arr {
-						if s, ok := item.(string); ok {
-							if trimmed := strings.TrimSpace(s); trimmed != "" {
-								accounts = append(accounts, trimmed)
-							}
-						}
-					}
-					c.CurrentInputFile.DisabledAccounts = accounts
-				}
-			}
 		}
 		return nil
 	})
@@ -283,32 +244,6 @@ func (h *Handler) batchImport(w http.ResponseWriter, r *http.Request) {
 			}
 			if v, exists := cifRaw["filename_template"]; exists {
 				c.CurrentInputFile.FilenameTemplate = strings.TrimSpace(fmt.Sprintf("%v", v))
-			}
-			if v, exists := cifRaw["disabled_models"]; exists {
-				if arr, ok := v.([]any); ok {
-					models := make([]string, 0, len(arr))
-					for _, item := range arr {
-						if s, ok := item.(string); ok {
-							if trimmed := strings.TrimSpace(s); trimmed != "" {
-								models = append(models, trimmed)
-							}
-						}
-					}
-					c.CurrentInputFile.DisabledModels = models
-				}
-			}
-			if v, exists := cifRaw["vision_accounts"]; exists {
-				if arr, ok := v.([]any); ok {
-					accs := make([]string, 0, len(arr))
-					for _, item := range arr {
-						if s, ok := item.(string); ok {
-							if trimmed := strings.TrimSpace(s); trimmed != "" {
-								accs = append(accs, trimmed)
-							}
-						}
-					}
-					c.CurrentInputFile.VisionAccounts = accs
-				}
 			}
 		}
 		return nil

@@ -43,10 +43,7 @@ func (c Config) MarshalJSON() ([]byte, error) {
 	}
 	m["auto_delete"] = c.AutoDelete
 	if c.CurrentInputFile.Enabled != nil || c.CurrentInputFile.MinChars != 0 ||
-		strings.TrimSpace(c.CurrentInputFile.FilenameTemplate) != "" ||
-		len(c.CurrentInputFile.DisabledModels) > 0 ||
-		len(c.CurrentInputFile.VisionAccounts) > 0 ||
-		len(c.CurrentInputFile.DisabledAccounts) > 0 {
+		strings.TrimSpace(c.CurrentInputFile.FilenameTemplate) != "" {
 		m["current_input_file"] = c.CurrentInputFile
 	}
 	if c.ThinkingInjection.Enabled != nil || strings.TrimSpace(c.ThinkingInjection.Prompt) != "" {
@@ -171,9 +168,6 @@ func (c Config) Clone() Config {
 			Enabled:          cloneBoolPtr(c.CurrentInputFile.Enabled),
 			MinChars:         c.CurrentInputFile.MinChars,
 			FilenameTemplate: c.CurrentInputFile.FilenameTemplate,
-			DisabledModels:   slices.Clone(c.CurrentInputFile.DisabledModels),
-			VisionAccounts:   slices.Clone(c.CurrentInputFile.VisionAccounts),
-			DisabledAccounts: slices.Clone(c.CurrentInputFile.DisabledAccounts),
 		},
 		ThinkingInjection: ThinkingInjectionConfig{
 			Enabled: cloneBoolPtr(c.ThinkingInjection.Enabled),

@@ -39,7 +39,6 @@ func (m mockOpenAIConfig) CurrentInputFileMinChars() int {
 	return m.currentInputMin
 }
 func (m mockOpenAIConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
-func (m mockOpenAIConfig) CurrentInputFileDisabledModels() []string { return nil }
 func (m mockOpenAIConfig) ThinkingInjectionEnabled() bool {
 	if m.thinkingInjection == nil {
 		return false

@@ -23,8 +23,6 @@ func (h *Handler) getConfig(w http.ResponseWriter, _ *http.Request) {
 			"enabled":           h.Store.CurrentInputFileEnabled(),
 			"min_chars":         h.Store.CurrentInputFileMinChars(),
 			"filename_template": h.Store.CurrentInputFileFilenameTemplate(),
-			"disabled_models":   h.Store.CurrentInputFileDisabledModels(),
-			"vision_accounts":   h.Store.CurrentInputFileVisionAccounts(),
 		},
 		"vercel": map[string]any{
 			"has_token":     strings.TrimSpace(snap.Vercel.Token) != "",

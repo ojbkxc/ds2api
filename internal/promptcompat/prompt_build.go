@@ -20,10 +20,6 @@ func BuildOpenAIPromptWithToolInstructionsOnlyAndFilename(messagesRaw []any, too
 	return buildOpenAIPrompt(messagesRaw, toolsRaw, traceID, toolPolicy, thinkingEnabled, false, toolsFilename, false)
 }
 
-func BuildOpenAIPromptSkipGuard(messagesRaw []any, toolsRaw any, traceID string, toolPolicy ToolChoicePolicy, thinkingEnabled bool) (string, []string) {
-	return buildOpenAIPrompt(messagesRaw, toolsRaw, traceID, toolPolicy, thinkingEnabled, true, "", true)
-}
-
 func buildOpenAIPrompt(messagesRaw []any, toolsRaw any, traceID string, toolPolicy ToolChoicePolicy, thinkingEnabled bool, includeToolDescriptions bool, toolsFilename string, skipGuard bool) (string, []string) {
 	messages := NormalizeOpenAIMessagesForPrompt(messagesRaw, traceID)
 	toolNames := []string{}

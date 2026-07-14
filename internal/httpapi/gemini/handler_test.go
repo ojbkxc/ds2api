@@ -24,7 +24,6 @@ func (testGeminiConfig) ModelAliases() map[string]string { return nil }
 func (testGeminiConfig) CurrentInputFileEnabled() bool { return true }
 func (testGeminiConfig) CurrentInputFileMinChars() int { return 0 }
 func (testGeminiConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
-func (testGeminiConfig) CurrentInputFileDisabledModels() []string { return nil }
 func (testGeminiConfig) RuntimeMaxAccountSwitches() int { return 3 }
 func (testGeminiConfig) RuntimeMaxMessagesPerSession() int { return 50 }
 func (testGeminiConfig) DisableAccount(identifier string) error { return nil }

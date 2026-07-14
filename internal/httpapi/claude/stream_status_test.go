@@ -26,7 +26,6 @@ func (streamStatusClaudeStoreStub) ModelAliases() map[string]string { return nil
 func (streamStatusClaudeStoreStub) CurrentInputFileEnabled() bool { return true }
 func (streamStatusClaudeStoreStub) CurrentInputFileMinChars() int { return 0 }
 func (streamStatusClaudeStoreStub) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
-func (streamStatusClaudeStoreStub) CurrentInputFileDisabledModels() []string { return nil }
 func (streamStatusClaudeStoreStub) RuntimeMaxAccountSwitches() int { return 3 }
 func (streamStatusClaudeStoreStub) RuntimeMaxMessagesPerSession() int { return 50 }
 func (streamStatusClaudeStoreStub) DisableAccount(identifier string) error { return nil }

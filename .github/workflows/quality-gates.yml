@@ -33,6 +33,9 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
 
+      - name: Auto-format Go code
+        run: gofmt -w ./...
+
       - name: Setup golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:

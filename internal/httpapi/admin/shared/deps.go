@@ -38,9 +38,6 @@ type ConfigStore interface {
 	CurrentInputFileEnabled() bool
 	CurrentInputFileMinChars() int
 	CurrentInputFileFilenameTemplate() string
-	CurrentInputFileDisabledModels() []string
-	CurrentInputFileVisionAccounts() []string
-	CurrentInputFileDisabledAccounts() []string
 	ThinkingInjectionEnabled() bool
 	ThinkingInjectionPrompt() string
 	AutoDeleteSessions() bool

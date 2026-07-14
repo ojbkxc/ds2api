@@ -193,36 +193,6 @@ func (s *Store) CurrentInputFileFilenameTemplate() string {
 	return strings.TrimSpace(s.cfg.CurrentInputFile.FilenameTemplate)
 }
 
-func (s *Store) CurrentInputFileDisabledModels() []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.cfg.CurrentInputFile.DisabledModels
-}
-
-func (s *Store) CurrentInputFileVisionAccounts() []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	out := make([]string, 0, len(s.cfg.CurrentInputFile.VisionAccounts))
-	for _, a := range s.cfg.CurrentInputFile.VisionAccounts {
-		if trimmed := strings.TrimSpace(a); trimmed != "" {
-			out = append(out, trimmed)
-		}
-	}
-	return out
-}
-
-func (s *Store) CurrentInputFileDisabledAccounts() []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	out := make([]string, 0, len(s.cfg.CurrentInputFile.DisabledAccounts))
-	for _, a := range s.cfg.CurrentInputFile.DisabledAccounts {
-		if trimmed := strings.TrimSpace(a); trimmed != "" {
-			out = append(out, trimmed)
-		}
-	}
-	return out
-}
-
 func (s *Store) ThinkingInjectionEnabled() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

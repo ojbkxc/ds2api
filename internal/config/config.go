@@ -123,51 +123,6 @@ func (c *Config) DropInvalidAccounts() {
 	c.Accounts = kept
 }
 
-func (c *Config) SyncDisabledFromList() {
-	if c == nil {
-		return
-	}
-	disabled := map[string]struct{}{}
-	for _, id := range c.CurrentInputFile.DisabledAccounts {
-		if trimmed := strings.TrimSpace(id); trimmed != "" {
-			disabled[strings.ToLower(trimmed)] = struct{}{}
-		}
-	}
-	for i := range c.Accounts {
-		id := c.Accounts[i].Identifier()
-		if id == "" {
-			continue
-		}
-		if _, ok := disabled[strings.ToLower(id)]; ok {
-			c.Accounts[i].Disabled = true
-		}
-	}
-}
-
-func (c *Config) SyncDisabledToList() {
-	if c == nil {
-		return
-	}
-	seen := map[string]struct{}{}
-	list := make([]string, 0, len(c.Accounts))
-	for _, acc := range c.Accounts {
-		if !acc.Disabled {
-			continue
-		}
-		id := acc.Identifier()
-		if id == "" {
-			continue
-		}
-		key := strings.ToLower(id)
-		if _, ok := seen[key]; ok {
-			continue
-		}
-		seen[key] = struct{}{}
-		list = append(list, id)
-	}
-	c.CurrentInputFile.DisabledAccounts = list
-}
-
 func (c *Config) normalizeModelAliases() {
 	if c == nil {
 		return
@@ -222,9 +177,6 @@ type CurrentInputFileConfig struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	MinChars int `json:"min_chars,omitempty"`
 	FilenameTemplate string `json:"filename_template,omitempty"`
-	DisabledModels []string `json:"disabled_models,omitempty"`
-	VisionAccounts []string `json:"vision_accounts,omitempty"`
-	DisabledAccounts []string `json:"disabled_accounts,omitempty"`
 }
 
 type ThinkingInjectionConfig struct {

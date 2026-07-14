@@ -47,7 +47,6 @@ type ConfigReader interface {
 	CurrentInputFileEnabled() bool
 	CurrentInputFileMinChars() int
 	CurrentInputFileFilenameTemplate() string
-	CurrentInputFileDisabledModels() []string
 	ThinkingInjectionEnabled() bool
 	ThinkingInjectionPrompt() string
 	RuntimeMaxAccountSwitches() int

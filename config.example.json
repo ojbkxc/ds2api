@@ -49,9 +49,7 @@
   "current_input_file": {
     "enabled": true,
     "min_chars": 0,
-    "filename_template": "{prefix}_{rand}.txt",
-    "disabled_models": [],
-    "vision_accounts": []
+    "filename_template": "{prefix}_{rand}.txt"
   },
   "thinking_injection": {
     "enabled": true,

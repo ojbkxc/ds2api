@@ -1,12 +1,5 @@
-import exampleConfig from '../../../config.example.json'
-
 export function getBatchImportTemplates(t) {
     return {
-        full: {
-            name: t('batchImport.templates.full.name'),
-            desc: t('batchImport.templates.full.desc'),
-            config: exampleConfig,
-        },
         email_only: {
             name: t('batchImport.templates.emailOnly.name'),
             desc: t('batchImport.templates.emailOnly.desc'),

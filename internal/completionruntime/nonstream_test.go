@@ -28,7 +28,6 @@ type currentInputRuntimeConfig struct{}
 
 func (currentInputRuntimeConfig) CurrentInputFileEnabled() bool            { return true }
 func (currentInputRuntimeConfig) CurrentInputFileMinChars() int            { return 0 }
-func (currentInputRuntimeConfig) CurrentInputFileDisabledModels() []string { return nil }
 func (currentInputRuntimeConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
 
 func (f *fakeDeepSeekCaller) CreateSession(_ context.Context, a *auth.RequestAuth, _ int) (string, error) {

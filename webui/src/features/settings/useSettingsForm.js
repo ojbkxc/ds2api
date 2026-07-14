@@ -16,7 +16,7 @@ const DEFAULT_FORM = {
     responses: { store_ttl_seconds: 900 },
     embeddings: { provider: '' },
     auto_delete: { mode: 'none' },
-    current_input_file: { enabled: true, min_chars: 0, filename_template: '', disabled_models: [], vision_accounts: [], disabled_accounts: [] },
+    current_input_file: { enabled: true, min_chars: 0, filename_template: '' },
     thinking_injection: { enabled: true, prompt: '', default_prompt: '' },
     model_aliases_text: '{}',
 }
@@ -72,9 +72,6 @@ function fromServerForm(data) {
             enabled: currentInputFileEnabled,
             min_chars: Number(data.current_input_file?.min_chars ?? 0),
             filename_template: data.current_input_file?.filename_template || '',
-            disabled_models: Array.isArray(data.current_input_file?.disabled_models) ? data.current_input_file.disabled_models : [],
-            vision_accounts: Array.isArray(data.current_input_file?.vision_accounts) ? data.current_input_file.vision_accounts : [],
-            disabled_accounts: Array.isArray(data.current_input_file?.disabled_accounts) ? data.current_input_file.disabled_accounts : [],
         },
         thinking_injection: {
             enabled: data.thinking_injection?.enabled ?? true,
@@ -102,9 +99,6 @@ function toServerPayload(form) {
             enabled: currentInputFileEnabled,
             min_chars: Number(form.current_input_file?.min_chars ?? 0),
             filename_template: String(form.current_input_file?.filename_template || '').trim(),
-            disabled_models: Array.isArray(form.current_input_file?.disabled_models) ? form.current_input_file.disabled_models : [],
-            vision_accounts: Array.isArray(form.current_input_file?.vision_accounts) ? form.current_input_file.vision_accounts : [],
-            disabled_accounts: Array.isArray(form.current_input_file?.disabled_accounts) ? form.current_input_file.disabled_accounts : [],
         },
         thinking_injection: {
             enabled: Boolean(form.thinking_injection?.enabled ?? true),

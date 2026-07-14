@@ -128,50 +128,6 @@ func (h *Handler) configImport(w http.ResponseWriter, r *http.Request) {
 			if strings.TrimSpace(incoming.CurrentInputFile.FilenameTemplate) != "" {
 				next.CurrentInputFile.FilenameTemplate = incoming.CurrentInputFile.FilenameTemplate
 			}
-			if len(incoming.CurrentInputFile.DisabledModels) > 0 {
-				seen := map[string]struct{}{}
-				for _, m := range next.CurrentInputFile.DisabledModels {
-					seen[strings.TrimSpace(m)] = struct{}{}
-				}
-				for _, m := range incoming.CurrentInputFile.DisabledModels {
-					if trimmed := strings.TrimSpace(m); trimmed != "" {
-						if _, exists := seen[trimmed]; !exists {
-							next.CurrentInputFile.DisabledModels = append(next.CurrentInputFile.DisabledModels, trimmed)
-							seen[trimmed] = struct{}{}
-						}
-					}
-				}
-			}
-			if len(incoming.CurrentInputFile.VisionAccounts) > 0 {
-				seen := map[string]struct{}{}
-				for _, a := range next.CurrentInputFile.VisionAccounts {
-					seen[strings.ToLower(strings.TrimSpace(a))] = struct{}{}
-				}
-				for _, a := range incoming.CurrentInputFile.VisionAccounts {
-					if trimmed := strings.TrimSpace(a); trimmed != "" {
-						key := strings.ToLower(trimmed)
-						if _, exists := seen[key]; !exists {
-							next.CurrentInputFile.VisionAccounts = append(next.CurrentInputFile.VisionAccounts, trimmed)
-							seen[key] = struct{}{}
-						}
-					}
-				}
-			}
-			if len(incoming.CurrentInputFile.DisabledAccounts) > 0 {
-				seen := map[string]struct{}{}
-				for _, a := range next.CurrentInputFile.DisabledAccounts {
-					seen[strings.ToLower(strings.TrimSpace(a))] = struct{}{}
-				}
-				for _, a := range incoming.CurrentInputFile.DisabledAccounts {
-					if trimmed := strings.TrimSpace(a); trimmed != "" {
-						key := strings.ToLower(trimmed)
-						if _, exists := seen[key]; !exists {
-							next.CurrentInputFile.DisabledAccounts = append(next.CurrentInputFile.DisabledAccounts, trimmed)
-							seen[key] = struct{}{}
-						}
-					}
-				}
-			}
 		}
 
 		normalizeSettingsConfig(&next)

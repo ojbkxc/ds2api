@@ -171,22 +171,6 @@ func (p *Pool) accountSupportsModel(acc config.Account, model string) bool {
 	if !acc.SupportsModel(model) {
 		return false
 	}
-	if modelType, ok := config.GetModelType(model); ok && modelType == "vision" {
-		visionAccounts := p.store.CurrentInputFileVisionAccounts()
-		if len(visionAccounts) > 0 {
-			identifier := acc.Identifier()
-			found := false
-			for _, va := range visionAccounts {
-				if strings.EqualFold(strings.TrimSpace(va), identifier) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return false
-			}
-		}
-	}
 	return true
 }
 
