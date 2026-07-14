@@ -76,7 +76,8 @@ func TestBuildOpenAICurrentInputContextTranscriptUsesNumberedHistorySections(t *
 	if !strings.Contains(transcript, "# deepseek.txt") {
 		t.Fatalf("expected history transcript header, got %q", transcript)
 	}
-	if !strings.Contains(transcript, "history") && !strings.Contains(transcript, "conversation") && !strings.Contains(transcript, "chat") && !strings.Contains(transcript, "Previous") && !strings.Contains(transcript, "Prior") && !strings.Contains(transcript, "Record") && !strings.Contains(transcript, "log") && !strings.Contains(transcript, "transcript") {
+	lower := strings.ToLower(transcript)
+	if !strings.Contains(lower, "history") && !strings.Contains(lower, "conversation") && !strings.Contains(lower, "chat") && !strings.Contains(lower, "previous") && !strings.Contains(lower, "prior") && !strings.Contains(lower, "record") && !strings.Contains(lower, "log") && !strings.Contains(lower, "transcript") {
 		t.Fatalf("expected history transcript description, got %q", transcript)
 	}
 	for _, want := range []string{
