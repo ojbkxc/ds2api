@@ -259,10 +259,7 @@ func (r *Resolver) EnsureModelSupport(ctx context.Context, a *RequestAuth, model
 }
 
 func (r *Resolver) accountSupportsModel(acc config.Account, model string) bool {
-	if !acc.SupportsModel(model) {
-		return false
-	}
-	return true
+	return acc.SupportsModel(model)
 }
 
 func (a *RequestAuth) SwitchAccount(ctx context.Context) bool {

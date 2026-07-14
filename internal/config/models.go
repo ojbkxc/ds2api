@@ -149,6 +149,27 @@ func IsNoThinkingModel(model string) bool {
 	return noThinking
 }
 
+// ModelSupportsLocalWebTools reports whether the resolved DeepSeek model should
+// have local web_search and web_fetch tools injected into the system prompt.
+// This is true for all models except those that already have native search
+// (deepseek-v4-flash-search), where local tools are still available but
+// the native search is the primary mechanism.
+// Pro and Vision models benefit from local tools since they lack native search.
+func ModelSupportsLocalWebTools(model string) bool {
+	baseModel, _ := splitNoThinkingModel(model)
+	aliases := DefaultModelAliases()
+	if mapped, ok := aliases[baseModel]; ok {
+		baseModel = mapped
+	}
+	baseModel, _ = splitNoThinkingModel(baseModel)
+	switch baseModel {
+	case "deepseek-v4-flash", "deepseek-v4-flash-search", "deepseek-v4-pro", "deepseek-v4-vision":
+		return true
+	default:
+		return false
+	}
+}
+
 func DefaultModelAliases() map[string]string {
 	return map[string]string{
 		// DeepSeek legacy model names (backward compatibility)

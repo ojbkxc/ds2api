@@ -46,6 +46,15 @@ func normalizeClaudeRequest(store ConfigReader, req map[string]any) (claudeNorma
 		toolNames = []string{"__any_tool__"}
 	}
 
+	// Inject local web tools for models that support them
+	if config.ModelSupportsLocalWebTools(dsModel) {
+		localPrompt, localNames := promptcompat.BuildLocalToolPrompt()
+		if localPrompt != "" {
+			finalPrompt = finalPrompt + "\n\n" + localPrompt
+			toolNames = append(localNames, toolNames...)
+		}
+	}
+
 	return claudeNormalizedRequest{
 		Standard: promptcompat.StandardRequest{
 			Surface:         "anthropic_messages",

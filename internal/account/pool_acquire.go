@@ -167,10 +167,7 @@ func (p *Pool) tryAcquireForModel(exclude map[string]bool, model string) (config
 }
 
 func (p *Pool) accountSupportsModel(acc config.Account, model string) bool {
-	if !acc.SupportsModel(model) {
-		return false
-	}
-	return true
+	return acc.SupportsModel(model)
 }
 
 func (p *Pool) isAccountBanned(id string) bool {
