@@ -77,9 +77,9 @@ func BuildLocalToolPromptParts() (descriptions string, toolNames []string) {
 
 	var schemas []string
 	for _, desc := range descs {
-		// Include all tools: web_search, web_fetch, memory, and MCP tools
-		// Skip the memory tool since it's not a web-accessible tool
-		if desc.Name == "memory" {
+		// Include all tools: web_search, web_fetch, and MCP tools
+		// Skip internal memory tools (they are not exposed to the LLM)
+		if strings.HasPrefix(desc.Name, "memory") {
 			continue
 		}
 		name := desc.Name
