@@ -31,6 +31,8 @@ func (streamStatusClaudeStoreStub) RuntimeMaxAccountSwitches() int          { re
 func (streamStatusClaudeStoreStub) RuntimeMaxMessagesPerSession() int       { return 50 }
 func (streamStatusClaudeStoreStub) DisableAccount(identifier string) error   { return nil }
 
+var _ ConfigReader = (*streamStatusClaudeStoreStub)(nil)
+
 func captureClaudeStatusMiddleware(statuses *[]int) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

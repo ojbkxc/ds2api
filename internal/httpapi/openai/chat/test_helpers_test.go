@@ -9,6 +9,7 @@ import (
 
 	"ds2api/internal/auth"
 	dsclient "ds2api/internal/deepseek/client"
+	"ds2api/internal/httpapi/openai/shared"
 )
 
 type mockOpenAIConfig struct {
@@ -53,6 +54,8 @@ func (m mockOpenAIConfig) ThinkingInjectionPrompt() string { return m.thinkingPr
 func (mockOpenAIConfig) RuntimeMaxAccountSwitches() int          { return 3 }
 func (mockOpenAIConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
 func (mockOpenAIConfig) DisableAccount(identifier string) error   { return nil }
+
+var _ shared.ConfigReader = (*mockOpenAIConfig)(nil)
 
 type streamStatusAuthStub struct{}
 

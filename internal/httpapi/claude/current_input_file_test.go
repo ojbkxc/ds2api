@@ -29,6 +29,8 @@ func (claudeHistoryConfig) RuntimeMaxMessagesPerSession() int       { return 50 
 func (claudeHistoryConfig) DisableAccount(identifier string) error   { return nil }
 func (claudeHistoryConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
 
+var _ ConfigReader = (*claudeHistoryConfig)(nil)
+
 func (claudeCurrentInputAuth) Determine(*http.Request) (*auth.RequestAuth, error) {
 	return &auth.RequestAuth{
 		DeepSeekToken: "direct-token",

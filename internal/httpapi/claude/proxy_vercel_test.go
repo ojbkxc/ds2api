@@ -22,6 +22,8 @@ func (claudeProxyStoreStub) RuntimeMaxAccountSwitches() int          { return 3 
 func (claudeProxyStoreStub) RuntimeMaxMessagesPerSession() int       { return 50 }
 func (claudeProxyStoreStub) DisableAccount(identifier string) error   { return nil }
 
+var _ ConfigReader = (*claudeProxyStoreStub)(nil)
+
 type openAIProxyStub struct {
 	status int
 	body   string

@@ -15,6 +15,8 @@ func (mockClaudeConfig) RuntimeMaxAccountSwitches() int          { return 3 }
 func (mockClaudeConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
 func (mockClaudeConfig) DisableAccount(identifier string) error   { return nil }
 
+var _ ConfigReader = (*mockClaudeConfig)(nil)
+
 func TestNormalizeClaudeRequestUsesGlobalAliasMapping(t *testing.T) {
 	req := map[string]any{
 		"model": "claude-opus-4-6",

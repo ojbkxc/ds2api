@@ -29,6 +29,8 @@ func (testGeminiConfig) RuntimeMaxAccountSwitches() int          { return 3 }
 func (testGeminiConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
 func (testGeminiConfig) DisableAccount(identifier string) error   { return nil }
 
+var _ ConfigReader = (*testGeminiConfig)(nil)
+
 type testGeminiAuth struct {
 	a   *auth.RequestAuth
 	err error

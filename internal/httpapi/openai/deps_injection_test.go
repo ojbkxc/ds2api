@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"ds2api/internal/httpapi/openai/shared"
 	"ds2api/internal/promptcompat"
 )
 
@@ -49,6 +50,8 @@ func (m mockOpenAIConfig) ThinkingInjectionPrompt() string { return m.thinkingPr
 func (mockOpenAIConfig) RuntimeMaxAccountSwitches() int          { return 3 }
 func (mockOpenAIConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
 func (mockOpenAIConfig) DisableAccount(identifier string) error   { return nil }
+
+var _ shared.ConfigReader = (*mockOpenAIConfig)(nil)
 
 func TestNormalizeOpenAIChatRequestWithConfigInterface(t *testing.T) {
 	cfg := mockOpenAIConfig{
