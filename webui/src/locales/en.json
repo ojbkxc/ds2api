@@ -34,6 +34,15 @@
             "desc": "Edit runtime and security settings online"
         }
     },
+    "common": {
+        "prev": "Previous",
+        "next": "Next",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "actions": "Actions",
+        "sessions": "Sessions",
+        "loading": "Loading..."
+    },
     "sidebar": {
         "onlineAdminConsole": "Online Admin Console",
         "systemStatus": "System Status",

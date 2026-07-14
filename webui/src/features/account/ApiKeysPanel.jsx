@@ -88,7 +88,7 @@ export default function ApiKeysPanel({
                     onClick={(e) => { e.stopPropagation(); onAddKey() }}
                     className="ds-btn-primary text-sm font-medium"
                 >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 mr-1" />
                     {t('accountManager.addKey')}
                 </button>
             </div>
@@ -97,13 +97,23 @@ export default function ApiKeysPanel({
                 <div className="divide-y border-t" style={{ borderColor: 'var(--ds-border)' }}>
                     {apiKeys.length > 0 ? (
                         apiKeys.map((item, i) => (
-                            <div key={i} className="p-4 flex items-center justify-between transition-colors group" style={{ borderRadius: 'var(--radius-card)' }}>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1">
-                                    <div className="text-sm" style={{ color: 'var(--ds-text)' }}>{item.name || '-'}</div>
+                            <div
+                                key={i}
+                                className="p-4 flex items-center justify-between transition-colors group"
+                                style={{ borderColor: 'var(--ds-border)' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--ds-surface)' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-w-0">
+                                    <div className="text-sm truncate" style={{ color: 'var(--ds-text)' }}>{item.name || '-'}</div>
                                     <button
                                         onClick={() => handleCopyKey(item.key)}
-                                        className="font-mono text-sm px-3 py-1 rounded inline-block transition-colors"
-                                        style={{ backgroundColor: 'var(--ds-surface)' }}
+                                        className="font-mono text-xs px-3 py-1 inline-block transition-colors"
+                                        style={{
+                                            backgroundColor: 'var(--ds-surface)',
+                                            borderRadius: 'var(--radius-ctrl)',
+                                            color: 'var(--ds-text-secondary)',
+                                        }}
                                         title={t('accountManager.copyKeyTitle')}
                                     >
                                         {maskSecret(item.key)}
@@ -116,28 +126,28 @@ export default function ApiKeysPanel({
                                         <span className="text-xs" style={{ color: 'var(--ds-danger)' }}>{t('accountManager.copyFailed')}</span>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 shrink-0">
                                     <button
                                         onClick={() => onEditKey(item)}
-                                        className="p-2 rounded-md transition-colors"
-                                        style={{ color: 'var(--ds-text-tertiary)' }}
+                                        className="ds-action-btn p-2"
                                         title={t('accountManager.editKeyTitle')}
+                                        style={{ borderRadius: 'var(--radius-ctrl)' }}
                                     >
                                         <Pencil className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => handleCopyKey(item.key)}
-                                        className="p-2 rounded-md transition-colors"
-                                        style={{ color: 'var(--ds-text-tertiary)' }}
+                                        className="ds-action-btn p-2"
                                         title={t('accountManager.copyKeyTitle')}
+                                        style={{ borderRadius: 'var(--radius-ctrl)' }}
                                     >
                                         {copiedKey === item.key ? <Check className="w-4 h-4" style={{ color: 'var(--ds-success)' }} /> : <Copy className="w-4 h-4" />}
                                     </button>
                                     <button
                                         onClick={() => onDeleteKey(item.key)}
-                                        className="p-2 rounded-md transition-colors"
-                                        style={{ color: 'var(--ds-text-tertiary)' }}
+                                        className="ds-action-btn p-2"
                                         title={t('accountManager.deleteKeyTitle')}
+                                        style={{ borderRadius: 'var(--radius-ctrl)', color: 'var(--ds-danger)' }}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>

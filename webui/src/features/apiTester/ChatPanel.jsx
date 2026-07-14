@@ -187,20 +187,14 @@ export default function ChatPanel({
                         {/* Input area */}
                         <form onSubmit={handleSubmit} className="shrink-0 space-y-3">
                             <textarea
-                                className="w-full p-3.5 text-sm resize-none"
-                                rows={3}
-                                style={{
-                                    background: 'var(--ds-bg)',
-                                    border: '1px solid var(--ds-border)',
-                                    borderRadius: 'var(--radius-ctrl)',
-                                    color: 'var(--ds-text)',
-                                }}
-                                placeholder={t('apiTester.enterMessage')}
-                                value={message}
-                                onChange={e => setMessage(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                disabled={!hasAvailableModel}
-                            />
+                            className="ds-input p-3.5 text-sm resize-none"
+                            rows={3}
+                            placeholder={t('apiTester.enterMessage')}
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            disabled={!hasAvailableModel}
+                        />
 
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
@@ -212,6 +206,9 @@ export default function ChatPanel({
                                         <Trash2 className="w-3 h-3 mr-1" />
                                         {t('chat.clear')}
                                     </button>
+                                    <span className="text-[10px]" style={{ color: 'var(--ds-text-tertiary)' }}>
+                                        Enter {t('chat.send')} · Shift+Enter ⏎
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {loading ? (

@@ -39,6 +39,29 @@ Use the web_search tool when any of these apply:
 - If one search is not enough, call web_search again with different keywords
 - Do not invent real-time information without searching`
 
+// webFetchGuidance is injected into the system prompt when local web_fetch is
+// available. It tells the model when to use web_fetch instead of web_search.
+// CRITICAL: without this guidance, the model sees web_fetch in the tool list
+// but does not know when to use it (webSearchGuidance only covers web_search).
+const webFetchGuidance = `## Web Fetch Rules
+
+Use the web_fetch tool when any of these apply:
+- The user asks you to access, fetch, visit, or read content from a specific URL
+- The user provides a link and wants you to retrieve or extract its content
+- The user asks you to open a webpage, check a link, or get information from a web address
+- The user asks you to summarize or analyze content from a specific web page
+
+### Fetch Flow
+1. First output a web_fetch tool call with the target URL
+2. The fetch runs automatically; the page content is sent back to you
+3. Read the content, then answer the user based on what you retrieved
+
+### Rules
+- Always include the full URL with the https:// prefix
+- If the fetch fails, explain the error to the user and suggest alternatives
+- Use web_fetch for direct URL access, not web_search
+- If the user asks you to "access", "visit", "open", "read", or "fetch" a URL, use web_fetch`
+
 // BuildLocalToolDescriptors returns all local tools (web_search, web_fetch, MCP tools)
 // as OpenAI-format tool definitions suitable for prompt injection.
 func BuildLocalToolDescriptors() []map[string]any {
@@ -109,7 +132,8 @@ func BuildLocalToolPromptParts() (descriptions string, toolNames []string) {
 }
 
 // BuildLocalToolPrompt returns the complete prompt text for local web tools,
-// including tool descriptions, DSML format instructions, and web search guidance.
+// including tool descriptions, DSML format instructions, web search guidance,
+// and web fetch guidance.
 func BuildLocalToolPrompt() (promptText string, toolNames []string) {
 	descriptions, toolNames := BuildLocalToolPromptParts()
 	if descriptions == "" {
@@ -130,6 +154,8 @@ func BuildLocalToolPrompt() (promptText string, toolNames []string) {
 	b.WriteString(instructions)
 	b.WriteString("\n\n")
 	b.WriteString(webSearchGuidance)
+	b.WriteString("\n\n")
+	b.WriteString(webFetchGuidance)
 	return b.String(), toolNames
 }
 

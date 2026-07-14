@@ -9,20 +9,20 @@ const LandingPage = ({ onEnter }) => {
             {/* Background glow */}
             <div style={{
                 position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0,
-                background: 'radial-gradient(circle at 20% 30%, rgba(77,107,254,0.06) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(77,107,254,0.04) 0%, transparent 40%)'
+                background: 'radial-gradient(circle at 20% 30%, var(--ds-blue-glow) 0%, transparent 40%), radial-gradient(circle at 80% 70%, var(--ds-blue-glow) 0%, transparent 40%)'
             }} />
 
             {/* Blobs */}
             <div style={{
                 position: 'absolute', width: '400px', height: '400px',
-                background: 'linear-gradient(135deg, #4D6BFE, #6366f1)',
+                background: 'var(--ds-blue)',
                 filter: 'blur(80px)', opacity: 0.12, borderRadius: '50%', zIndex: 0,
                 top: '10%', left: '15%',
                 animation: 'move 20s infinite alternate'
             }} />
             <div style={{
                 position: 'absolute', width: '400px', height: '400px',
-                background: 'linear-gradient(135deg, #4D6BFE, #818cf8)',
+                background: 'var(--ds-blue-soft)',
                 filter: 'blur(80px)', opacity: 0.10, borderRadius: '50%', zIndex: 0,
                 bottom: '10%', right: '15%',
                 animation: 'move 20s infinite alternate',
@@ -49,10 +49,7 @@ const LandingPage = ({ onEnter }) => {
                     <h1 style={{
                         fontSize: 'clamp(3rem, 10vw, 5rem)',
                         fontWeight: 700,
-                        background: 'linear-gradient(135deg, #4D6BFE, #818cf8)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
+                        color: 'var(--ds-blue)',
                         letterSpacing: '-2px',
                         marginBottom: '0.5rem',
                     }}>
@@ -66,9 +63,10 @@ const LandingPage = ({ onEnter }) => {
                 <div className="flex flex-wrap gap-4 justify-center mb-16">
                     <button
                         onClick={onEnter}
-                        className="text-white px-8 py-3 font-bold transition-all flex items-center gap-2"
+                        className="px-8 py-3 font-bold transition-all flex items-center gap-2"
                         style={{
                             background: 'var(--ds-blue)',
+                            color: 'var(--ds-text-on-primary)',
                             borderRadius: 'var(--radius-ctrl)',
                             border: '1px solid var(--ds-blue)',
                             boxShadow: 'var(--ds-elevate-1)',

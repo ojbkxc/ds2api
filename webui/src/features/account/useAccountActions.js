@@ -116,7 +116,6 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
     }
 
     const deleteKey = async (key) => {
-        if (!confirm(t('accountManager.deleteKeyConfirm'))) return
         try {
             const res = await apiFetch(`/admin/keys/${encodeURIComponent(key)}`, { method: 'DELETE' })
             if (res.ok) {
@@ -193,7 +192,6 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
             onMessage('error', t('accountManager.invalidIdentifier'))
             return
         }
-        if (!confirm(t('accountManager.deleteAccountConfirm'))) return
         try {
             const res = await apiFetch(`/admin/accounts/${encodeURIComponent(identifier)}`, { method: 'DELETE' })
             if (res.ok) {
@@ -242,7 +240,6 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
     }
 
     const testAllAccounts = async () => {
-        if (!confirm(t('accountManager.testAllConfirm'))) return
         const allAccounts = config.accounts || []
         if (allAccounts.length === 0) return
 
@@ -289,7 +286,6 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
             onMessage('error', t('accountManager.invalidIdentifier'))
             return
         }
-        if (!confirm(t('accountManager.deleteAllSessionsConfirm'))) return
         
         setDeletingSessions(prev => ({ ...prev, [accountID]: true }))
         try {
