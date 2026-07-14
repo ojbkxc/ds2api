@@ -1,6 +1,7 @@
 package localtool
 
 import (
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -188,6 +189,9 @@ func (r *ToolRegistry) List() []ToolDescriptor {
 		seen[desc.ID] = true
 		descriptors = append(descriptors, desc)
 	}
+	sort.Slice(descriptors, func(i, j int) bool {
+		return descriptors[i].Name < descriptors[j].Name
+	})
 	return descriptors
 }
 
