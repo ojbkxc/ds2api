@@ -14,6 +14,8 @@ import (
 	dsclient "ds2api/internal/deepseek/client"
 )
 
+var largeClaudeInput = strings.Repeat("this is a large input to trigger file upload with first-message threshold. ", 40)
+
 type claudeCurrentInputAuth struct{}
 
 type claudeHistoryConfig struct {
@@ -130,7 +132,7 @@ func TestClaudeDirectAppliesCurrentInputFile(t *testing.T) {
 		DS:          ds,
 		ChatHistory: historyStore,
 	}
-	reqBody := `{"model":"claude-sonnet-4-6","messages":[{"role":"user","content":"hello from claude"}],"max_tokens":1024}`
+	reqBody := `{"model":"claude-sonnet-4-6","messages":[{"role":"user","content":"` + largeClaudeInput + `"}],"max_tokens":1024}`
 	req := httptest.NewRequest(http.MethodPost, "/v1/messages", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -180,7 +182,7 @@ func TestClaudeCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 		Auth:  claudeCurrentInputAuth{},
 		DS:    ds,
 	}
-	reqBody := `{"model":"claude-sonnet-4-6","messages":[{"role":"user","content":"hello from claude"}],"tools":[{"name":"search","description":"Search docs","input_schema":{"type":"object"}}],"max_tokens":1024}`
+	reqBody := `{"model":"claude-sonnet-4-6","messages":[{"role":"user","content":"` + largeClaudeInput + `"}],"tools":[{"name":"search","description":"Search docs","input_schema":{"type":"object"}}],"max_tokens":1024}`
 	req := httptest.NewRequest(http.MethodPost, "/v1/messages", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
