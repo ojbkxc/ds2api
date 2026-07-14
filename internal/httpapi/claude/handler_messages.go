@@ -114,6 +114,7 @@ func (h *Handler) handleClaudeDirect(w http.ResponseWriter, r *http.Request) boo
 		RetryEnabled:     true,
 		CurrentInputFile: h.Store,
 		Store:            h.Store,
+		SessionPool:      h.DS.SessionPool(),
 	})
 	if outErr != nil {
 		if historySession != nil {

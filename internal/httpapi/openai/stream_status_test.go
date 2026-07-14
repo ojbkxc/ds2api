@@ -70,6 +70,8 @@ func (m streamStatusDSStub) DeleteAllSessionsForToken(_ context.Context, _ strin
 	return nil
 }
 
+func (m streamStatusDSStub) SessionPool() *dsclient.SessionPool { return nil }
+
 type streamStatusDSSeqStub struct {
 	resps    []*http.Response
 	payloads []map[string]any
@@ -107,6 +109,8 @@ func (m *streamStatusDSSeqStub) DeleteSessionForToken(_ context.Context, _ strin
 func (m *streamStatusDSSeqStub) DeleteAllSessionsForToken(_ context.Context, _ string) error {
 	return nil
 }
+
+func (m *streamStatusDSSeqStub) SessionPool() *dsclient.SessionPool { return nil }
 
 func makeOpenAISSEHTTPResponse(lines ...string) *http.Response {
 	body := strings.Join(lines, "\n")

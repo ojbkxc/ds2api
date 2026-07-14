@@ -26,6 +26,7 @@ func (testGeminiConfig) CurrentInputFileMinChars() int            { return 0 }
 func (testGeminiConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
 func (testGeminiConfig) CurrentInputFileDisabledModels() []string { return nil }
 func (testGeminiConfig) RuntimeMaxAccountSwitches() int          { return 3 }
+func (testGeminiConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
 func (testGeminiConfig) DisableAccount(identifier string) error   { return nil }
 
 type testGeminiAuth struct {
@@ -90,6 +91,9 @@ func (m *testGeminiDS) CallCompletion(_ context.Context, _ *auth.RequestAuth, pa
 	}
 	return m.resp, nil
 }
+
+//nolint:unused // reserved test double for native Gemini DS-call path coverage.
+func (m *testGeminiDS) SessionPool() *dsclient.SessionPool { return nil }
 
 type geminiOpenAIErrorStub struct {
 	status  int

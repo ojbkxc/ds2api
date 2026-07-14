@@ -21,6 +21,7 @@ func executeWithToolCalls(ctx context.Context, ds completionruntime.DeepSeekCall
 			RetryEnabled:     true,
 			CurrentInputFile: store,
 			Store:            nil,
+			SessionPool:      nil,
 		})
 		if outErr != nil {
 			return result, outErr

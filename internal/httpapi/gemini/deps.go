@@ -20,6 +20,7 @@ type DeepSeekCaller interface {
 	GetPow(ctx context.Context, a *auth.RequestAuth, maxAttempts int) (string, error)
 	UploadFile(ctx context.Context, a *auth.RequestAuth, req dsclient.UploadFileRequest, maxAttempts int) (*dsclient.UploadFileResult, error)
 	CallCompletion(ctx context.Context, a *auth.RequestAuth, payload map[string]any, powResp string, maxAttempts int) (*http.Response, error)
+	SessionPool() *dsclient.SessionPool
 }
 
 type ConfigReader interface {
@@ -29,6 +30,7 @@ type ConfigReader interface {
 	CurrentInputFileFilenameTemplate() string
 	CurrentInputFileDisabledModels() []string
 	RuntimeMaxAccountSwitches() int
+	RuntimeMaxMessagesPerSession() int
 	DisableAccount(identifier string) error
 }
 

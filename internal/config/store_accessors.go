@@ -150,6 +150,15 @@ func (s *Store) RuntimeMaxAccountSwitches() int {
 	return 3
 }
 
+func (s *Store) RuntimeMaxMessagesPerSession() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.cfg.Runtime.MaxMessagesPerSession > 0 {
+		return s.cfg.Runtime.MaxMessagesPerSession
+	}
+	return 50
+}
+
 func (s *Store) AutoDeleteSessions() bool {
 	return s.AutoDeleteMode() != "none"
 }

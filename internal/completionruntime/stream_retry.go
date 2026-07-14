@@ -25,6 +25,7 @@ type StreamRetryOptions struct {
 	CurrentInputFile    history.CurrentInputConfigReader
 	MaxAccountSwitches  int
 	Store               AccountDisabler
+	SessionPool         SessionPoolAccessor
 }
 
 type StreamRetryHooks struct {

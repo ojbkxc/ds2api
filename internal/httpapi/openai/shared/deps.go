@@ -32,6 +32,7 @@ type DeepSeekCaller interface {
 	CallCompletion(ctx context.Context, a *auth.RequestAuth, payload map[string]any, powResp string, maxAttempts int) (*http.Response, error)
 	DeleteSessionForToken(ctx context.Context, token string, sessionID string) (*dsclient.DeleteSessionResult, error)
 	DeleteAllSessionsForToken(ctx context.Context, token string) error
+	SessionPool() *dsclient.SessionPool
 }
 
 type ConfigReader interface {
@@ -49,6 +50,7 @@ type ConfigReader interface {
 	ThinkingInjectionEnabled() bool
 	ThinkingInjectionPrompt() string
 	RuntimeMaxAccountSwitches() int
+	RuntimeMaxMessagesPerSession() int
 	DisableAccount(identifier string) error
 }
 

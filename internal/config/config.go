@@ -201,6 +201,7 @@ type RuntimeConfig struct {
 	GlobalMaxInflight         int `json:"global_max_inflight,omitempty"`
 	TokenRefreshIntervalHours int `json:"token_refresh_interval_hours,omitempty"`
 	MaxAccountSwitches        int `json:"max_account_switches,omitempty"`
+	MaxMessagesPerSession     int `json:"max_messages_per_session,omitempty"`
 }
 
 type ResponsesConfig struct {

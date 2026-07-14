@@ -117,6 +117,7 @@ func (h *Handler) handleStreamGenerateContentWithRetry(w http.ResponseWriter, r 
 		Request:          stdReq,
 		CurrentInputFile: h.Store,
 		Store:            h.Store,
+		SessionPool:      h.DS.SessionPool(),
 	}, completionruntime.StreamRetryHooks{
 		ConsumeAttempt: func(currentResp *http.Response, allowDeferEmpty bool) (bool, bool) {
 			return h.consumeGeminiStreamAttempt(r.Context(), currentResp, runtime, thinkingEnabled, allowDeferEmpty)

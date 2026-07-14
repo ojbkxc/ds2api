@@ -50,6 +50,7 @@ func (m mockOpenAIConfig) ThinkingInjectionEnabled() bool {
 }
 func (m mockOpenAIConfig) ThinkingInjectionPrompt() string { return m.thinkingPrompt }
 func (mockOpenAIConfig) RuntimeMaxAccountSwitches() int          { return 3 }
+func (mockOpenAIConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
 func (mockOpenAIConfig) DisableAccount(identifier string) error   { return nil }
 
 type streamStatusAuthStub struct{}
@@ -123,6 +124,8 @@ func (m streamStatusDSStub) DeleteAllSessionsForToken(_ context.Context, _ strin
 	return nil
 }
 
+func (m streamStatusDSStub) SessionPool() *dsclient.SessionPool { return nil }
+
 func makeOpenAISSEHTTPResponse(lines ...string) *http.Response {
 	body := strings.Join(lines, "\n")
 	if !strings.HasSuffix(body, "\n") {
@@ -192,6 +195,8 @@ func (m *inlineUploadDSStub) DeleteSessionForToken(_ context.Context, _ string, 
 func (m *inlineUploadDSStub) DeleteAllSessionsForToken(_ context.Context, _ string) error {
 	return nil
 }
+
+func (m *inlineUploadDSStub) SessionPool() *dsclient.SessionPool { return nil }
 
 func historySplitTestMessages() []any {
 	toolCalls := []any{

@@ -61,6 +61,10 @@ func (p ToolChoicePolicy) Allows(name string) bool {
 }
 
 func (r StandardRequest) CompletionPayload(sessionID string) map[string]any {
+	return r.CompletionPayloadWithParent(sessionID, 0)
+}
+
+func (r StandardRequest) CompletionPayloadWithParent(sessionID string, parentMessageID int) map[string]any {
 	modelID := r.ResolvedModel
 	if modelID == "" {
 		modelID = r.RequestedModel
@@ -86,6 +90,9 @@ func (r StandardRequest) CompletionPayload(sessionID string) map[string]any {
 		"search_enabled":    r.Search,
 		"action":            nil,
 		"preempt":           false,
+	}
+	if parentMessageID > 0 {
+		payload["parent_message_id"] = parentMessageID
 	}
 	for k, v := range r.PassThrough {
 		payload[k] = v

@@ -68,7 +68,9 @@
     "account_max_queue": 0,
     "global_max_inflight": 0,
     "token_refresh_interval_hours": 24,
-    "max_account_switches": 3
+    "max_account_switches": 3,
+    "max_messages_per_session": 50
+  },
   "auto_delete": {
     "mode": "single",
     "delay_hours": 12

@@ -118,6 +118,7 @@ func (h *Handler) Responses(w http.ResponseWriter, r *http.Request) {
 			RetryEnabled:     true,
 			CurrentInputFile: h.Store,
 			Store:            h.Store,
+			SessionPool:      h.DS.SessionPool(),
 		})
 		if outErr != nil {
 			if historySession != nil {

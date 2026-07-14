@@ -254,6 +254,8 @@ func (m *vercelReleaseAutoDeleteDSStub) DeleteAllSessionsForToken(_ context.Cont
 	return nil
 }
 
+func (m *vercelReleaseAutoDeleteDSStub) SessionPool() *dsclient.SessionPool { return nil }
+
 type vercelReleaseAuthStub struct {
 	events *[]string
 }

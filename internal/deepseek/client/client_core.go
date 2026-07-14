@@ -25,6 +25,7 @@ type Client struct {
 	fallback   *http.Client
 	fallbackS  *http.Client
 	maxRetries int
+	Pool       *SessionPool
 
 	proxyClientsMu sync.RWMutex
 	proxyClients   map[string]requestClients
@@ -40,8 +41,13 @@ func NewClient(store *config.Store, resolver *auth.Resolver) *Client {
 		fallback:     &http.Client{Timeout: 60 * time.Second},
 		fallbackS:    &http.Client{Timeout: 0},
 		maxRetries:   3,
+		Pool:         NewSessionPool(),
 		proxyClients: map[string]requestClients{},
 	}
+}
+
+func (c *Client) SessionPool() *SessionPool {
+	return c.Pool
 }
 
 // PreloadPow 保留兼容接口，纯 Go 实现无需预加载。

@@ -49,6 +49,8 @@ func (d *responsesHistoryDS) DeleteAllSessionsForToken(context.Context, string) 
 	return nil
 }
 
+func (d *responsesHistoryDS) SessionPool() *dsclient.SessionPool { return nil }
+
 func TestResponsesRecordsResponseHistory(t *testing.T) {
 	store, resolver := newDirectTokenResolver(t)
 	historyStore := chathistory.New(filepath.Join(t.TempDir(), "history.json"))

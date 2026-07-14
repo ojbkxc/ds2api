@@ -53,6 +53,8 @@ func (m *autoDeleteModeDSStub) DeleteSessionForTokenCtx(ctx context.Context, _ s
 	return &dsclient.DeleteSessionResult{SessionID: sessionID, Success: true}, nil
 }
 
+func (m *autoDeleteModeDSStub) SessionPool() *dsclient.SessionPool { return nil }
+
 func TestChatCompletionsAutoDeleteModes(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -117,6 +119,8 @@ func (m *autoDeleteCtxDSStub) DeleteAllSessionsForToken(_ context.Context, _ str
 	m.allCalls++
 	return nil
 }
+
+func (m *autoDeleteCtxDSStub) SessionPool() *dsclient.SessionPool { return nil }
 
 func TestAutoDeleteRemoteSessionIgnoresCanceledParentContext(t *testing.T) {
 	ds := &autoDeleteCtxDSStub{}

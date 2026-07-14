@@ -32,11 +32,20 @@ type Options struct {
 	CurrentInputFile      history.CurrentInputConfigReader
 	MaxAccountSwitches    int
 	Store                 AccountDisabler
+	SessionPool           SessionPoolAccessor
 }
 
 type AccountDisabler interface {
 	RuntimeMaxAccountSwitches() int
+	RuntimeMaxMessagesPerSession() int
 	DisableAccount(identifier string) error
+}
+
+type SessionPoolAccessor interface {
+	Acquire(accountID string, maxMessages int) (sessionID string, parentMessageID int)
+	Register(accountID string, sessionID string)
+	Update(accountID string, sessionID string, responseMessageID int)
+	Invalidate(accountID string)
 }
 
 type NonStreamResult struct {
@@ -64,15 +73,40 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 	if prepErr != nil {
 		return StartResult{Request: stdReq}, prepErr
 	}
-	sessionID, err := ds.CreateSession(ctx, a, maxAttempts)
-	if err != nil {
-		return StartResult{Request: stdReq}, authOutputError(a)
+
+	// 会话池：尝试复用已有会话
+	var sessionID string
+	var parentMessageID int
+	if opts.SessionPool != nil && a != nil && a.AccountID != "" {
+		maxMessages := 50
+		if opts.Store != nil {
+			if m := opts.Store.RuntimeMaxMessagesPerSession(); m > 0 {
+				maxMessages = m
+			}
+		}
+		sessionID, parentMessageID = opts.SessionPool.Acquire(a.AccountID, maxMessages)
 	}
+
+	// 池中没有可复用的会话，创建新会话
+	if sessionID == "" {
+		var err error
+		sessionID, err = ds.CreateSession(ctx, a, maxAttempts)
+		if err != nil {
+			if opts.SessionPool != nil && a != nil {
+				opts.SessionPool.Invalidate(a.AccountID)
+			}
+			return StartResult{Request: stdReq}, authOutputError(a)
+		}
+		if opts.SessionPool != nil && a != nil {
+			opts.SessionPool.Register(a.AccountID, sessionID)
+		}
+	}
+
 	pow, err := ds.GetPow(ctx, a, maxAttempts)
 	if err != nil {
 		return StartResult{SessionID: sessionID, Request: stdReq}, &assistantturn.OutputError{Status: http.StatusUnauthorized, Message: "Failed to get PoW (invalid token or unknown error).", Code: "error"}
 	}
-	payload := stdReq.CompletionPayload(sessionID)
+	payload := stdReq.CompletionPayloadWithParent(sessionID, parentMessageID)
 	resp, err := ds.CallCompletion(ctx, a, payload, pow, maxAttempts)
 	if err != nil {
 		return StartResult{SessionID: sessionID, Payload: payload, Pow: pow, Request: stdReq}, &assistantturn.OutputError{Status: http.StatusInternalServerError, Message: "Failed to get completion.", Code: "error"}
@@ -153,6 +187,11 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 			CitationLinks:         turn.CitationLinks,
 			ResponseMessageID:     turn.ResponseMessageID,
 		}, buildOptions(stdReq, usagePrompt, opts))
+
+		// 回写 response_message_id 到会话池，供下一次请求复用
+		if opts.SessionPool != nil && a != nil && turn.ResponseMessageID > 0 {
+			opts.SessionPool.Update(a.AccountID, sessionID, turn.ResponseMessageID)
+		}
 
 		retryMax := opts.RetryMaxAttempts
 		if retryMax <= 0 {
@@ -322,9 +361,16 @@ func startStandardCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekC
 	if prepErr != nil {
 		return StartResult{Request: stdReq}, prepErr
 	}
+	// 换号时使旧会话失效，创建新会话
+	if opts.SessionPool != nil && a != nil {
+		opts.SessionPool.Invalidate(a.AccountID)
+	}
 	sessionID, err := ds.CreateSession(ctx, a, maxAttempts)
 	if err != nil {
 		return StartResult{}, authOutputError(a)
+	}
+	if opts.SessionPool != nil && a != nil {
+		opts.SessionPool.Register(a.AccountID, sessionID)
 	}
 	pow, err := ds.GetPow(ctx, a, maxAttempts)
 	if err != nil {

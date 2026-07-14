@@ -61,6 +61,8 @@ func (f *fakeDeepSeekCaller) CallCompletion(_ context.Context, a *auth.RequestAu
 	return resp, nil
 }
 
+func (f *fakeDeepSeekCaller) SessionPool() *dsclient.SessionPool { return nil }
+
 func TestExecuteNonStreamWithRetryBuildsCanonicalTurn(t *testing.T) {
 	ds := &fakeDeepSeekCaller{responses: []*http.Response{sseHTTPResponse(
 		http.StatusOK,

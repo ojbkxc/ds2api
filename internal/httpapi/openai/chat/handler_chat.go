@@ -115,6 +115,7 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 	start, outErr := completionruntime.StartCompletion(r.Context(), h.DS, a, stdReq, completionruntime.Options{
 		CurrentInputFile: h.Store,
 		Store:            h.Store,
+		SessionPool:      h.DS.SessionPool(),
 	})
 	sessionID = start.SessionID
 	if outErr != nil {

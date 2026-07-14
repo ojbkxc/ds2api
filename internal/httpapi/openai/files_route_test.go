@@ -92,6 +92,8 @@ func (m *filesRouteDSStub) DeleteAllSessionsForToken(_ context.Context, _ string
 	return nil
 }
 
+func (m *filesRouteDSStub) SessionPool() *dsclient.SessionPool { return nil }
+
 func newMultipartUploadRequest(t *testing.T, purpose string, filename string, data []byte, model string) *http.Request {
 	t.Helper()
 	var body bytes.Buffer

@@ -74,6 +74,8 @@ func (m *inlineUploadDSStub) DeleteAllSessionsForToken(_ context.Context, _ stri
 	return nil
 }
 
+func (m *inlineUploadDSStub) SessionPool() *dsclient.SessionPool { return nil }
+
 func TestPreprocessInlineFileInputsReplacesDataURLAndCollectsRefFileIDs(t *testing.T) {
 	ds := &inlineUploadDSStub{}
 	h := &openAITestSurface{DS: ds}
