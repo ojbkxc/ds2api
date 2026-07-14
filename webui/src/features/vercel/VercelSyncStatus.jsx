@@ -6,26 +6,26 @@ export default function VercelSyncStatus({ t, result }) {
     }
 
     return (
-        <div className={`p-6 rounded-xl border ${result.success ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-destructive/10 border-destructive/20'} animate-in fade-in slide-in-from-right-4`}>
+        <div className="p-6 border animate-in fade-in slide-in-from-right-4" style={{ borderRadius: 'var(--radius-card)', borderColor: result.success ? 'var(--ds-success)' : 'var(--ds-error)', backgroundColor: result.success ? 'var(--ds-success-bg)' : 'var(--ds-error-bg)' }}>
             <div className="flex items-start gap-4">
                 {result.success ? (
-                    <div className="p-2 bg-emerald-500 text-white rounded-full shadow-lg shadow-emerald-500/30">
+                    <div className="p-2 rounded-full shadow-lg" style={{ backgroundColor: 'var(--ds-success)', color: 'var(--ds-text-on-primary)' }}>
                         <CheckCircle2 className="w-6 h-6" />
                     </div>
                 ) : (
-                    <div className="p-2 bg-destructive text-white rounded-full shadow-lg shadow-destructive/30">
+                    <div className="p-2 rounded-full shadow-lg" style={{ backgroundColor: 'var(--ds-error)', color: 'var(--ds-text-on-primary)' }}>
                         <XCircle className="w-6 h-6" />
                     </div>
                 )}
                 <div className="space-y-1">
-                    <h3 className={`font-semibold text-lg ${result.success ? 'text-emerald-500' : 'text-destructive'}`}>
+                    <h3 className="font-semibold text-lg" style={{ color: result.success ? 'var(--ds-success)' : 'var(--ds-error)' }}>
                         {result.success ? t('vercel.syncSucceeded') : t('vercel.syncFailedLabel')}
                     </h3>
-                    <p className="text-sm opacity-90">{result.message}</p>
+                    <p className="text-sm" style={{ color: 'var(--ds-text-secondary)' }}>{result.message}</p>
 
                     {result.deployment_url && (
-                        <div className="pt-3 mt-3 border-t border-emerald-500/20">
-                            <a href={`https://${result.deployment_url}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-medium hover:underline">
+                        <div className="pt-3 mt-3 border-t" style={{ borderColor: result.success ? 'var(--ds-success)' : 'var(--ds-error)' }}>
+                            <a href={`https://${result.deployment_url}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-medium hover:underline" style={{ color: 'var(--ds-blue)' }}>
                                 {t('vercel.openDeployment')} <ExternalLink className="w-3 h-3" />
                             </a>
                         </div>

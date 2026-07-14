@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import clsx from 'clsx'
 
 import { useI18n } from '../../i18n'
 import { useApiTesterState } from './useApiTesterState'
@@ -24,7 +23,7 @@ function describeModel(t, modelID) {
     }
 
     if (noThinking) {
-        return `${description} · ${t('apiTester.models.noThinking')}`
+        return `${description} \u00b7 ${t('apiTester.models.noThinking')}`
     }
     return description
 }
@@ -40,7 +39,7 @@ function decorateModel(t, modelID) {
             name: modelID,
             icon: 'ImageIcon',
             desc: describeModel(t, modelID),
-            color: 'text-fuchsia-600',
+            color: 'var(--ds-purple)',
         }
     }
     if (isVision) {
@@ -49,7 +48,7 @@ function decorateModel(t, modelID) {
             name: modelID,
             icon: 'ImageIcon',
             desc: describeModel(t, modelID),
-            color: 'text-violet-500',
+            color: 'var(--ds-purple)',
         }
     }
     if (isSearch) {
@@ -58,7 +57,7 @@ function decorateModel(t, modelID) {
             name: modelID,
             icon: 'SearchIcon',
             desc: describeModel(t, modelID),
-            color: isPro ? 'text-cyan-600' : 'text-cyan-500',
+            color: isPro ? 'var(--ds-info)' : 'var(--ds-info)',
         }
     }
     return {
@@ -66,7 +65,7 @@ function decorateModel(t, modelID) {
         name: modelID,
         icon: isPro ? 'Cpu' : 'MessageSquare',
         desc: describeModel(t, modelID),
-        color: isPro ? 'text-amber-600' : 'text-amber-500',
+        color: isPro ? 'var(--ds-warning)' : 'var(--ds-warning)',
     }
 }
 
@@ -186,7 +185,7 @@ export default function ApiTesterContainer({ config, onMessage, authFetch }) {
     })
 
     return (
-        <div className={clsx('flex flex-col lg:grid lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-0')}>
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 h-[calc(100vh-140px)] min-h-0">
             <ConfigPanel
                 t={t}
                 configExpanded={configExpanded}

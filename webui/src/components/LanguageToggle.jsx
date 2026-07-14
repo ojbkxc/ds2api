@@ -9,7 +9,13 @@ export default function LanguageToggle({ className = '' }) {
         <button
             type="button"
             onClick={() => setLang(nextLang)}
-            className={`text-xs font-semibold px-2 py-1 rounded-md border border-border bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${className}`}
+            className={`text-[10px] font-semibold px-2 py-1 transition-colors ${className}`}
+            style={{
+                background: 'var(--ds-surface)',
+                border: '1px solid var(--ds-border)',
+                borderRadius: 'var(--radius-ctrl)',
+                color: 'var(--ds-text-secondary)',
+            }}
             title={t('language.label')}
         >
             {label}

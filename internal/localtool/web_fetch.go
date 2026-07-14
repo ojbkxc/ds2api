@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/net/html"
 )
@@ -97,8 +98,9 @@ func (e *WebFetchExecutor) fetchHTML(body io.Reader, name string, callID ToolCal
 	text := extractTextFromHTML(string(data))
 	text = cleanExtractedText(text)
 
-	if len(text) > 10000 {
-		text = text[:10000] + "\n\n[Content truncated]"
+	if utf8.RuneCountInString(text) > 5000 {
+		runes := []rune(text)
+		text = string(runes[:5000]) + "\n\n[Content truncated]"
 		return &ToolResult{Ok: true, Name: name, CallId: callID, Summary: "Content fetched (truncated)", Detail: text, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds(), Truncated: true}, nil
 	}
 
@@ -112,8 +114,9 @@ func (e *WebFetchExecutor) fetchText(body io.Reader, name string, callID ToolCal
 	}
 
 	text := cleanExtractedText(string(data))
-	if len(text) > 10000 {
-		text = text[:10000] + "\n\n[Content truncated]"
+	if utf8.RuneCountInString(text) > 5000 {
+		runes := []rune(text)
+		text = string(runes[:5000]) + "\n\n[Content truncated]"
 		return &ToolResult{Ok: true, Name: name, CallId: callID, Summary: "Content fetched (truncated)", Detail: text, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds(), Truncated: true}, nil
 	}
 

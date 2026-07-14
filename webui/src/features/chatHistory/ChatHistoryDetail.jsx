@@ -10,7 +10,7 @@ import {
     formatElapsed,
 } from './chatHistoryUtils'
 
-function ExpandableText({ text = '', threshold = MESSAGE_COLLAPSE_AT, expandLabel, collapseLabel, buttonClassName = 'text-white hover:text-white/80' }) {
+function ExpandableText({ text = '', threshold = MESSAGE_COLLAPSE_AT, expandLabel, collapseLabel, buttonClassName }) {
     const shouldCollapse = text.length > threshold
     const [expanded, setExpanded] = useState(false)
     const contentRef = useRef(null)
@@ -29,7 +29,7 @@ function ExpandableText({ text = '', threshold = MESSAGE_COLLAPSE_AT, expandLabe
 
     return (
         <div>
-            <div className="overflow-hidden transition-[max-height] duration-300 ease-out" style={{ maxHeight }}>
+            <div className="overflow-hidden" style={{ maxHeight, transition: 'max-height 0.3s ease-out' }}>
                 <div ref={contentRef} className="whitespace-pre-wrap break-words">
                     {visibleText}
                 </div>
@@ -39,6 +39,7 @@ function ExpandableText({ text = '', threshold = MESSAGE_COLLAPSE_AT, expandLabe
                     type="button"
                     onClick={() => setExpanded(prev => !prev)}
                     className={clsx('mt-3 inline-flex items-center gap-2 text-xs font-medium transition-colors', buttonClassName)}
+                    style={{ borderRadius: 'var(--radius-ctrl)', color: 'var(--ds-text-secondary)' }}
                 >
                     <ChevronDown className={clsx('w-3.5 h-3.5 transition-transform duration-300', expanded && 'rotate-180')} />
                     {expanded ? collapseLabel : expandLabel}
@@ -65,22 +66,37 @@ function RequestMessages({ item, t, messages }) {
                     : (isAssistant ? t('chatHistory.role.assistant') : (isTool ? t('chatHistory.role.tool') : t('chatHistory.role.system')))
                 return (
                     <div key={`${role}-${index}`} className={clsx('flex gap-4', isUser && 'flex-row-reverse justify-start')}>
-                        <div className={clsx(
-                            'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-border',
-                            isUser ? 'bg-secondary' : (isAssistant ? 'bg-muted' : 'bg-background')
-                        )}>
-                            {isUser ? <UserRound className="w-4 h-4 text-muted-foreground" /> : <Bot className="w-4 h-4 text-foreground" />}
+                        <div
+                            className="w-8 h-8 flex items-center justify-center shrink-0"
+                            style={{
+                                borderRadius: 'var(--radius-ctrl)',
+                                background: isUser ? 'var(--ds-surface)' : (isAssistant ? 'var(--ds-surface)' : 'var(--ds-bg)'),
+                                border: '1px solid var(--ds-border)',
+                            }}
+                        >
+                            {isUser
+                                ? <UserRound className="w-4 h-4" style={{ color: 'var(--ds-text-secondary)' }} />
+                                : <Bot className="w-4 h-4" style={{ color: 'var(--ds-text)' }} />}
                         </div>
                         <div className="max-w-[88%] lg:max-w-[78%] text-left">
-                            <div className={clsx('text-[11px] uppercase tracking-[0.12em] text-muted-foreground mb-2 px-1', isUser && 'text-right')}>
+                            <div
+                                className={clsx('text-[11px] uppercase tracking-[0.12em] mb-2 px-1', isUser && 'text-right')}
+                                style={{ color: 'var(--ds-text-secondary)' }}
+                            >
                                 {label}
                             </div>
-                            <div className={clsx(
-                                'rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm border whitespace-pre-wrap break-words',
-                                isUser
-                                    ? 'bg-primary text-primary-foreground rounded-tr-sm border-primary/30'
-                                    : (isAssistant ? 'bg-secondary/60 text-foreground rounded-tl-sm border-border' : 'bg-background text-foreground rounded-tl-sm border-border')
-                            )}>
+                            <div
+                                className="px-5 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words"
+                                style={{
+                                    borderRadius: isUser
+                                        ? 'var(--radius-ctrl) var(--radius-ctrl) 2px var(--radius-ctrl)'
+                                        : 'var(--radius-ctrl) var(--radius-ctrl) var(--radius-ctrl) 2px',
+                                    background: isUser ? 'var(--ds-blue)' : (isAssistant ? 'var(--ds-surface)' : 'var(--ds-bg)'),
+                                    color: isUser ? 'var(--ds-text-on-primary)' : 'var(--ds-text)',
+                                    border: isUser ? '1px solid var(--ds-blue)' : '1px solid var(--ds-border)',
+                                    boxShadow: isUser ? 'var(--ds-elevate-1)' : 'none',
+                                }}
+                            >
                                 <div className="whitespace-pre-wrap break-words">
                                     {message.content || t('chatHistory.emptyUserInput')}
                                 </div>
@@ -114,10 +130,22 @@ function PromptTextActions({ text, filename, copyTitle, downloadTitle, t, onMess
 
     return (
         <div className="flex items-center gap-2">
-            <button type="button" onClick={handleCopy} className={buttonClassName} title={copyTitle}>
+            <button
+                type="button"
+                onClick={handleCopy}
+                className={clsx('ds-action-btn h-8 w-8', buttonClassName)}
+                style={{ borderRadius: 'var(--radius-ctrl)' }}
+                title={copyTitle}
+            >
                 <Copy className="w-4 h-4" />
             </button>
-            <button type="button" onClick={handleDownload} className={buttonClassName} title={downloadTitle}>
+            <button
+                type="button"
+                onClick={handleDownload}
+                className={clsx('ds-action-btn h-8 w-8', buttonClassName)}
+                style={{ borderRadius: 'var(--radius-ctrl)' }}
+                title={downloadTitle}
+            >
                 <Download className="w-4 h-4" />
             </button>
         </div>
@@ -129,11 +157,15 @@ function MergedPromptView({ item, t, onMessage }) {
 
     return (
         <div
-            className="max-w-4xl mx-auto rounded-2xl border px-5 py-4"
-            style={{ backgroundColor: 'rgb(231, 176, 8)', borderColor: 'rgba(231, 176, 8, 0.45)' }}
+            className="max-w-4xl mx-auto px-5 py-4"
+            style={{
+                background: 'var(--ds-warning-bg)',
+                border: '1px solid var(--ds-warning-border)',
+                borderRadius: 'var(--radius-ctrl)',
+            }}
         >
             <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="text-[11px] uppercase tracking-[0.12em] text-[#5b4300]">
+                <div className="text-[11px] uppercase tracking-[0.12em]" style={{ color: 'var(--ds-warning)' }}>
                     {t('chatHistory.mergedInput')}
                 </div>
                 <PromptTextActions
@@ -143,15 +175,15 @@ function MergedPromptView({ item, t, onMessage }) {
                     downloadTitle={t('chatHistory.downloadMerged')}
                     t={t}
                     onMessage={onMessage}
-                    buttonClassName="h-8 w-8 rounded-lg text-[#5b4300] hover:text-black hover:bg-[#fff8db]/45 flex items-center justify-center transition-colors"
+                    buttonClassName=""
                 />
             </div>
-            <div className="text-sm leading-7 text-[#2f2200] whitespace-pre-wrap break-words font-mono">
+            <div className="text-sm leading-7 whitespace-pre-wrap break-words font-mono" style={{ color: 'var(--ds-text)' }}>
                 <ExpandableText
                     text={merged || t('chatHistory.emptyMergedPrompt')}
                     expandLabel={t('chatHistory.expand')}
                     collapseLabel={t('chatHistory.collapse')}
-                    buttonClassName="text-[#2f2200] hover:text-black"
+                    buttonClassName=""
                 />
             </div>
         </div>
@@ -163,9 +195,9 @@ function HistoryTextView({ item, t, onMessage }) {
     if (!historyText) return null
 
     return (
-        <div className="max-w-4xl mx-auto rounded-2xl border border-border bg-background px-5 py-4">
+        <div className="max-w-4xl mx-auto ds-card px-5 py-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground text-left">
+                <div className="text-[11px] uppercase tracking-[0.12em] text-left" style={{ color: 'var(--ds-text-secondary)' }}>
                     HISTORY
                 </div>
                 <PromptTextActions
@@ -175,16 +207,16 @@ function HistoryTextView({ item, t, onMessage }) {
                     downloadTitle={t('chatHistory.downloadHistory')}
                     t={t}
                     onMessage={onMessage}
-                    buttonClassName="h-8 w-8 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-secondary/70 flex items-center justify-center"
+                    buttonClassName=""
                 />
             </div>
-            <div className="text-sm leading-7 text-foreground whitespace-pre-wrap break-words font-mono">
+            <div className="text-sm leading-7 whitespace-pre-wrap break-words font-mono" style={{ color: 'var(--ds-text)' }}>
                 <ExpandableText
                     text={historyText}
                     threshold={Math.floor(MESSAGE_COLLAPSE_AT / 4)}
                     expandLabel={t('chatHistory.expand')}
                     collapseLabel={t('chatHistory.collapse')}
-                    buttonClassName="text-foreground hover:text-muted-foreground"
+                    buttonClassName=""
                 />
             </div>
         </div>
@@ -193,39 +225,41 @@ function HistoryTextView({ item, t, onMessage }) {
 
 function MetaGrid({ selectedItem, t }) {
     return (
-        <div className="max-w-4xl mx-auto rounded-xl border border-border bg-background/70 p-4 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{t('chatHistory.metaTitle')}</div>
+        <div className="max-w-4xl mx-auto ds-card p-4 space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--ds-text-secondary)' }}>
+                {t('chatHistory.metaTitle')}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                    <div className="text-[11px] text-muted-foreground">{t('chatHistory.metaAccount')}</div>
-                    <div className="text-sm font-medium text-foreground">{selectedItem.account_id || t('chatHistory.metaUnknown')}</div>
+                <div className="ds-surface-panel px-3 py-2">
+                    <div className="text-[11px]" style={{ color: 'var(--ds-text-secondary)' }}>{t('chatHistory.metaAccount')}</div>
+                    <div className="text-sm font-medium" style={{ color: 'var(--ds-text)' }}>{selectedItem.account_id || t('chatHistory.metaUnknown')}</div>
                 </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                    <div className="text-[11px] text-muted-foreground">{t('chatHistory.metaElapsed')}</div>
-                    <div className="text-sm font-medium text-foreground flex items-center gap-2">
-                        <Clock3 className="w-3.5 h-3.5 text-muted-foreground" />
+                <div className="ds-surface-panel px-3 py-2">
+                    <div className="text-[11px]" style={{ color: 'var(--ds-text-secondary)' }}>{t('chatHistory.metaElapsed')}</div>
+                    <div className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--ds-text)' }}>
+                        <Clock3 className="w-3.5 h-3.5" style={{ color: 'var(--ds-text-secondary)' }} />
                         {formatElapsed(selectedItem.elapsed_ms, t)}
                     </div>
                 </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                    <div className="text-[11px] text-muted-foreground">{t('chatHistory.metaSurface')}</div>
-                    <div className="text-sm font-medium text-foreground break-all">{selectedItem.surface || t('chatHistory.metaUnknown')}</div>
+                <div className="ds-surface-panel px-3 py-2">
+                    <div className="text-[11px]" style={{ color: 'var(--ds-text-secondary)' }}>{t('chatHistory.metaSurface')}</div>
+                    <div className="text-sm font-medium break-all" style={{ color: 'var(--ds-text)' }}>{selectedItem.surface || t('chatHistory.metaUnknown')}</div>
                 </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                    <div className="text-[11px] text-muted-foreground">{t('chatHistory.metaModel')}</div>
-                    <div className="text-sm font-medium text-foreground break-all">{selectedItem.model || t('chatHistory.metaUnknown')}</div>
+                <div className="ds-surface-panel px-3 py-2">
+                    <div className="text-[11px]" style={{ color: 'var(--ds-text-secondary)' }}>{t('chatHistory.metaModel')}</div>
+                    <div className="text-sm font-medium break-all" style={{ color: 'var(--ds-text)' }}>{selectedItem.model || t('chatHistory.metaUnknown')}</div>
                 </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                    <div className="text-[11px] text-muted-foreground">{t('chatHistory.metaStatusCode')}</div>
-                    <div className="text-sm font-medium text-foreground">{selectedItem.status_code || '-'}</div>
+                <div className="ds-surface-panel px-3 py-2">
+                    <div className="text-[11px]" style={{ color: 'var(--ds-text-secondary)' }}>{t('chatHistory.metaStatusCode')}</div>
+                    <div className="text-sm font-medium" style={{ color: 'var(--ds-text)' }}>{selectedItem.status_code || '-'}</div>
                 </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                    <div className="text-[11px] text-muted-foreground">{t('chatHistory.metaStream')}</div>
-                    <div className="text-sm font-medium text-foreground">{selectedItem.stream ? t('chatHistory.streamMode') : t('chatHistory.nonStreamMode')}</div>
+                <div className="ds-surface-panel px-3 py-2">
+                    <div className="text-[11px]" style={{ color: 'var(--ds-text-secondary)' }}>{t('chatHistory.metaStream')}</div>
+                    <div className="text-sm font-medium" style={{ color: 'var(--ds-text)' }}>{selectedItem.stream ? t('chatHistory.streamMode') : t('chatHistory.nonStreamMode')}</div>
                 </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                    <div className="text-[11px] text-muted-foreground">{t('chatHistory.metaCaller')}</div>
-                    <div className="text-sm font-medium text-foreground break-all">{selectedItem.caller_id || t('chatHistory.metaUnknown')}</div>
+                <div className="ds-surface-panel px-3 py-2">
+                    <div className="text-[11px]" style={{ color: 'var(--ds-text-secondary)' }}>{t('chatHistory.metaCaller')}</div>
+                    <div className="text-sm font-medium break-all" style={{ color: 'var(--ds-text)' }}>{selectedItem.caller_id || t('chatHistory.metaUnknown')}</div>
                 </div>
             </div>
         </div>
@@ -246,28 +280,45 @@ export default function DetailConversation({ selectedItem, t, viewMode, detailSc
                 : <MergedPromptView item={selectedItem} t={t} onMessage={onMessage} />}
 
             <div ref={assistantStartRef} className="flex gap-4 max-w-4xl mx-auto">
-                <div className={clsx(
-                    'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-border',
-                    selectedItem.status === 'error' ? 'bg-destructive/10 border-destructive/20' : 'bg-muted'
-                )}>
-                    <Bot className={clsx('w-4 h-4', selectedItem.status === 'error' ? 'text-destructive' : 'text-foreground')} />
+                <div
+                    className="w-8 h-8 flex items-center justify-center shrink-0"
+                    style={{
+                        borderRadius: 'var(--radius-ctrl)',
+                        background: selectedItem.status === 'error' ? 'var(--ds-danger-bg)' : 'var(--ds-surface)',
+                        border: selectedItem.status === 'error' ? '1px solid var(--ds-danger-border)' : '1px solid var(--ds-border)',
+                    }}
+                >
+                    <Bot
+                        className="w-4 h-4"
+                        style={{ color: selectedItem.status === 'error' ? 'var(--ds-danger)' : 'var(--ds-text)' }}
+                    />
                 </div>
                 <div className="space-y-4 flex-1 min-w-0">
                     {(selectedItem.reasoning_content || '').trim() && (
-                        <div className="text-xs bg-secondary/50 border border-border rounded-lg p-3 space-y-1.5">
-                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <div
+                            className="p-3 space-y-1.5"
+                            style={{
+                                background: 'var(--ds-surface)',
+                                border: '1px solid var(--ds-border)',
+                                borderRadius: 'var(--radius-ctrl)',
+                            }}
+                        >
+                            <div className="flex items-center gap-1.5" style={{ color: 'var(--ds-text-secondary)' }}>
                                 <Sparkles className="w-3.5 h-3.5" />
-                                <span className="font-medium">{t('chatHistory.reasoningTrace')}</span>
+                                <span className="font-medium text-xs">{t('chatHistory.reasoningTrace')}</span>
                             </div>
-                            <div className="whitespace-pre-wrap leading-relaxed text-muted-foreground font-mono text-[12px] md:text-[13px] max-h-64 overflow-y-auto custom-scrollbar pl-5 border-l-2 border-border/50 break-words">
+                            <div
+                                className="whitespace-pre-wrap leading-relaxed font-mono text-[12px] md:text-[13px] max-h-64 overflow-y-auto custom-scrollbar pl-5 break-words"
+                                style={{ color: 'var(--ds-text-secondary)', borderLeft: '2px solid var(--ds-border)' }}
+                            >
                                 {selectedItem.reasoning_content}
                             </div>
                         </div>
                     )}
 
-                    <div className="text-sm leading-7 text-foreground whitespace-pre-wrap break-words">
+                    <div className="text-sm leading-7 whitespace-pre-wrap break-words" style={{ color: 'var(--ds-text)' }}>
                         {selectedItem.status === 'error'
-                            ? <span className="text-destructive font-medium">{selectedItem.error || t('chatHistory.failedOutput')}</span>
+                            ? <span className="font-medium" style={{ color: 'var(--ds-danger)' }}>{selectedItem.error || t('chatHistory.failedOutput')}</span>
                             : (selectedItem.content || t('chatHistory.emptyAssistantOutput'))}
                     </div>
                 </div>
@@ -278,7 +329,13 @@ export default function DetailConversation({ selectedItem, t, viewMode, detailSc
             <button
                 type="button"
                 onClick={() => detailScrollRef.current?.scrollTo({ top: detailScrollRef.current?.scrollHeight || 0, behavior: 'smooth' })}
-                className={clsx('h-12 w-12 rounded-full border border-border bg-card/95 backdrop-blur shadow-lg text-muted-foreground hover:text-foreground hover:bg-secondary/90 flex items-center justify-center', bottomButtonClassName)}
+                className={clsx('ds-action-btn h-12 w-12', bottomButtonClassName)}
+                style={{
+                    borderRadius: 'var(--radius-pill)',
+                    background: 'var(--ds-card)',
+                    border: '1px solid var(--ds-border)',
+                    boxShadow: 'var(--ds-shadow-lg)',
+                }}
                 title={t('chatHistory.backToBottom')}
             >
                 <ArrowDown className="w-5 h-5" />

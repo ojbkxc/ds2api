@@ -6,7 +6,7 @@ import {
     Terminal,
     Zap,
     ToggleLeft,
-    ToggleRight
+    ToggleRight,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -46,141 +46,285 @@ export default function ConfigPanel({
     const defaultKeyPreview = maskSecret(config.keys?.[0])
     const hasModels = models.length > 0
 
+    const labelStyle = {
+        fontSize: 11,
+        fontWeight: 600,
+        color: 'var(--ds-text-tertiary)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        marginLeft: 2,
+    }
+
+    const selectStyle = {
+        width: '100%',
+        height: 40,
+        paddingLeft: 12,
+        paddingRight: 36,
+        background: 'var(--ds-surface)',
+        border: '1px solid var(--ds-border)',
+        borderRadius: 'var(--radius-ctrl)',
+        fontSize: 13,
+        color: 'var(--ds-text)',
+        appearance: 'none',
+        cursor: 'pointer',
+        transition: 'border-color 0.15s',
+    }
+
     return (
-        <div className={clsx(
-            "lg:col-span-3 flex flex-col transition-all duration-300 ease-in-out z-20 min-h-0",
-            configExpanded ? "h-auto" : "h-14 lg:h-full"
-        )}>
-            <div className="bg-card border border-border rounded-xl flex flex-col h-full shadow-sm min-h-0 overflow-hidden">
+        <div
+            className={clsx(
+                'lg:col-span-3 flex flex-col transition-all duration-300 ease-in-out z-20 min-h-0',
+                configExpanded ? 'h-auto' : 'h-14 lg:h-full',
+            )}
+        >
+            <div
+                className="ds-card flex flex-col h-full min-h-0 overflow-hidden"
+                style={{ boxShadow: 'var(--ds-elevate-1)' }}
+            >
+                {/* Mobile expand toggle */}
                 <button
                     onClick={() => setConfigExpanded(!configExpanded)}
-                    className="lg:hidden flex items-center justify-between p-4 w-full bg-muted/20 hover:bg-muted/30 transition-colors"
+                    className="lg:hidden flex items-center justify-between p-4 w-full transition-colors"
+                    style={{
+                        background: 'var(--ds-surface)',
+                        border: 'none',
+                        cursor: 'pointer',
+                    }}
                 >
-                    <div className="flex items-center gap-2.5 font-medium text-sm text-foreground">
-                        <div className="p-1.5 rounded-md bg-transparent text-foreground">
+                    <div className="flex items-center gap-2.5 font-medium text-sm" style={{ color: 'var(--ds-text)' }}>
+                        <div
+                            style={{
+                                padding: '6px',
+                                borderRadius: 'var(--radius-ctrl)',
+                                background: 'transparent',
+                                color: 'var(--ds-text)',
+                            }}
+                        >
                             <Terminal className="w-4 h-4" />
                         </div>
                         <span>{t('apiTester.config')}</span>
                     </div>
-                    <div className={clsx("transition-transform duration-300 text-muted-foreground", configExpanded ? "rotate-180" : "") }>
+                    <div
+                        className={clsx(
+                            'transition-transform duration-300',
+                            configExpanded ? 'rotate-180' : '',
+                        )}
+                        style={{ color: 'var(--ds-text-secondary)' }}
+                    >
                         <ChevronDown className="w-4 h-4" />
                     </div>
                 </button>
 
-                <div className={clsx(
-                    "p-4 flex flex-col gap-5",
-                    !configExpanded && "hidden lg:flex"
-                )}>
-                    <div className="space-y-2 shrink-0">
-                        <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-0.5">{t('apiTester.modelLabel')}</label>
-                        <div className="relative">
+                <div
+                    className={clsx(
+                        'p-4 flex flex-col gap-5',
+                        !configExpanded && 'hidden lg:flex',
+                    )}
+                >
+                    {/* Model selector */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} className="shrink-0">
+                        <label style={labelStyle}>{t('apiTester.modelLabel')}</label>
+                        <div style={{ position: 'relative' }}>
                             <select
-                                className="w-full h-11 pl-3 pr-9 bg-secondary border border-border rounded-lg text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-all cursor-pointer hover:bg-muted/70 text-foreground disabled:opacity-60 disabled:cursor-not-allowed"
+                                style={selectStyle}
                                 value={model}
                                 onChange={e => setModel(e.target.value)}
                                 disabled={!hasModels}
                             >
-                                {hasModels ? models.map(m => (
-                                    <option key={m.id} value={m.id} className="bg-popover text-popover-foreground">
-                                        {m.name}
-                                    </option>
-                                )) : (
-                                    <option value="" className="bg-popover text-popover-foreground">
-                                        {modelsLoaded ? t('apiTester.noModels') : t('apiTester.loadingModels')}
-                                    </option>
-                                )}
+                                {hasModels
+                                    ? models.map(m => (
+                                        <option key={m.id} value={m.id}>
+                                            {m.name}
+                                        </option>
+                                    ))
+                                    : (
+                                        <option value="">
+                                            {modelsLoaded ? t('apiTester.noModels') : t('apiTester.loadingModels')}
+                                        </option>
+                                    )}
                             </select>
-                            <ChevronDown className="absolute right-2.5 top-3.5 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            <ChevronDown
+                                className="w-4 h-4 pointer-events-none"
+                                style={{
+                                    position: 'absolute',
+                                    right: 10,
+                                    top: 12,
+                                    color: 'var(--ds-text-tertiary)',
+                                }}
+                            />
                         </div>
                         {selectedModel ? (
-                            <div className="mt-3 rounded-lg border border-border bg-muted/20 p-3">
-                                <div className="flex items-start gap-3">
-                                    <div className={clsx(
-                                        "p-2 rounded-md shrink-0 border border-border bg-background/80",
-                                        selectedModel.color
-                                    )}>
+                            <div
+                                style={{
+                                    borderRadius: 'var(--radius-ctrl)',
+                                    border: '1px solid var(--ds-border)',
+                                    background: 'var(--ds-bg)',
+                                    padding: 12,
+                                    marginTop: 4,
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                                    <div
+                                        style={{
+                                            padding: 8,
+                                            borderRadius: 'var(--radius-ctrl)',
+                                            flexShrink: 0,
+                                            border: '1px solid var(--ds-border)',
+                                            background: 'var(--ds-card)',
+                                            color: 'var(--ds-blue)',
+                                        }}
+                                    >
                                         <SelectedModelIcon className="w-4 h-4" />
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="font-medium text-sm text-foreground truncate">
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                        <div
+                                            style={{
+                                                fontWeight: 500,
+                                                fontSize: 13,
+                                                color: 'var(--ds-text)',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
                                             {selectedModel.name}
                                         </div>
-                                        <div className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                                        <div
+                                            style={{
+                                                fontSize: 11,
+                                                color: 'var(--ds-text-tertiary)',
+                                                marginTop: 4,
+                                                lineHeight: 1.5,
+                                            }}
+                                        >
                                             {selectedModel.desc}
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-[11px] text-muted-foreground/70 mt-2">
+                                <p
+                                    style={{
+                                        fontSize: 11,
+                                        color: 'var(--ds-text-tertiary)',
+                                        marginTop: 8,
+                                        margin: '8px 0 0 0',
+                                    }}
+                                >
                                     {t('apiTester.modelPickerHint')}
                                 </p>
                             </div>
                         ) : (
-                            <div className="mt-3 rounded-lg border border-dashed border-border bg-muted/10 p-3 text-[11px] text-muted-foreground leading-relaxed">
+                            <div
+                                style={{
+                                    borderRadius: 'var(--radius-ctrl)',
+                                    border: '1px dashed var(--ds-border)',
+                                    background: 'var(--ds-bg)',
+                                    padding: 12,
+                                    marginTop: 4,
+                                    fontSize: 11,
+                                    color: 'var(--ds-text-tertiary)',
+                                    lineHeight: 1.5,
+                                }}
+                            >
                                 {modelsLoaded ? t('apiTester.noModelsHint') : t('apiTester.loadingModelsHint')}
                             </div>
                         )}
                     </div>
 
-                    <div className="space-y-2 shrink-0">
-                        <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-0.5">{t('apiTester.streamMode')}</label>
+                    {/* Stream mode toggle */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} className="shrink-0">
+                        <label style={labelStyle}>{t('apiTester.streamMode')}</label>
                         <button
                             onClick={() => setStreamingMode(!streamingMode)}
                             className={clsx(
-                                "w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all duration-200",
-                                streamingMode
-                                    ? "bg-primary/10 border-primary/50 text-foreground"
-                                    : "bg-background border-border text-muted-foreground hover:bg-muted/50"
+                                'w-full flex items-center justify-between px-3 py-2 transition-all duration-200',
                             )}
+                            style={{
+                                borderRadius: 'var(--radius-ctrl)',
+                                border: '1px solid',
+                                borderColor: streamingMode ? 'var(--ds-blue)' : 'var(--ds-border)',
+                                background: streamingMode ? 'var(--ds-blue-light)' : 'var(--ds-card)',
+                                color: streamingMode ? 'var(--ds-text)' : 'var(--ds-text-secondary)',
+                                cursor: 'pointer',
+                            }}
                         >
-                            <div className="flex items-center gap-2">
-                                <div className={clsx("p-1.5 rounded-md", streamingMode ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div
+                                    style={{
+                                        padding: 6,
+                                        borderRadius: 'var(--radius-ctrl)',
+                                        background: streamingMode ? 'var(--ds-blue)' : 'var(--ds-surface)',
+                                        color: streamingMode ? 'var(--ds-text-on-primary)' : 'var(--ds-text-tertiary)',
+                                    }}
+                                >
                                     <Zap className="w-4 h-4" />
                                 </div>
-                                <span className="text-sm font-medium">{t('apiTester.streamMode')}</span>
+                                <span style={{ fontSize: 13, fontWeight: 500 }}>{t('apiTester.streamMode')}</span>
                             </div>
-                            {streamingMode ? <ToggleRight className="w-5 h-5 text-primary" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground" />}
+                            {streamingMode ? (
+                                <ToggleRight className="w-5 h-5" style={{ color: 'var(--ds-blue)' }} />
+                            ) : (
+                                <ToggleLeft className="w-5 h-5" style={{ color: 'var(--ds-text-tertiary)' }} />
+                            )}
                         </button>
                     </div>
 
-                    <div className="space-y-2 shrink-0">
-                        <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-0.5">{t('apiTester.accountSelector')}</label>
-                        <div className="relative">
+                    {/* Account selector */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} className="shrink-0">
+                        <label style={labelStyle}>{t('apiTester.accountSelector')}</label>
+                        <div style={{ position: 'relative' }}>
                             <select
-                                className="w-full h-10 pl-3 pr-8 bg-secondary border border-border rounded-lg text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-all cursor-pointer hover:bg-muted"
+                                style={selectStyle}
                                 value={selectedAccount}
                                 onChange={e => setSelectedAccount(e.target.value)}
                             >
-                                <option value="" className="bg-popover text-popover-foreground">{t('apiTester.autoRandom')}</option>
+                                <option value="">{t('apiTester.autoRandom')}</option>
                                 {accounts.map((acc, i) => {
                                     const id = resolveAccountIdentifier(acc)
                                     if (!id) return null
                                     return (
-                                        <option key={i} value={id} className="bg-popover text-popover-foreground">
-                                            👤 {id}
+                                        <option key={i} value={id}>
+                                            {id}
                                         </option>
                                     )
                                 })}
                             </select>
-                            <ChevronDown className="absolute right-2.5 top-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            <ChevronDown
+                                className="w-4 h-4 pointer-events-none"
+                                style={{
+                                    position: 'absolute',
+                                    right: 10,
+                                    top: 12,
+                                    color: 'var(--ds-text-tertiary)',
+                                }}
+                            />
                         </div>
                     </div>
 
-                    <div className="space-y-2 shrink-0">
-                        <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-0.5">{t('apiTester.apiKeyOptional')}</label>
+                    {/* API key input */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} className="shrink-0">
+                        <label style={labelStyle}>{t('apiTester.apiKeyOptional')}</label>
                         <input
                             type="text"
                             autoComplete="off"
                             spellCheck={false}
-                            className="w-full h-10 px-3 bg-muted/30 border border-border rounded-lg text-sm font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-all"
-                            placeholder={defaultKeyPreview ? t('apiTester.apiKeyDefault', { preview: defaultKeyPreview }) : t('apiTester.apiKeyPlaceholder')}
+                            className="ds-input"
+                            style={{ fontFamily: 'monospace', height: 40 }}
+                            placeholder={
+                                defaultKeyPreview
+                                    ? t('apiTester.apiKeyDefault', { preview: defaultKeyPreview })
+                                    : t('apiTester.apiKeyPlaceholder')
+                            }
                             value={apiKey}
                             onChange={e => setApiKey(e.target.value)}
                         />
                         {customKeyActive && (
-                            <p className={clsx(
-                                "text-[11px] mt-1",
-                                customKeyManaged ? "text-emerald-600" : "text-amber-600"
-                            )}>
+                            <p
+                                style={{
+                                    fontSize: 11,
+                                    marginTop: 2,
+                                    color: customKeyManaged ? 'var(--ds-success)' : 'var(--ds-warning)',
+                                }}
+                            >
                                 {customKeyManaged ? t('apiTester.modeManaged') : t('apiTester.modeDirect')}
                             </p>
                         )}

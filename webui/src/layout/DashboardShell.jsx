@@ -29,8 +29,8 @@ const ProxyManagerContainer = lazy(() => import('../features/proxy/ProxyManagerC
 
 function TabLoadingFallback({ label }) {
     return (
-        <div className="min-h-[320px] rounded-lg border border-border bg-card flex items-center justify-center">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <div className="min-h-[320px] border border-border flex items-center justify-center" style={{ background: 'var(--ds-card)', borderRadius: 'var(--radius-card)' }}>
+            <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>{label}</span>
             </div>
@@ -129,27 +129,29 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
     }
 
     return (
-        <div className="flex h-screen bg-background overflow-hidden text-foreground">
+        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--ds-shell-bg)', color: 'var(--ds-text)' }}>
             {sidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+                    className="fixed inset-0 z-40 lg:hidden"
+                    style={{ background: 'rgba(15,20,35,0.6)', backdropFilter: 'blur(2px)' }}
                     onClick={() => setSidebarOpen(false)}
                 />
             )}
 
             <aside className={clsx(
-                "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transition-transform duration-300 ease-in-out lg:transform-none flex flex-col shadow-2xl lg:shadow-none",
+                "fixed lg:static inset-y-0 left-0 z-50 w-64 border-r transition-transform duration-300 ease-in-out lg:transform-none flex flex-col",
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
-            )}>
+            )}
+                style={{ background: 'var(--ds-card)', borderColor: 'var(--ds-border)' }}>
                 <div className="p-6">
-                    <div className="flex items-center gap-2.5 font-bold text-xl text-foreground tracking-tight">
-                        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+                    <div className="flex items-center gap-2.5 font-bold text-xl tracking-tight" style={{ color: 'var(--ds-text)' }}>
+                        <div className="w-8 h-8 flex items-center justify-center" style={{ background: 'var(--ds-blue)', borderRadius: 'var(--radius-ctrl)', color: 'var(--ds-text-on-primary)' }}>
                             <LayoutDashboard className="w-5 h-5" />
                         </div>
                         <span>DS2API</span>
                     </div>
                     <div className="flex items-center justify-between mt-2">
-                        <p className="text-[10px] text-muted-foreground font-semibold tracking-[0.1em] uppercase opacity-60 px-1">{t('sidebar.onlineAdminConsole')}</p>
+                        <p className="text-[10px] font-semibold tracking-[0.1em] uppercase opacity-60 px-1" style={{ color: 'var(--ds-text-tertiary)' }}>{t('sidebar.onlineAdminConsole')}</p>
                         <LanguageToggle />
                     </div>
                 </div>
@@ -165,45 +167,63 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
                                     navigateToTab(item.id)
                                 }}
                                 className={clsx(
-                                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group border",
-                                    isActive
-                                        ? "bg-secondary text-primary border-border shadow-sm"
-                                        : "text-muted-foreground border-transparent hover:bg-secondary/80 hover:text-foreground"
+                                    "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative",
                                 )}
+                                style={{
+                                    borderRadius: 'var(--radius-ctrl)',
+                                    background: isActive ? 'var(--ds-surface)' : 'transparent',
+                                    color: isActive ? 'var(--ds-text)' : 'var(--ds-text-secondary)',
+                                    border: isActive ? '1px solid var(--ds-border)' : '1px solid transparent',
+                                }}
+                                onMouseEnter={e => {
+                                    if (!isActive) {
+                                        e.currentTarget.style.color = 'var(--ds-text)'
+                                        e.currentTarget.style.background = 'var(--ds-surface)'
+                                    }
+                                }}
+                                onMouseLeave={e => {
+                                    if (!isActive) {
+                                        e.currentTarget.style.color = 'var(--ds-text-secondary)'
+                                        e.currentTarget.style.background = 'transparent'
+                                    }
+                                }}
                             >
-                                <Icon className={clsx("w-4 h-4 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground")} />
+                                <Icon className={clsx("w-4 h-4 transition-colors")} style={{ color: isActive ? 'var(--ds-blue)' : 'var(--ds-text-secondary)' }} />
                                 <span className="flex-1 text-left">{item.label}</span>
-                                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                                {isActive && (
+                                    <div className="absolute bottom-0 left-3 right-3 h-0.5" style={{ background: 'var(--ds-blue)', borderRadius: '2px 2px 0 0' }} />
+                                )}
                             </button>
                         )
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-border bg-card">
+                <div className="p-4 border-t" style={{ borderColor: 'var(--ds-border)', background: 'var(--ds-card)' }}>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between text-sm px-1">
-                            <span className="text-muted-foreground font-semibold text-[10px] uppercase tracking-wider">{t('sidebar.systemStatus')}</span>
-                            <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span className="font-semibold text-[10px] uppercase tracking-wider" style={{ color: 'var(--ds-text-secondary)' }}>{t('sidebar.systemStatus')}</span>
+                            <span className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--ds-success)', background: 'var(--ds-success-bg)', borderRadius: 'var(--radius-pill)', padding: '0.125rem 0.5rem', border: '1px solid var(--ds-success-border)' }}>
+                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--ds-success)' }}></span>
                                 {t('sidebar.statusOnline')}
                             </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <div className="bg-background rounded-lg p-3 border border-border shadow-sm">
-                                <div className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5 opacity-70">{t('sidebar.accounts')}</div>
-                                <div className="text-lg font-bold text-foreground leading-tight">{config.accounts?.length || 0}</div>
+                            <div className="p-3 border" style={{ background: 'var(--ds-bg)', borderRadius: 'var(--radius-card)', borderColor: 'var(--ds-border)' }}>
+                                <div className="text-[9px] font-bold uppercase tracking-wider mb-0.5 opacity-70" style={{ color: 'var(--ds-text-tertiary)' }}>{t('sidebar.accounts')}</div>
+                                <div className="text-lg font-bold leading-tight" style={{ color: 'var(--ds-text)' }}>{config.accounts?.length || 0}</div>
                             </div>
-                            <div className="bg-background rounded-lg p-3 border border-border shadow-sm">
-                                <div className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5 opacity-70">{t('sidebar.keys')}</div>
-                                <div className="text-lg font-bold text-foreground">{config.keys?.length || 0}</div>
+                            <div className="p-3 border" style={{ background: 'var(--ds-bg)', borderRadius: 'var(--radius-card)', borderColor: 'var(--ds-border)' }}>
+                                <div className="text-[9px] font-bold uppercase tracking-wider mb-0.5 opacity-70" style={{ color: 'var(--ds-text-tertiary)' }}>{t('sidebar.keys')}</div>
+                                <div className="text-lg font-bold" style={{ color: 'var(--ds-text)' }}>{config.keys?.length || 0}</div>
                             </div>
                         </div>
-                        <div className="bg-background rounded-lg p-3 border border-border shadow-sm">
-                            <div className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider mb-1 opacity-70">{t('sidebar.version')}</div>
-                            <div className="text-xs font-semibold text-foreground">{versionInfo?.current_tag || '-'}</div>
+                        <div className="p-3 border" style={{ background: 'var(--ds-bg)', borderRadius: 'var(--radius-card)', borderColor: 'var(--ds-border)' }}>
+                            <div className="text-[9px] font-bold uppercase tracking-wider mb-1 opacity-70" style={{ color: 'var(--ds-text-tertiary)' }}>{t('sidebar.version')}</div>
+                            <div className="text-xs font-semibold" style={{ color: 'var(--ds-text)' }}>{versionInfo?.current_tag || '-'}</div>
                             {versionInfo?.has_update && (
                                 <a
-                                    className="inline-flex mt-1 text-[10px] text-amber-500 hover:text-amber-400"
+                                    className="inline-flex mt-1 text-[10px] hover:underline"
+                                    style={{ color: 'var(--ds-warning)' }}
                                     href={versionInfo?.release_url || 'https://github.com/ojbkxc/ds2api/releases/latest'}
                                     target="_blank"
                                     rel="noreferrer"
@@ -214,7 +234,18 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
                         </div>
                         <button
                             onClick={onLogout}
-                            className="w-full h-10 flex items-center justify-center gap-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all"
+                            className="w-full h-10 flex items-center justify-center gap-2 text-xs font-medium transition-all"
+                            style={{ borderRadius: 'var(--radius-ctrl)', border: '1px solid var(--ds-border)', color: 'var(--ds-text-secondary)', background: 'transparent' }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.color = 'var(--ds-danger)'
+                                e.currentTarget.style.borderColor = 'var(--ds-danger-border)'
+                                e.currentTarget.style.background = 'var(--ds-danger-bg)'
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.color = 'var(--ds-text-secondary)'
+                                e.currentTarget.style.borderColor = 'var(--ds-border)'
+                                e.currentTarget.style.background = 'transparent'
+                            }}
                         >
                             <LogOut className="w-3.5 h-3.5" />
                             {t('sidebar.signOut')}
@@ -224,42 +255,54 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
             </aside>
 
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-                <header className="lg:hidden h-14 flex items-center justify-between px-4 border-b border-border bg-card">
+                <header className="lg:hidden h-14 flex items-center justify-between px-4 border-b" style={{ borderColor: 'var(--ds-border)', background: 'var(--ds-card)' }}>
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded bg-primary flex items-center justify-center text-primary-foreground text-[10px]">
+                        <div className="w-6 h-6 flex items-center justify-center" style={{ background: 'var(--ds-blue)', borderRadius: 'var(--radius-ctrl)', color: 'var(--ds-text-on-primary)' }}>
                             <LayoutDashboard className="w-3.5 h-3.5" />
                         </div>
-                        <span className="font-semibold text-sm">DS2API</span>
+                        <span className="font-semibold text-sm" style={{ color: 'var(--ds-text)' }}>DS2API</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <LanguageToggle />
                         <button
                             onClick={() => setSidebarOpen(true)}
-                            className="p-2 -mr-2 text-muted-foreground hover:text-foreground"
+                            className="p-2 -mr-2"
+                            style={{ color: 'var(--ds-text-secondary)' }}
                         >
                             <Menu className="w-5 h-5" />
                         </button>
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-auto bg-background p-4 lg:p-10">
+                <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8" style={{ background: 'var(--ds-shell-bg)' }}>
                     <div className="max-w-6xl mx-auto space-y-4 lg:space-y-6">
                         <div className="hidden lg:block mb-8">
-                            <h1 className="text-3xl font-bold tracking-tight mb-2">
+                            <h1 className="text-[17px] font-bold tracking-tight mb-2" style={{ color: 'var(--ds-text)' }}>
                                 {activeNavItem?.label}
                             </h1>
-                            <p className="text-muted-foreground">
+                            <p style={{ color: 'var(--ds-text-secondary)', fontSize: '13px' }}>
                                 {activeNavItem?.description}
                             </p>
                         </div>
 
                         {message && (
                             <div className={clsx(
-                                "p-4 rounded-lg border flex items-center gap-3 animate-in fade-in slide-in-from-top-2",
-                                message.type === 'error' ? "bg-destructive/10 border-destructive/20 text-destructive" :
-                                    "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
-                            )}>
-                                {message.type === 'error' ? <X className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 border-emerald-500 flex items-center justify-center text-[10px]">✓</div>}
+                                "p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2",
+                            )}
+                                style={{
+                                    borderRadius: 'var(--radius-ctrl)',
+                                    border: message.type === 'error'
+                                        ? '1px solid var(--ds-danger-border)'
+                                        : '1px solid var(--ds-success-border)',
+                                    background: message.type === 'error'
+                                        ? 'var(--ds-danger-bg)'
+                                        : 'var(--ds-success-bg)',
+                                    color: message.type === 'error'
+                                        ? 'var(--ds-danger)'
+                                        : 'var(--ds-success)',
+                                }}
+                            >
+                                {message.type === 'error' ? <X className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px]" style={{ borderColor: 'var(--ds-success)' }}>✓</div>}
                                 {message.text}
                             </div>
                         )}

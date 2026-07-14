@@ -1,14 +1,17 @@
+import Input from '../../components/ui/Input'
+
 export default function ModelSection({ t, form, setForm }) {
     return (
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-            <h3 className="font-semibold">{t('settings.modelTitle')}</h3>
-            <label className="text-sm space-y-2 block">
-                <span className="text-muted-foreground">{t('settings.modelAliases')}</span>
+        <div className="ds-card p-5" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h3 className="font-semibold" style={{ color: 'var(--ds-text)' }}>{t('settings.modelTitle')}</h3>
+            <label className="text-sm" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--ds-text-secondary)' }}>{t('settings.modelAliases')}</span>
                 <textarea
                     value={form.model_aliases_text}
                     onChange={(e) => setForm((prev) => ({ ...prev, model_aliases_text: e.target.value }))}
                     rows={12}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 font-mono text-xs"
+                    className="ds-input font-mono text-xs"
+                    style={{ resize: 'vertical' }}
                 />
             </label>
         </div>

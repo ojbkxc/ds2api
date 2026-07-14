@@ -12,21 +12,44 @@ export default function AddKeyModal({ show, t, editingKey, newKey, setNewKey, lo
     const displayKey = isEditing ? maskSecret(editingKey?.key || newKey.key) : newKey.key
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-card w-full max-w-md rounded-xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95">
-                <div className="p-4 border-b border-border flex justify-between items-center">
-                    <h3 className="font-semibold">{isEditing ? t('accountManager.modalEditKeyTitle') : t('accountManager.modalAddKeyTitle')}</h3>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-                        <X className="w-5 h-5" />
+        <div className="ds-modal-overlay" onClick={onClose}>
+            <div className="ds-modal-card" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+                    <h3 className="ds-modal-title">
+                        {isEditing ? t('accountManager.modalEditKeyTitle') : t('accountManager.modalAddKeyTitle')}
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="ds-action-btn"
+                        style={{ borderRadius: 'var(--radius-ctrl)', padding: 4 }}
+                    >
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
-                <div className="p-6 space-y-4">
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{isEditing ? t('accountManager.keyLabel') : t('accountManager.newKeyLabel')}</label>
-                        <div className="flex gap-2">
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {isEditing ? t('accountManager.keyLabel') : t('accountManager.newKeyLabel')}
+                        </label>
+                        <div style={{ display: 'flex', gap: 8 }}>
                             <input
                                 type="text"
-                                className={isEditing ? "input-field bg-muted/30 flex-1 cursor-not-allowed" : "input-field bg-[#09090b] flex-1"}
+                                className="ds-input"
+                                style={{
+                                    flex: 1,
+                                    ...(isEditing ? { opacity: 0.5, cursor: 'not-allowed' } : { background: 'var(--ds-shell-bg)' }),
+                                }}
                                 placeholder={isEditing ? t('accountManager.keyReadonlyPlaceholder') : t('accountManager.newKeyPlaceholder')}
                                 value={displayKey}
                                 onChange={e => setNewKey({ ...newKey, key: e.target.value })}
@@ -37,21 +60,34 @@ export default function AddKeyModal({ show, t, editingKey, newKey, setNewKey, lo
                                 <button
                                     type="button"
                                     onClick={() => setNewKey({ ...newKey, key: 'sk-' + uuidv4().replace(/-/g, '') })}
-                                    className="px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-sm font-medium border border-border whitespace-nowrap"
+                                    className="ds-btn-secondary"
+                                    style={{ padding: '0.5rem 0.75rem', fontSize: 12, whiteSpace: 'nowrap' }}
                                 >
                                     {t('accountManager.generate')}
                                 </button>
                             )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1.5">
+                        <p style={{ fontSize: 11, color: 'var(--ds-text-tertiary)', marginTop: 6, margin: '6px 0 0 0' }}>
                             {isEditing ? t('accountManager.keyReadonlyHint') : t('accountManager.generateHint')}
                         </p>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.nameOptional')}</label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.nameOptional')}
+                        </label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="ds-input"
                             placeholder={t('accountManager.namePlaceholder')}
                             value={newKey.name}
                             onChange={e => setNewKey({ ...newKey, name: e.target.value })}
@@ -59,23 +95,47 @@ export default function AddKeyModal({ show, t, editingKey, newKey, setNewKey, lo
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.remarkOptional')}</label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.remarkOptional')}
+                        </label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="ds-input"
                             placeholder={t('accountManager.remarkPlaceholder')}
                             value={newKey.remark}
                             onChange={e => setNewKey({ ...newKey, remark: e.target.value })}
                         />
                     </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border hover:bg-secondary transition-colors text-sm font-medium">{t('actions.cancel')}</button>
-                        <button onClick={onAdd} disabled={loading} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50">
-                            {loading
-                                ? (isEditing ? t('accountManager.editKeyLoading') : t('accountManager.addKeyLoading'))
-                                : (isEditing ? t('accountManager.editKeyAction') : t('accountManager.addKeyAction'))}
-                        </button>
-                    </div>
+                </div>
+
+                <div className="ds-modal-actions">
+                    <button
+                        onClick={onClose}
+                        className="ds-btn-secondary"
+                        style={{ padding: '0.5rem 1rem', fontSize: 13 }}
+                    >
+                        {t('actions.cancel')}
+                    </button>
+                    <button
+                        onClick={onAdd}
+                        disabled={loading}
+                        className="ds-btn-primary"
+                        style={{ padding: '0.5rem 1rem', fontSize: 13 }}
+                    >
+                        {loading
+                            ? (isEditing ? t('accountManager.editKeyLoading') : t('accountManager.addKeyLoading'))
+                            : (isEditing ? t('accountManager.editKeyAction') : t('accountManager.addKeyAction'))}
+                    </button>
                 </div>
             </div>
         </div>

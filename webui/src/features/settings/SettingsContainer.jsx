@@ -2,6 +2,7 @@ import { AlertTriangle, Save } from 'lucide-react'
 
 import { useI18n } from '../../i18n'
 import { useSettingsForm } from './useSettingsForm'
+import Button from '../../components/ui/Button'
 import SecuritySection from './SecuritySection'
 import RuntimeSection from './RuntimeSection'
 import BehaviorSection from './BehaviorSection'
@@ -52,7 +53,15 @@ export default function SettingsContainer({ onRefresh, onMessage, authFetch, onF
     return (
         <div className="space-y-6">
             {autoFetchPaused && (
-                <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/10 text-destructive flex items-center justify-between gap-4">
+                <div
+                    className="p-4 flex items-center justify-between gap-4"
+                    style={{
+                        background: 'var(--ds-danger-bg)',
+                        border: '1px solid var(--ds-danger-border)',
+                        borderRadius: 'var(--radius-ctrl)',
+                        color: 'var(--ds-danger)',
+                    }}
+                >
                     <div className="flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4" />
                         <span className="text-sm">
@@ -62,20 +71,43 @@ export default function SettingsContainer({ onRefresh, onMessage, authFetch, onF
                     <button
                         type="button"
                         onClick={retryLoadSettings}
-                        className="px-3 py-1.5 text-xs rounded-md border border-destructive/40 hover:bg-destructive/10"
+                        className="px-3 py-1.5 text-xs font-medium"
+                        style={{
+                            borderRadius: 'var(--radius-ctrl)',
+                            border: '1px solid var(--ds-danger-border)',
+                            background: 'transparent',
+                            color: 'var(--ds-danger)',
+                            cursor: 'pointer',
+                        }}
                     >
                         {t('settings.retryLoad')}
                     </button>
                 </div>
             )}
             {settingsMeta.default_password_warning && (
-                <div className="p-4 rounded-lg border border-amber-300/30 bg-amber-500/10 text-amber-700 flex items-center gap-2">
+                <div
+                    className="p-4 flex items-center gap-2"
+                    style={{
+                        background: 'var(--ds-warning-bg)',
+                        border: '1px solid var(--ds-warning-border)',
+                        borderRadius: 'var(--radius-ctrl)',
+                        color: 'var(--ds-warning)',
+                    }}
+                >
                     <AlertTriangle className="w-4 h-4" />
                     <span className="text-sm">{t('settings.defaultPasswordWarning')}</span>
                 </div>
             )}
             {syncHintVisible && (
-                <div className="p-4 rounded-lg border border-amber-300/30 bg-amber-500/10 text-amber-700 flex items-center gap-2">
+                <div
+                    className="p-4 flex items-center gap-2"
+                    style={{
+                        background: 'var(--ds-warning-bg)',
+                        border: '1px solid var(--ds-warning-border)',
+                        borderRadius: 'var(--radius-ctrl)',
+                        color: 'var(--ds-warning)',
+                    }}
+                >
                     <AlertTriangle className="w-4 h-4" />
                     <span className="text-sm">{t('settings.vercelSyncHint')}</span>
                 </div>
@@ -116,15 +148,16 @@ export default function SettingsContainer({ onRefresh, onMessage, authFetch, onF
             />
 
             <div className="flex justify-end">
-                <button
+                <Button
                     type="button"
+                    variant="primary"
+                    size="md"
                     onClick={saveSettings}
                     disabled={loading || saving}
-                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2"
                 >
                     <Save className="w-4 h-4" />
-                    {saving ? t('settings.saving') : t('settings.save')}
-                </button>
+                    <span className="ml-1.5">{saving ? t('settings.saving') : t('settings.save')}</span>
+                </Button>
             </div>
         </div>
     )

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { FileCode, Download, Upload, Copy, Check, AlertTriangle } from 'lucide-react'
-import clsx from 'clsx'
+
 import { useI18n } from '../i18n'
 import { getBatchImportTemplates } from '../utils/batchImportTemplates'
+import Button from '../components/ui/Button'
 
 export default function BatchImport({ onRefresh, onMessage, authFetch }) {
     const { t } = useI18n()
@@ -91,9 +92,9 @@ export default function BatchImport({ onRefresh, onMessage, authFetch }) {
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:h-[calc(100vh-140px)]">
             {/* Templates Panel */}
             <div className="md:col-span-1 space-y-4">
-                <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <h3 className="font-semibold flex items-center gap-2 mb-4">
-                        <FileCode className="w-4 h-4 text-primary" />
+                <div className="ds-card p-5">
+                    <h3 className="font-semibold flex items-center gap-2 mb-4" style={{ color: 'var(--ds-text)' }}>
+                        <FileCode className="w-4 h-4" style={{ color: 'var(--ds-blue)' }} />
                         {t('batchImport.quickTemplates')}
                     </h3>
                     <div className="space-y-3">
@@ -101,56 +102,112 @@ export default function BatchImport({ onRefresh, onMessage, authFetch }) {
                             <button
                                 key={key}
                                 onClick={() => loadTemplate(key)}
-                                className="w-full text-left p-3 rounded-lg border border-border bg-secondary/20 hover:bg-secondary/50 hover:border-primary/50 transition-all custom-focus group"
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '0.75rem',
+                                    borderRadius: 'var(--radius-ctrl)',
+                                    border: '1px solid var(--ds-border)',
+                                    background: 'var(--ds-surface)',
+                                    color: 'var(--ds-text)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--ds-blue)'
+                                    e.currentTarget.style.background = 'var(--ds-surface-hover)'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--ds-border)'
+                                    e.currentTarget.style.background = 'var(--ds-surface)'
+                                }}
                             >
-                                <div className="font-medium text-sm group-hover:text-primary transition-colors">{tpl.name}</div>
-                                <div className="text-xs text-muted-foreground mt-0.5">{tpl.desc}</div>
+                                <div className="font-medium text-sm" style={{ color: 'var(--ds-text)' }}>
+                                    {tpl.name}
+                                </div>
+                                <div className="text-xs mt-0.5" style={{ color: 'var(--ds-text-secondary)' }}>
+                                    {tpl.desc}
+                                </div>
                             </button>
                         ))}
                     </div>
                 </div>
 
-                <div className="bg-linear-to-br from-primary/10 to-transparent border border-primary/20 rounded-xl p-5 shadow-sm">
-                    <h3 className="font-semibold flex items-center gap-2 mb-2 text-primary">
+                <div
+                    className="p-5"
+                    style={{
+                        background: 'var(--ds-blue-light)',
+                        border: '1px solid var(--ds-selected-border)',
+                        borderRadius: 'var(--radius-card)',
+                    }}
+                >
+                    <h3 className="font-semibold flex items-center gap-2 mb-2" style={{ color: 'var(--ds-blue)' }}>
                         <Download className="w-4 h-4" />
                         {t('batchImport.dataExport')}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <p className="text-sm mb-4" style={{ color: 'var(--ds-text-secondary)' }}>
                         {t('batchImport.dataExportDesc')}
                     </p>
-                    <button
-                        onClick={copyBase64}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all font-medium text-sm shadow-sm"
-                    >
+                    <Button variant="primary" size="md" onClick={copyBase64} className="w-full">
                         {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                        {copied ? t('batchImport.copied') : t('batchImport.copyBase64')}
-                    </button>
-                    <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                        {t('batchImport.variableName')}: <code className="bg-background px-1 py-0.5 rounded border border-border">DS2API_CONFIG_JSON</code>
+                        <span className="ml-1.5">{copied ? t('batchImport.copied') : t('batchImport.copyBase64')}</span>
+                    </Button>
+                    <p className="text-[10px] mt-2 text-center" style={{ color: 'var(--ds-text-tertiary)' }}>
+                        {t('batchImport.variableName')}:{' '}
+                        <code
+                            style={{
+                                background: 'var(--ds-bg)',
+                                padding: '0.125rem 0.375rem',
+                                borderRadius: 'var(--radius-ctrl)',
+                                border: '1px solid var(--ds-border)',
+                                color: 'var(--ds-text)',
+                            }}
+                        >
+                            DS2API_CONFIG_JSON
+                        </code>
                     </p>
                 </div>
             </div>
 
             {/* Editor Panel */}
-            <div className="lg:col-span-2 flex flex-col bg-card border border-border rounded-xl shadow-sm overflow-hidden min-h-[400px] lg:h-full">
-                <div className="p-4 border-b border-border flex items-center justify-between bg-muted/20">
-                    <h3 className="font-semibold flex items-center gap-2">
-                        <Upload className="w-4 h-4 text-primary" />
+            <div
+                className="lg:col-span-2 flex flex-col overflow-hidden min-h-[400px] lg:h-full"
+                style={{
+                    background: 'var(--ds-card)',
+                    border: '1px solid var(--ds-border)',
+                    borderRadius: 'var(--radius-card)',
+                }}
+            >
+                <div
+                    className="p-4 flex items-center justify-between"
+                    style={{
+                        borderBottom: '1px solid var(--ds-border)',
+                        background: 'var(--ds-surface)',
+                    }}
+                >
+                    <h3 className="font-semibold flex items-center gap-2" style={{ color: 'var(--ds-text)' }}>
+                        <Upload className="w-4 h-4" style={{ color: 'var(--ds-blue)' }} />
                         {t('batchImport.jsonEditor')}
                     </h3>
                     <div className="flex gap-2">
-                        <button onClick={handleExport} className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-xs font-medium border border-border">
+                        <Button variant="secondary" size="sm" onClick={handleExport}>
                             {t('batchImport.loadCurrentConfig')}
-                        </button>
-                        <button onClick={handleImport} disabled={loading} className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-xs font-medium disabled:opacity-50">
+                        </Button>
+                        <Button variant="primary" size="sm" onClick={handleImport} disabled={loading}>
                             {loading ? t('batchImport.importing') : t('batchImport.applyConfig')}
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
                 <div className="flex-1 relative min-h-[400px]">
                     <textarea
-                        className="absolute inset-0 w-full h-full p-4 font-mono text-sm bg-[#09090b] text-foreground resize-none focus:outline-none custom-scrollbar"
+                        className="absolute inset-0 w-full h-full p-4 font-mono text-sm resize-none focus:outline-none custom-scrollbar"
+                        style={{
+                            background: 'var(--ds-bg)',
+                            color: 'var(--ds-text)',
+                            border: 'none',
+                        }}
                         value={jsonInput}
                         onChange={e => setJsonInput(e.target.value)}
                         placeholder={'{\n  "keys": ["your-api-key"],\n  "accounts": [\n    {"email": "...", "password": "...", "token": ""}\n  ]\n}'}
@@ -159,21 +216,33 @@ export default function BatchImport({ onRefresh, onMessage, authFetch }) {
                 </div>
 
                 {result && (
-                    <div className={clsx(
-                        "p-4 border-t",
-                        result.imported_keys || result.imported_accounts ? "bg-emerald-500/10 border-emerald-500/20" : "bg-destructive/10 border-destructive/20"
-                    )}>
+                    <div
+                        className="p-4"
+                        style={{
+                            borderTop: '1px solid',
+                            background: (result.imported_keys || result.imported_accounts)
+                                ? 'var(--ds-success-bg)'
+                                : 'var(--ds-danger-bg)',
+                            borderColor: (result.imported_keys || result.imported_accounts)
+                                ? 'var(--ds-success-border)'
+                                : 'var(--ds-danger-border)',
+                        }}
+                    >
                         <div className="flex items-start gap-3">
                             {result.imported_keys || result.imported_accounts ? (
-                                <Check className="w-5 h-5 text-emerald-500 mt-0.5" />
+                                <Check className="w-5 h-5 mt-0.5" style={{ color: 'var(--ds-success)' }} />
                             ) : (
-                                <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
+                                <AlertTriangle className="w-5 h-5 mt-0.5" style={{ color: 'var(--ds-danger)' }} />
                             )}
                             <div>
-                                <h4 className={clsx("font-medium", result.imported_keys || result.imported_accounts ? "text-emerald-500" : "text-destructive")}>
+                                <h4 className="font-medium" style={{
+                                    color: (result.imported_keys || result.imported_accounts)
+                                        ? 'var(--ds-success)'
+                                        : 'var(--ds-danger)'
+                                }}>
                                     {t('batchImport.importComplete')}
                                 </h4>
-                                <p className="text-sm opacity-80 mt-1">
+                                <p className="text-sm mt-1" style={{ color: 'var(--ds-text-secondary)' }}>
                                     {t('batchImport.importSummary', { keys: result.imported_keys, accounts: result.imported_accounts })}
                                 </p>
                             </div>

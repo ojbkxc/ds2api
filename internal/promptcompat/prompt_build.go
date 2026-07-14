@@ -33,14 +33,15 @@ func buildOpenAIPrompt(messagesRaw []any, toolsRaw any, traceID string, toolPoli
 			messages, toolNames = injectToolPromptWithDescriptionsAndFilename(messages, tools, toolPolicy, false, toolsFilename)
 		}
 	}
-	finalPrompt := prompt.MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, skipGuard)
-
-	// Apply context compression if needed
+	// Apply context compression to messages before building the final prompt.
+	// This is more effective than compressing the final string because it can
+	// identify and snip/prune individual tool result messages.
 	if compressor := contextcompression.GlobalCompressor; compressor != nil && compressor.Config().Enabled {
-		if compressed, level, _, _ := compressor.CompressPrompt(finalPrompt); level > contextcompression.CompressionNone {
-			finalPrompt = compressed
+		if compressed := compressor.CompressMessages(messages); compressed.Level > contextcompression.CompressionNone {
+			messages = compressed.Messages
 		}
 	}
+	finalPrompt := prompt.MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, skipGuard)
 
 	return finalPrompt, toolNames
 }
@@ -72,16 +73,13 @@ func buildOpenAIPromptWithLocalTools(messagesRaw []any, toolsRaw any, traceID st
 		toolNames = MergeLocalToolNames(toolNames, resolvedModel)
 	}
 
-	finalPrompt := prompt.MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, skipGuard)
-
-	// Apply context compression if needed
+	// Apply context compression to messages before building the final prompt.
 	if compressor := contextcompression.GlobalCompressor; compressor != nil && compressor.Config().Enabled {
-		if compressed, level, origTokens, newTokens := compressor.CompressPrompt(finalPrompt); level > contextcompression.CompressionNone {
-			_ = origTokens
-			_ = newTokens
-			finalPrompt = compressed
+		if compressed := compressor.CompressMessages(messages); compressed.Level > contextcompression.CompressionNone {
+			messages = compressed.Messages
 		}
 	}
+	finalPrompt := prompt.MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, skipGuard)
 
 	return finalPrompt, toolNames
 }

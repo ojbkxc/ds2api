@@ -1,282 +1,205 @@
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Check, Copy, Pencil, Play, Plus, Trash2, FolderX, ToggleLeft, ToggleRight } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import { Trash2, Edit3, Copy, Plus, Key, Ban, Search } from 'lucide-react'
 import clsx from 'clsx'
+import { useI18n } from '../../i18n'
+import StatusDot from '../../components/ui/StatusDot'
+import Badge from '../../components/ui/Badge'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 
-export default function AccountsTable({
-    t,
-    accounts,
-    loadingAccounts,
-    testing,
-    testingAll,
-    batchProgress,
-    sessionCounts,
-    deletingSessions,
-    updatingProxy,
-    togglingDisabled,
-    totalAccounts,
-    page,
-    pageSize,
-    totalPages,
-    resolveAccountIdentifier,
-    proxies,
-    onTestAll,
-    onShowAddAccount,
-    onEditAccount,
-    onTestAccount,
-    onDeleteAccount,
-    onDeleteAllSessions,
-    onUpdateAccountProxy,
-    onToggleDisabled,
-    onPrevPage,
-    onNextPage,
-    onPageSizeChange,
-    searchQuery,
-    onSearchChange,
-    envBacked = false,
-}) {
-    const [copiedId, setCopiedId] = useState(null)
+const PAGE_SIZE = 20
 
-    const copyId = (id) => {
-        navigator.clipboard.writeText(id).then(() => {
-            setCopiedId(id)
-            setTimeout(() => setCopiedId(null), 1500)
-        })
+export default function AccountsTable({ accounts, onEdit, onDelete, onAddKey, onAddAccount }) {
+    const { t } = useI18n()
+    const [search, setSearch] = useState('')
+    const [deleteTarget, setDeleteTarget] = useState(null)
+    const [page, setPage] = useState(0)
+
+    const filtered = useMemo(() => {
+        if (!search.trim()) return accounts
+        const q = search.toLowerCase()
+        return accounts.filter(a => a.email?.toLowerCase().includes(q) || a.plan_type?.toLowerCase().includes(q))
+    }, [accounts, search])
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+    const safePage = Math.min(page, totalPages - 1)
+    const paged = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE)
+
+    const statusTone = (status) => {
+        switch (status) {
+            case 'active': return 'success'
+            case 'banned': return 'purple'
+            case 'failed': return 'danger'
+            case 'disabled': return 'muted'
+            default: return 'info'
+        }
     }
+
+    const handleCopy = useCallback(async (text) => {
+        try {
+            await navigator.clipboard.writeText(text)
+        } catch { /* ignore */ }
+    }, [])
+
     return (
-        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-lg font-semibold">{t('accountManager.accountsTitle')}</h2>
-                    <p className="text-sm text-muted-foreground">{t('accountManager.accountsDesc')}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
+        <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="relative flex-1 max-w-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style={{ color: 'var(--ds-text-tertiary)' }}>
+                        <Search className="w-3.5 h-3.5" />
+                    </div>
                     <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={e => onSearchChange(e.target.value)}
-                        placeholder={t('accountManager.searchPlaceholder')}
-                        className="px-3 py-1.5 text-sm bg-muted border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                        className="w-full pl-9 pr-3 py-2 text-xs"
+                        style={{
+                            background: 'var(--ds-bg)',
+                            border: '1px solid var(--ds-border)',
+                            borderRadius: 'var(--radius-ctrl)',
+                            color: 'var(--ds-text)',
+                        }}
+                        placeholder={t('accounts.searchPlaceholder')}
+                        value={search}
+                        onChange={e => { setSearch(e.target.value); setPage(0) }}
                     />
-                    <button
-                        onClick={onTestAll}
-                        disabled={testingAll || totalAccounts === 0}
-                        className="flex items-center px-3 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-xs font-medium border border-border disabled:opacity-50"
-                    >
-                        {testingAll ? <span className="animate-spin mr-2">⟳</span> : <Play className="w-3 h-3 mr-2" />}
-                        {t('accountManager.testAll')}
-                    </button>
-                    <button
-                        onClick={onShowAddAccount}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm shadow-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        {t('accountManager.addAccount')}
-                    </button>
                 </div>
+                <button
+                    onClick={onAddAccount}
+                    className="ds-btn-primary text-xs"
+                >
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
+                    {t('accounts.addAccount')}
+                </button>
             </div>
 
-            {testingAll && batchProgress.total > 0 && (
-                <div className="p-4 border-b border-border bg-muted/30">
-                    <div className="flex items-center justify-between text-sm mb-2">
-                        <span className="font-medium">{t('accountManager.testingAllAccounts')}</span>
-                        <span className="text-muted-foreground">{batchProgress.current} / {batchProgress.total}</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2 overflow-hidden mb-4">
-                        <div
-                            className="bg-primary h-full transition-all duration-300"
-                            style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
-                        />
-                    </div>
-                    {batchProgress.results.length > 0 && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-32 overflow-y-auto custom-scrollbar">
-                            {batchProgress.results.map((r, i) => (
-                                <div key={i} className={clsx(
-                                    "text-xs px-2 py-1 rounded border truncate",
-                                    r.success ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-destructive/10 border-destructive/20 text-destructive"
-                                )}>
-                                    {r.success ? '✓' : '✗'} {r.id}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            <div className="divide-y divide-border">
-                {loadingAccounts ? (
-                    <div className="p-8 text-center text-muted-foreground">{t('actions.loading')}</div>
-                ) : accounts.length > 0 ? (
-                    accounts.map((acc, i) => {
-                        const id = resolveAccountIdentifier(acc)
-                        const assignedProxy = proxies.find(proxy => proxy.id === acc.proxy_id)
-                        const runtimeUnknown = envBacked && !acc.test_status
-                        const isBanned = acc.test_status === 'banned'
-                        const isActive = acc.test_status === 'ok' || acc.has_token
-                        return (
-                            <div key={i} className={clsx(
-                                "p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-muted/50 transition-colors",
-                                acc.disabled && "opacity-50"
-                            )}>
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className={clsx(
-                                        "w-2 h-2 rounded-full shrink-0",
-                                        acc.disabled ? "bg-gray-400 shadow-[0_0_8px_rgba(156,163,175,0.5)]" :
-                                        acc.test_status === 'banned' ? "bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" :
-                                        acc.test_status === 'failed' ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" :
-                                        isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
-                                        runtimeUnknown ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" : "bg-amber-500"
-                                    )} />
-                                    <div className="min-w-0">
-                                        <div className="text-sm font-medium truncate">{acc.name || '-'}</div>
-                                        <div
-                                            className="font-medium truncate flex items-center gap-1.5 cursor-pointer hover:text-primary transition-colors group"
-                                            onClick={() => copyId(id)}
-                                        >
-                                            <span className="truncate">{id || '-'}</span>
-                                            {copiedId === id
-                                                ? <Check className="w-3 h-3 text-emerald-500 shrink-0" />
-                                                : <Copy className="w-3 h-3 opacity-0 group-hover:opacity-50 shrink-0 transition-opacity" />
-                                            }
-                                        </div>
-                                        {acc.remark && (
-                                            <div className="text-xs text-muted-foreground truncate mt-0.5">{acc.remark}</div>
-                                        )}
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                                            {acc.disabled ? (
-                                                <span className="font-mono bg-gray-500/10 text-gray-400 px-1.5 py-0.5 rounded text-[10px]">{t('accountManager.disableAccount')}</span>
-                                            ) : (
-                                                <span>{isBanned ? t('accountManager.accountBanned') : acc.test_status === 'failed' ? t('accountManager.testStatusFailed') : isActive ? t('accountManager.sessionActive') : runtimeUnknown ? t('accountManager.runtimeStatusUnknown') : t('accountManager.reauthRequired')}</span>
-                                            )}
-                                            {acc.token_preview && (
-                                                <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-[10px]">
-                                                    {acc.token_preview}
-                                                </span>
-                                            )}
-                                            {sessionCounts && sessionCounts[id] !== undefined && (
-                                                <span className="font-mono bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded text-[10px]">
-                                                    {t('accountManager.sessionCount', { count: sessionCounts[id] })}
-                                                </span>
-                                            )}
-                                            {sessionCounts && sessionCounts[id] !== undefined && sessionCounts[id] > 0 && (
+            <div className="border overflow-hidden" style={{ borderColor: 'var(--ds-border)', borderRadius: 'var(--radius-card)', background: 'var(--ds-card)' }}>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid var(--ds-border)', background: 'var(--ds-bg)' }}>
+                                <th className="text-left px-4 py-3 font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-secondary)' }}>{t('accounts.status')}</th>
+                                <th className="text-left px-4 py-3 font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-secondary)' }}>{t('accounts.email')}</th>
+                                <th className="text-left px-4 py-3 font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-secondary)' }}>{t('accounts.plan')}</th>
+                                <th className="text-left px-4 py-3 font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-secondary)' }}>{t('accounts.keys')}</th>
+                                <th className="text-right px-4 py-3 font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-secondary)' }}>{t('accounts.actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paged.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-4 py-16 text-center" style={{ color: 'var(--ds-text-tertiary)' }}>
+                                        {search ? t('accounts.noResults') : t('accounts.noAccounts')}
+                                    </td>
+                                </tr>
+                            ) : (
+                                paged.map((account, i) => (
+                                    <tr
+                                        key={account.email || i}
+                                        className="transition-colors"
+                                        style={{ borderBottom: '1px solid var(--ds-border)' }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--ds-surface)' }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                                    >
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <StatusDot status={account.status} />
+                                                <Badge tone={statusTone(account.status)}>
+                                                    {account.status}
+                                                </Badge>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 font-medium" style={{ color: 'var(--ds-text)' }}>
+                                            {account.email}
+                                        </td>
+                                        <td className="px-4 py-3" style={{ color: 'var(--ds-text-secondary)' }}>
+                                            {account.plan_type || '-'}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className="font-mono" style={{ color: 'var(--ds-text-secondary)' }}>
+                                                {account.session_token ? (
+                                                    <span className="flex items-center gap-1">
+                                                        <Key className="w-3 h-3" />
+                                                        <span className="font-mono" style={{ color: 'var(--ds-text-tertiary)' }}>{account.session_token.substring(0, 8)}...</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>-</span>
+                                                )}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center justify-end gap-1">
                                                 <button
-                                                    onClick={() => onDeleteAllSessions(id)}
-                                                    disabled={deletingSessions && deletingSessions[id]}
-                                                    className="flex items-center gap-1 font-mono bg-red-500/10 text-red-500 hover:bg-red-500/20 px-1.5 py-0.5 rounded text-[10px] transition-colors disabled:opacity-50"
-                                                    title={t('accountManager.deleteAllSessions')}
+                                                    onClick={() => handleCopy(account.session_token)}
+                                                    className="ds-action-btn p-1.5"
+                                                    title={t('accounts.copyToken')}
+                                                    style={{ borderRadius: 'var(--radius-ctrl)' }}
                                                 >
-                                                    {deletingSessions && deletingSessions[id] ? (
-                                                        <span className="animate-spin">⟳</span>
-                                                    ) : (
-                                                        <FolderX className="w-3 h-3" />
-                                                    )}
+                                                    <Copy className="w-3.5 h-3.5" />
                                                 </button>
-                                            )}
-                                            {acc.proxy_id && (
-                                                <span className="font-mono bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded text-[10px]">
-                                                    {t('accountManager.proxyBadge', { name: assignedProxy ? (assignedProxy.name || `${assignedProxy.host}:${assignedProxy.port}`) : acc.proxy_id })}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2 self-start lg:self-auto ml-5 lg:ml-0">
-                                    <button
-                                        onClick={() => onToggleDisabled(id, acc.disabled)}
-                                        disabled={togglingDisabled?.[id]}
-                                        className={clsx(
-                                            "p-1.5 lg:p-2 rounded-md transition-colors disabled:opacity-50",
-                                            acc.disabled
-                                                ? "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
-                                                : "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
-                                        )}
-                                        title={acc.disabled ? t('accountManager.enableAccount') : t('accountManager.disableAccount')}
-                                    >
-                                        {togglingDisabled?.[id] ? (
-                                            <span className="animate-spin text-sm">⟳</span>
-                                        ) : acc.disabled ? (
-                                            <ToggleLeft className="w-5 h-5 lg:w-6 lg:h-6" />
-                                        ) : (
-                                            <ToggleRight className="w-5 h-5 lg:w-6 lg:h-6" />
-                                        )}
-                                    </button>
-                                    <select
-                                        value={acc.proxy_id || ''}
-                                        onChange={e => onUpdateAccountProxy(id, e.target.value)}
-                                        disabled={updatingProxy?.[id]}
-                                        className="max-w-[180px] px-2.5 py-1.5 text-[10px] lg:text-xs bg-secondary border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-                                    >
-                                        <option value="">{t('accountManager.proxyNone')}</option>
-                                        {proxies.map(proxy => (
-                                            <option key={proxy.id} value={proxy.id}>
-                                                {proxy.name || `${proxy.host}:${proxy.port}`}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        onClick={() => onEditAccount(acc)}
-                                        disabled={!id}
-                                        className="p-1 lg:p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                        title={id ? t('accountManager.editAccountTitle') : t('accountManager.invalidIdentifier')}
-                                    >
-                                        <Pencil className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => onTestAccount(id)}
-                                        disabled={testing[id]}
-                                        className="px-2 lg:px-3 py-1 lg:py-1.5 text-[10px] lg:text-xs font-medium border border-border rounded-md hover:bg-secondary transition-colors disabled:opacity-50"
-                                    >
-                                        {testing[id] ? t('actions.testing') : t('actions.test')}
-                                    </button>
-                                    <button
-                                        onClick={() => onDeleteAccount(id)}
-                                        className="p-1 lg:p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        )
-                    })
-                ) : (
-                    <div className="p-8 text-center text-muted-foreground">{searchQuery ? t('accountManager.searchNoResults') : t('accountManager.noAccounts')}</div>
+                                                <button
+                                                    onClick={() => onAddKey(account)}
+                                                    className="ds-action-btn p-1.5"
+                                                    title={t('accounts.addKey')}
+                                                    style={{ borderRadius: 'var(--radius-ctrl)' }}
+                                                >
+                                                    <Key className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => onEdit(account)}
+                                                    className="ds-action-btn p-1.5"
+                                                    title={t('accounts.edit')}
+                                                    style={{ borderRadius: 'var(--radius-ctrl)' }}
+                                                >
+                                                    <Edit3 className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteTarget(account)}
+                                                    className="ds-action-btn p-1.5"
+                                                    title={t('accounts.delete')}
+                                                    style={{ borderRadius: 'var(--radius-ctrl)', color: 'var(--ds-danger)' }}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-4 py-3 border-t" style={{ borderColor: 'var(--ds-border)' }}>
+                        <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
+                            {filtered.length} {t('accounts.total')} · {t('accounts.page')} {safePage + 1}/{totalPages}
+                        </span>
+                        <div className="flex gap-1">
+                            <button
+                                className="ds-btn-secondary px-2.5 py-1 text-[10px]"
+                                disabled={safePage === 0}
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                            >
+                                {t('common.prev')}
+                            </button>
+                            <button
+                                className="ds-btn-secondary px-2.5 py-1 text-[10px]"
+                                disabled={safePage >= totalPages - 1}
+                                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                            >
+                                {t('common.next')}
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
 
-            {totalPages > 1 && (
-                <div className="p-4 border-t border-border flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="text-sm text-muted-foreground">
-                            {t('accountManager.pageInfo', { current: page, total: totalPages, count: totalAccounts })}
-                        </div>
-                        <select
-                            value={pageSize}
-                            onChange={e => onPageSizeChange(Number(e.target.value))}
-                            className="text-sm border border-border rounded-md px-2 py-1 bg-background text-foreground"
-                        >
-                            {[10, 20, 50, 100, 500, 1000, 2000, 5000].map(s => (
-                                <option key={s} value={s}>{s}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={onPrevPage}
-                            disabled={page <= 1 || loadingAccounts}
-                            className="p-2 border border-border rounded-md hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="text-sm font-medium px-2">{page} / {totalPages}</span>
-                        <button
-                            onClick={onNextPage}
-                            disabled={page >= totalPages || loadingAccounts}
-                            className="p-2 border border-border rounded-md hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
+            <ConfirmDialog
+                open={!!deleteTarget}
+                title={t('accounts.deleteConfirmTitle')}
+                message={t('accounts.deleteConfirmMessage', { email: deleteTarget?.email || '' })}
+                confirmLabel={t('common.delete')}
+                cancelLabel={t('common.cancel')}
+                onConfirm={() => { onDelete(deleteTarget); setDeleteTarget(null) }}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </div>
     )
 }

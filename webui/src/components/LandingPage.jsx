@@ -5,96 +5,60 @@ import LanguageToggle from './LanguageToggle'
 const LandingPage = ({ onEnter }) => {
     const { t } = useI18n()
     return (
-        <div className="landing-container min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-6 text-center">
-            {/* Animated Background Elements - using Tailwind with some custom CSS in styles.css if needed, 
-                but for simplicity I will use inline styles to match the backend version precisely */}
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                .landing-container {
-                    background-color: #030712;
-                    color: #f9fafb;
-                    font-family: 'Inter', sans-serif;
-                }
-                .bg-glow {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: 0;
-                    background: 
-                        radial-gradient(circle at 20% 30%, rgba(245, 158, 11, 0.05) 0%, transparent 40%),
-                        radial-gradient(circle at 80% 70%, rgba(239, 68, 68, 0.05) 0%, transparent 40%);
-                }
-                .blob {
-                    position: absolute;
-                    width: 400px;
-                    height: 400px;
-                    background: linear-gradient(135deg, #f59e0b, #ef4444);
-                    filter: blur(80px);
-                    opacity: 0.15;
-                    border-radius: 50%;
-                    z-index: 0;
-                    animation: move 20s infinite alternate;
-                }
+        <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-6 text-center" style={{ background: 'var(--ds-shell-bg)', color: 'var(--ds-text)', fontFamily: 'inherit' }}>
+            {/* Background glow */}
+            <div style={{
+                position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0,
+                background: 'radial-gradient(circle at 20% 30%, rgba(77,107,254,0.06) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(77,107,254,0.04) 0%, transparent 40%)'
+            }} />
+
+            {/* Blobs */}
+            <div style={{
+                position: 'absolute', width: '400px', height: '400px',
+                background: 'linear-gradient(135deg, #4D6BFE, #6366f1)',
+                filter: 'blur(80px)', opacity: 0.12, borderRadius: '50%', zIndex: 0,
+                top: '10%', left: '15%',
+                animation: 'move 20s infinite alternate'
+            }} />
+            <div style={{
+                position: 'absolute', width: '400px', height: '400px',
+                background: 'linear-gradient(135deg, #4D6BFE, #818cf8)',
+                filter: 'blur(80px)', opacity: 0.10, borderRadius: '50%', zIndex: 0,
+                bottom: '10%', right: '15%',
+                animation: 'move 20s infinite alternate',
+                animationDelay: '-5s'
+            }} />
+
+            <style>{`
                 @keyframes move {
                     from { transform: translate(-10%, -10%) scale(1); }
                     to { transform: translate(10%, 10%) scale(1.1); }
-                }
-                .landing-content {
-                    position: relative;
-                    z-index: 10;
-                    max-width: 900px;
-                    animation: fadeInUp 0.8s ease-out;
                 }
                 @keyframes fadeInUp {
                     from { opacity: 0; transform: translateY(20px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
-                .logo-text {
-                    font-family: 'Orbitron', sans-serif;
-                    font-size: clamp(3rem, 10vw, 5rem);
-                    font-weight: 700;
-                    background: linear-gradient(135deg, #f59e0b, #ef4444);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                    letter-spacing: -2px;
-                    margin-bottom: 0.5rem;
-                }
-                .btn-premium {
-                    background: linear-gradient(135deg, #f59e0b, #ef4444);
-                    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
-                }
-                .btn-premium:hover {
-                    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.6);
-                    transform: translateY(-3px) scale(1.02);
-                }
-                .glass-card {
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    backdrop-filter: blur(10px);
-                    transition: all 0.3s ease;
-                }
-                .glass-card:hover {
-                    border-color: rgba(245, 158, 11, 0.3);
-                    background: rgba(255, 255, 255, 0.05);
-                    transform: translateY(-5px);
-                }
-            `}} />
-
-            <div className="bg-glow" />
-            <div className="blob" style={{ top: '10%', left: '15%' }} />
-            <div className="blob" style={{ bottom: '10%', right: '15%', animationDelay: '-5s' }} />
+            `}</style>
 
             <div className="absolute top-6 right-6 z-20">
                 <LanguageToggle />
             </div>
 
-            <div className="landing-content">
+            <div style={{ position: 'relative', zIndex: 10, maxWidth: '900px', animation: 'fadeInUp 0.8s ease-out' }}>
                 <header className="mb-12">
-                    <h1 className="logo-text">DS2API</h1>
-                    <p className="text-gray-400 text-xl max-w-2xl mx-auto leading-relaxed">
+                    <h1 style={{
+                        fontSize: 'clamp(3rem, 10vw, 5rem)',
+                        fontWeight: 700,
+                        background: 'linear-gradient(135deg, #4D6BFE, #818cf8)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        letterSpacing: '-2px',
+                        marginBottom: '0.5rem',
+                    }}>
+                        DS2API
+                    </h1>
+                    <p className="text-xl max-w-2xl mx-auto leading-relaxed" style={{ color: 'var(--ds-text-secondary)' }}>
                         DeepSeek to OpenAI & Claude Compatible API Interface
                     </p>
                 </header>
@@ -102,23 +66,66 @@ const LandingPage = ({ onEnter }) => {
                 <div className="flex flex-wrap gap-4 justify-center mb-16">
                     <button
                         onClick={onEnter}
-                        className="btn-premium text-white px-8 py-3 rounded-xl font-bold transition-all flex items-center gap-2"
+                        className="text-white px-8 py-3 font-bold transition-all flex items-center gap-2"
+                        style={{
+                            background: 'linear-gradient(135deg, #4D6BFE, #6366f1)',
+                            borderRadius: 'var(--radius-ctrl)',
+                            boxShadow: '0 4px 15px rgba(77,107,254,0.4)',
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(77,107,254,0.6)'
+                            e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)'
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(77,107,254,0.4)'
+                            e.currentTarget.style.transform = 'none'
+                        }}
                     >
-                        <span>🎛️</span> {t('landing.adminConsole')}
+                        <span>{t('landing.adminConsole')}</span>
                     </button>
                     <a
                         href="/v1/models"
                         target="_blank"
-                        className="glass-card text-white px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2"
+                        className="text-white px-8 py-3 font-semibold transition-all flex items-center gap-2"
+                        style={{
+                            background: 'var(--ds-card)',
+                            border: '1px solid var(--ds-border)',
+                            borderRadius: 'var(--radius-ctrl)',
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.borderColor = 'var(--ds-blue)'
+                            e.currentTarget.style.background = 'var(--ds-surface)'
+                            e.currentTarget.style.transform = 'translateY(-3px)'
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.borderColor = 'var(--ds-border)'
+                            e.currentTarget.style.background = 'var(--ds-card)'
+                            e.currentTarget.style.transform = 'none'
+                        }}
                     >
-                        <span>📡</span> {t('landing.apiStatus')}
+                        <span>{t('landing.apiStatus')}</span>
                     </a>
                     <a
-                        href="https://github.com/CJackHwang/ds2api"
+                        href="https://github.com/ojbkxc/ds2api"
                         target="_blank"
-                        className="glass-card text-white px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2"
+                        className="text-white px-8 py-3 font-semibold transition-all flex items-center gap-2"
+                        style={{
+                            background: 'var(--ds-card)',
+                            border: '1px solid var(--ds-border)',
+                            borderRadius: 'var(--radius-ctrl)',
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.borderColor = 'var(--ds-blue)'
+                            e.currentTarget.style.background = 'var(--ds-surface)'
+                            e.currentTarget.style.transform = 'translateY(-3px)'
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.borderColor = 'var(--ds-border)'
+                            e.currentTarget.style.background = 'var(--ds-card)'
+                            e.currentTarget.style.transform = 'none'
+                        }}
                     >
-                        <span>📦</span> GitHub
+                        <span>GitHub</span>
                     </a>
                 </div>
 
@@ -129,10 +136,26 @@ const LandingPage = ({ onEnter }) => {
                         { icon: '🧠', title: t('landing.features.reasoning.title'), desc: t('landing.features.reasoning.desc') },
                         { icon: '🔍', title: t('landing.features.search.title'), desc: t('landing.features.search.desc') },
                     ].map((feature, idx) => (
-                        <div key={idx} className="glass-card p-6 rounded-2xl">
+                        <div key={idx} className="p-6 transition-all"
+                            style={{
+                                background: 'var(--ds-card)',
+                                border: '1px solid var(--ds-border)',
+                                borderRadius: 'var(--radius-card)',
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.borderColor = 'var(--ds-blue)'
+                                e.currentTarget.style.background = 'var(--ds-surface)'
+                                e.currentTarget.style.transform = 'translateY(-5px)'
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.borderColor = 'var(--ds-border)'
+                                e.currentTarget.style.background = 'var(--ds-card)'
+                                e.currentTarget.style.transform = 'none'
+                            }}
+                        >
                             <span className="text-2xl mb-4 block">{feature.icon}</span>
-                            <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                            <p className="text-sm text-gray-400 leading-relaxed">{feature.desc}</p>
+                            <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--ds-text)' }}>{feature.title}</h3>
+                            <p className="text-sm leading-relaxed" style={{ color: 'var(--ds-text-secondary)' }}>{feature.desc}</p>
                         </div>
                     ))}
                 </div>

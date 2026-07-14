@@ -1,236 +1,351 @@
-import { Bot, Loader2, Send, Square, User, Zap, Paperclip, X, FileIcon } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { Send, Trash2, ChevronDown, ChevronUp, Loader2, Copy, Check, Maximize2, Minimize2 } from 'lucide-react'
 import clsx from 'clsx'
-import { useRef, useState } from 'react'
+import { useI18n } from '../../i18n'
+import SegmentedControl from '../../components/ui/SegmentedControl'
 
-import { getAttachedFileAccountIds } from './fileAccountBinding'
-
-export default function ChatPanel({
-    t,
-    message,
-    setMessage,
-    attachedFiles = [],
-    setAttachedFiles,
-    setSelectedAccount,
-    effectiveKey,
-    selectedAccount,
-    model,
-    onMessage,
-    response,
-    isStreaming,
-    loading,
-    streamingThinking,
-    streamingContent,
-    onRunTest,
-    onStopGeneration,
-    hasAvailableModel,
-}) {
-    const fileInputRef = useRef(null)
-    const [uploadingFiles, setUploadingFiles] = useState(false)
-
-    const handleFileSelect = async (e) => {
-        const files = Array.from(e.target.files)
-        if (files.length === 0) return
-
-        if (!effectiveKey) {
-            onMessage('error', t('apiTester.missingApiKey') || 'Missing API Key')
-            return
-        }
-
-        setUploadingFiles(true)
-        const initialSelectedAccount = String(selectedAccount || '').trim()
-        const selectedModel = String(model || '').trim()
-        let boundAccount = initialSelectedAccount
-        for (const file of files) {
-            const formData = new FormData()
-            formData.append('file', file)
-            formData.append('purpose', 'assistants')
-            if (selectedModel) {
-                formData.append('model', selectedModel)
-            }
-
-            const headers = {
-                'Authorization': `Bearer ${effectiveKey}`,
-            }
-            if (boundAccount) {
-                headers['X-Ds2-Target-Account'] = boundAccount
-            }
-
-            try {
-                const res = await fetch('/v1/files', {
-                    method: 'POST',
-                    headers,
-                    body: formData
-                })
-                if (!res.ok) {
-                    const err = await res.text()
-                    onMessage('error', err || 'File upload failed')
-                    continue
-                }
-                const data = await res.json()
-                setAttachedFiles(prev => [...prev, data])
-                const uploadedAccount = String(data?.account_id || '').trim()
-                if (!boundAccount && uploadedAccount) {
-                    boundAccount = uploadedAccount
-                }
-            } catch (error) {
-                onMessage('error', error.message || 'Network error during upload')
-            }
-        }
-        setUploadingFiles(false)
-        if (!initialSelectedAccount && boundAccount && setSelectedAccount) {
-            setSelectedAccount(boundAccount)
-        }
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-        }
-    }
-
-    const removeFile = (id) => {
-        setAttachedFiles(prev => prev.filter(f => f.id !== id))
-    }
-
-    const attachmentAccountIds = getAttachedFileAccountIds(attachedFiles)
-    const attachmentAccountId = attachmentAccountIds.length === 1 ? attachmentAccountIds[0] : ''
+function StatusLabel({ message }) {
     return (
-        <div className="lg:col-span-9 flex flex-col bg-card border border-border rounded-xl shadow-sm overflow-hidden min-h-0 flex-1 relative">
-            <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-8 custom-scrollbar scroll-smooth">
-                <div className="flex gap-4 max-w-4xl mx-auto flex-row-reverse group">
-                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0 border border-border">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <div className="space-y-1 max-w-[85%] lg:max-w-[75%]">
-                        <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-5 py-3 text-sm leading-relaxed shadow-sm">
-                            {message}
-                        </div>
-                    </div>
-                </div>
+        <div className="px-3 py-2 text-xs font-medium" style={{ color: 'var(--ds-text-secondary)', background: 'var(--ds-surface)', borderRadius: 'var(--radius-ctrl)' }}>
+            {message}
+        </div>
+    )
+}
 
-                {(response || isStreaming) && (
-                    <div className="flex gap-4 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <div className={clsx(
-                            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-border",
-                            response?.success !== false ? "bg-muted" : "bg-destructive/10 border-destructive/20"
-                        )}>
-                            <Bot className={clsx("w-4 h-4", response?.success !== false ? "text-foreground" : "text-destructive")} />
-                        </div>
-                        <div className="space-y-3 flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm text-foreground">DeepSeek</span>
-                                {response && (
-                                    <span className={clsx(
-                                        "text-[10px] px-1.5 py-0.5 rounded-sm border uppercase font-medium tracking-wider",
-                                        response.success ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/10" : "border-destructive/20 text-destructive bg-destructive/10"
-                                    )}>
-                                        {response.status_code || t('apiTester.statusError')}
-                                    </span>
-                                )}
-                            </div>
+export default function ChatPanel({ onSend, config, onClear, onMessage }) {
+    const { t } = useI18n()
+    const [prompt, setPrompt] = useState('')
+    const [reply, setReply] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [collapsed, setCollapsed] = useState(false)
+    const [copied, setCopied] = useState(false)
+    const [expanded, setExpanded] = useState(false)
+    const [status, setStatus] = useState('')
+    const [advanceOpen, setAdvanceOpen] = useState(false)
+    const [modelMode, setModelMode] = useState(
+        config?.default_model || 'deepseek-v4'
+    )
+    const [stream, setStream] = useState(true)
+    const [temperature, setTemperature] = useState(0.7)
+    const [maxTokens, setMaxTokens] = useState(4096)
+    const replyRef = useRef(null)
+    const abortRef = useRef(null)
 
-                            {(streamingThinking || response?.choices?.[0]?.message?.reasoning_content) && (
-                                <div className="text-xs bg-secondary/50 border border-border rounded-lg p-3 space-y-1.5">
-                                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                                        <Zap className="w-3.5 h-3.5" />
-                                        <span className="font-medium">{t('apiTester.reasoningTrace')}</span>
+    const models = useMemo(() => {
+        const list = []
+        if (config?.models) {
+            Object.entries(config.models).forEach(([key, val]) => {
+                list.push({ key, label: val.display_name || key })
+            })
+        }
+        if (list.length === 0) {
+            list.push({ key: 'deepseek-v4', label: 'deepseek-v4' })
+        }
+        return list
+    }, [config])
+
+    useEffect(() => {
+        if (replyRef.current) {
+            replyRef.current.scrollTop = replyRef.current.scrollHeight
+        }
+    }, [reply])
+
+    const handleCopy = useCallback(async () => {
+        if (!reply) return
+        try {
+            await navigator.clipboard.writeText(reply)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        } catch { /* ignore */ }
+    }, [reply])
+
+    const handleSubmit = async (e) => {
+        e?.preventDefault()
+        if (!prompt.trim() || loading) return
+
+        setLoading(true)
+        setReply('')
+        setStatus(t('chat.sending'))
+
+        const controller = new AbortController()
+        abortRef.current = controller
+
+        try {
+            const res = await fetch('/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: modelMode,
+                    messages: [{ role: 'user', content: prompt }],
+                    stream,
+                    temperature,
+                    max_tokens: maxTokens,
+                }),
+                signal: controller.signal,
+            })
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}))
+                throw new Error(err.detail || err.error?.message || `HTTP ${res.status}`)
+            }
+
+            if (stream) {
+                setStatus(t('chat.receiving'))
+                const reader = res.body.getReader()
+                const decoder = new TextDecoder()
+                let buffer = ''
+
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+                    buffer += decoder.decode(value, { stream: true })
+                    const lines = buffer.split('\n')
+                    buffer = lines.pop() || ''
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue
+                        const data = line.slice(6)
+                        if (data === '[DONE]') continue
+                        try {
+                            const parsed = JSON.parse(data)
+                            const content = parsed.choices?.[0]?.delta?.content || ''
+                            setReply(prev => prev + content)
+                        } catch { /* skip bad JSON */ }
+                    }
+                }
+            } else {
+                const data = await res.json()
+                setReply(data.choices?.[0]?.message?.content || '')
+            }
+
+            setStatus('')
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                setReply(err.message)
+                onMessage?.('error', err.message)
+            }
+            setStatus('')
+        } finally {
+            setLoading(false)
+            abortRef.current = null
+        }
+    }
+
+    const handleCancel = () => {
+        abortRef.current?.abort()
+        setLoading(false)
+        setStatus('')
+    }
+
+    const handleClear = () => {
+        setPrompt('')
+        setReply('')
+        setStatus('')
+        onClear?.()
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="border" style={{ borderColor: 'var(--ds-border)', borderRadius: 'var(--radius-card)', background: 'var(--ds-card)' }}>
+                <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className="w-full flex items-center justify-between px-5 py-3.5 transition-colors"
+                    style={{ borderBottom: collapsed ? 'none' : '1px solid var(--ds-border)' }}
+                >
+                    <div className="flex items-center gap-2">
+                        <Send className="w-4 h-4" style={{ color: 'var(--ds-blue)' }} />
+                        <span className="text-sm font-bold" style={{ color: 'var(--ds-text)' }}>{t('chat.title')}</span>
+                    </div>
+                    {collapsed ? <ChevronDown className="w-4 h-4" style={{ color: 'var(--ds-text-tertiary)' }} /> : <ChevronUp className="w-4 h-4" style={{ color: 'var(--ds-text-tertiary)' }} />}
+                </button>
+
+                {!collapsed && (
+                    <div className="p-5 space-y-4">
+                        <div className="space-y-2">
+                            {status && <StatusLabel message={status} />}
+
+                            {reply && (
+                                <div className="relative">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.response')}</span>
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={handleCopy}
+                                                className="ds-action-btn p-1 rounded"
+                                                style={{ borderRadius: 'var(--radius-ctrl)' }}
+                                                title={copied ? t('chat.copied') : t('chat.copy')}
+                                            >
+                                                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                            </button>
+                                            <button
+                                                onClick={() => setExpanded(!expanded)}
+                                                className="ds-action-btn p-1 rounded"
+                                                style={{ borderRadius: 'var(--radius-ctrl)' }}
+                                                title={expanded ? t('chat.collapse') : t('chat.expand')}
+                                            >
+                                                {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="whitespace-pre-wrap leading-relaxed text-muted-foreground font-mono text-[11px] max-h-60 overflow-y-auto custom-scrollbar pl-5 border-l-2 border-border/50">
-                                        {streamingThinking || response?.choices?.[0]?.message?.reasoning_content}
+                                    <div
+                                        ref={replyRef}
+                                        className={clsx(
+                                            "p-4 text-sm leading-relaxed whitespace-pre-wrap overflow-auto custom-scrollbar",
+                                            expanded ? "max-h-[600px]" : "max-h-[300px]"
+                                        )}
+                                        style={{
+                                            background: 'var(--ds-bg)',
+                                            border: '1px solid var(--ds-border)',
+                                            borderRadius: 'var(--radius-ctrl)',
+                                            color: 'var(--ds-text)',
+                                        }}
+                                    >
+                                        {reply}
                                     </div>
                                 </div>
                             )}
-
-                            <div className="text-sm leading-7 text-foreground whitespace-pre-wrap">
-                                {response?.success === false
-                                    ? <span className="text-destructive font-medium">{response.error || t('apiTester.requestFailed')}</span>
-                                    : (streamingContent || response?.choices?.[0]?.message?.content || (loading && <span className="text-muted-foreground italic">{t('apiTester.generating')}</span>))}
-                                {isStreaming && <span className="inline-block w-1.5 h-4 bg-primary ml-1 align-middle animate-pulse" />}
-                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
 
-            <div className="p-4 lg:p-6 border-t border-border bg-card">
-                {attachedFiles.length > 0 && (
-                    <div className="max-w-4xl mx-auto flex flex-wrap gap-2 mb-3">
-                        {attachedFiles.map(file => (
-                            <div key={file.id} className="flex items-center gap-2 bg-secondary/50 border border-border rounded-md px-2 py-1 text-xs text-secondary-foreground">
-                                <FileIcon className="w-3 h-3 text-muted-foreground" />
-                                <span className="truncate max-w-[150px]">{file.filename || file.id}</span>
-                                <button
-                                    onClick={() => removeFile(file.id)}
-                                    className="text-muted-foreground hover:text-destructive transition-colors ml-1"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
+                        <form onSubmit={handleSubmit} className="space-y-3">
+                            <textarea
+                                className="w-full p-3.5 text-sm resize-none"
+                                rows={3}
+                                style={{
+                                    background: 'var(--ds-bg)',
+                                    border: '1px solid var(--ds-border)',
+                                    borderRadius: 'var(--radius-ctrl)',
+                                    color: 'var(--ds-text)',
+                                }}
+                                placeholder={t('chat.placeholder')}
+                                value={prompt}
+                                onChange={e => setPrompt(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                        e.preventDefault()
+                                        handleSubmit()
+                                    }
+                                }}
+                            />
+
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setAdvanceOpen(!advanceOpen)}
+                                        className="ds-btn-secondary text-[10px] px-2 py-1"
+                                    >
+                                        {advanceOpen ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
+                                        {t('chat.advanced')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleClear}
+                                        className="ds-btn-secondary text-[10px] px-2 py-1"
+                                    >
+                                        <Trash2 className="w-3 h-3 mr-1" />
+                                        {t('chat.clear')}
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {loading ? (
+                                        <button
+                                            type="button"
+                                            onClick={handleCancel}
+                                            className="ds-btn-danger text-[10px] px-3 py-1.5"
+                                        >
+                                            {t('chat.cancel')}
+                                        </button>
+                                    ) : null}
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !prompt.trim()}
+                                        className="ds-btn-primary text-[11px] px-3 py-1.5"
+                                    >
+                                        {loading ? (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <Send className="w-3.5 h-3.5 mr-1.5" />
+                                                {t('chat.send')}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
-                        ))}
+
+                            {advanceOpen && (
+                                <div className="p-4 space-y-3" style={{ background: 'var(--ds-bg)', border: '1px solid var(--ds-border)', borderRadius: 'var(--radius-ctrl)' }}>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.model')}</label>
+                                            <SegmentedControl
+                                                options={models}
+                                                value={modelMode}
+                                                onChange={setModelMode}
+                                                size="sm"
+                                                ariaLabel={t('chat.model')}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.stream')}</label>
+                                            <div className="flex items-center gap-2 h-8">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setStream(true)}
+                                                    className="text-[10px] px-2 py-1 font-medium border transition-colors"
+                                                    style={{
+                                                        borderRadius: 'var(--radius-ctrl)',
+                                                        background: stream ? 'var(--ds-blue)' : 'transparent',
+                                                        color: stream ? 'var(--ds-text-on-primary)' : 'var(--ds-text-secondary)',
+                                                        borderColor: stream ? 'var(--ds-blue)' : 'var(--ds-border)',
+                                                    }}
+                                                >
+                                                    {t('chat.streamOn')}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setStream(false)}
+                                                    className="text-[10px] px-2 py-1 font-medium border transition-colors"
+                                                    style={{
+                                                        borderRadius: 'var(--radius-ctrl)',
+                                                        background: !stream ? 'var(--ds-blue)' : 'transparent',
+                                                        color: !stream ? 'var(--ds-text-on-primary)' : 'var(--ds-text-secondary)',
+                                                        borderColor: !stream ? 'var(--ds-blue)' : 'var(--ds-border)',
+                                                    }}
+                                                >
+                                                    {t('chat.streamOff')}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.temperature')}</label>
+                                            <input
+                                                type="number"
+                                                className="ds-input py-2 text-xs"
+                                                min={0}
+                                                max={2}
+                                                step={0.1}
+                                                value={temperature}
+                                                onChange={e => setTemperature(parseFloat(e.target.value) || 0)}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ds-text-tertiary)' }}>{t('chat.maxTokens')}</label>
+                                            <input
+                                                type="number"
+                                                className="ds-input py-2 text-xs"
+                                                min={1}
+                                                max={32768}
+                                                step={1}
+                                                value={maxTokens}
+                                                onChange={e => setMaxTokens(parseInt(e.target.value) || 1)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </form>
                     </div>
                 )}
-                {attachmentAccountIds.length > 1 && (
-                    <div className="max-w-4xl mx-auto mb-3 text-[11px] text-amber-600">
-                        {t('apiTester.fileAccountConflict')}
-                    </div>
-                )}
-                {attachmentAccountId && (
-                    <div className="max-w-4xl mx-auto mb-3 text-[11px] text-muted-foreground">
-                        {t('apiTester.attachmentAccountHint', { account: attachmentAccountId })}
-                    </div>
-                )}
-                <div className="max-w-4xl mx-auto relative group">
-                    <input
-                        type="file"
-                        className="hidden"
-                        ref={fileInputRef}
-                        multiple
-                        onChange={handleFileSelect}
-                    />
-                    <div className="absolute left-2 bottom-2 z-10">
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploadingFiles || isStreaming}
-                            className="p-2 text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Attach files"
-                        >
-                            {uploadingFiles ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-                        </button>
-                    </div>
-                    <textarea
-                        className="w-full bg-[#09090b] border border-border rounded-xl pl-12 pr-12 py-3 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none custom-scrollbar placeholder:text-muted-foreground/50 text-foreground shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
-                        placeholder={hasAvailableModel ? t('apiTester.enterMessage') : t('apiTester.noModelsMessagePlaceholder')}
-                        rows={1}
-                        style={{ minHeight: '52px' }}
-                        value={message}
-                        disabled={!hasAvailableModel}
-                        onChange={e => setMessage(e.target.value)}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault()
-                                if (!loading && !uploadingFiles && (message.trim() || attachedFiles.length > 0)) {
-                                    onRunTest()
-                                }
-                            }
-                        }}
-                    />
-                    <div className="absolute right-2 bottom-2 z-10">
-                        {loading && isStreaming ? (
-                            <button onClick={onStopGeneration} className="p-2 text-muted-foreground hover:text-destructive transition-colors">
-                                <Square className="w-4 h-4 fill-current" />
-                            </button>
-                        ) : (
-                            <button
-                                onClick={onRunTest}
-                                disabled={loading || uploadingFiles || !hasAvailableModel || (!message.trim() && attachedFiles.length === 0)}
-                                className="p-2 text-primary hover:text-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                            </button>
-                        )}
-                    </div>
-                </div>
-                <div className="max-w-4xl mx-auto mt-3 flex justify-center">
-                    <span className="text-[10px] text-muted-foreground/40 font-medium">{t('apiTester.adminConsoleLabel')}</span>
-                </div>
             </div>
         </div>
     )

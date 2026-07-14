@@ -129,6 +129,17 @@ func truncateError(s string) string {
 	return string(runes[:maxToolErrorRunes]) + "..."
 }
 
+// truncateToolResult safely truncates a tool result string to maxRunes
+// runes, avoiding UTF-8 multi-byte character corruption.
+func truncateToolResult(s string, maxRunes int) string {
+	runeCount := utf8.RuneCountInString(s)
+	if runeCount <= maxRunes {
+		return s
+	}
+	runes := []rune(s)
+	return string(runes[:maxRunes]) + "\n\n[Content truncated to fit context window]"
+}
+
 func appendToolResultsToMessages(stdReq promptcompat.StandardRequest, calls []toolcall.ParsedToolCall, results []*localtool.ToolResult) promptcompat.StandardRequest {
 	if len(calls) == 0 || len(results) == 0 {
 		return stdReq
@@ -141,7 +152,7 @@ func appendToolResultsToMessages(stdReq promptcompat.StandardRequest, calls []to
 		content := ""
 		if result.Ok {
 			if result.Detail != "" {
-				content = result.Detail
+				content = truncateToolResult(result.Detail, 4000)
 			} else if result.Summary != "" {
 				content = result.Summary
 			}
@@ -149,7 +160,7 @@ func appendToolResultsToMessages(stdReq promptcompat.StandardRequest, calls []to
 			if result.Error != nil {
 				content = "Error: " + truncateError(result.Error.Message)
 			} else if result.Detail != "" {
-				content = "Error: " + result.Detail
+				content = "Error: " + truncateToolResult(result.Detail, 2000)
 			}
 		}
 		callID := string(results[i].CallId)

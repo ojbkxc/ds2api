@@ -1,6 +1,9 @@
 package contextcompression
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,22 +50,22 @@ func (c *Compressor) CompressPrompt(prompt string) (string, CompressionLevel, in
 	level := CompressionNone
 	compressed := prompt
 
-	// Level 1: Snip
+	// Level 1: Snip — trim sections that look like tool results
 	if float64(originalTokens) > float64(maxTokens)*c.config.SnipRatio {
-		compressed = c.snipLongContent(compressed)
+		compressed = c.snipToolSections(compressed)
 		level = CompressionSnip
 	}
 
 	currentTokens := EstimateTokensForPrompt(compressed)
 
-	// Level 2: Prune
+	// Level 2: Prune — replace old sections with placeholders
 	if float64(currentTokens) > float64(maxTokens)*c.config.PruneRatio {
-		compressed = c.pruneOldContent(compressed)
+		compressed = c.pruneOldSections(compressed)
 		level = CompressionPrune
 		currentTokens = EstimateTokensForPrompt(compressed)
 	}
 
-	// Level 3: Compact - truncate to fit
+	// Level 3: Compact — truncate to fit
 	if float64(currentTokens) > float64(maxTokens)*c.config.CompactRatio {
 		compressed = c.truncateToFit(compressed, maxTokens)
 		level = CompressionCompact
@@ -71,6 +74,119 @@ func (c *Compressor) CompressPrompt(prompt string) (string, CompressionLevel, in
 
 	c.logger.Debugf("compressed: %d -> %d tokens (level: %d)", originalTokens, currentTokens, level)
 	return compressed, level, originalTokens, currentTokens
+}
+
+// snipToolSections identifies long "Tool:" sections in the prompt string
+// and trims them, keeping head and tail portions.
+func (c *Compressor) snipToolSections(prompt string) string {
+	// Prompts from MessagesPrepareWithThinkingAndGuard use role markers
+	// like "tool:" or "Tool:" followed by the content. We look for long
+	// sections and snip them by keeping the first and last portion.
+	const maxSectionLen = 3000
+	lines := strings.Split(prompt, "\n")
+	var result strings.Builder
+	var sectionBuf strings.Builder
+	inToolSection := false
+
+	flushBuffer := func() {
+		if sectionBuf.Len() == 0 {
+			return
+		}
+		content := sectionBuf.String()
+		if len(content) > maxSectionLen {
+			// Snip: keep head and tail
+			head := content[:maxSectionLen/2]
+			tail := content[len(content)-maxSectionLen/4:]
+			result.WriteString(head)
+			result.WriteString(fmt.Sprintf("\n... [%d chars snipped] ...\n", len(content)-maxSectionLen/2-maxSectionLen/4))
+			result.WriteString(tail)
+		} else {
+			result.WriteString(content)
+		}
+		sectionBuf.Reset()
+	}
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		lower := strings.ToLower(trimmed)
+		if strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:") {
+			flushBuffer()
+			inToolSection = true
+			result.WriteString(line)
+			result.WriteString("\n")
+			continue
+		}
+		// Heuristic: tool section ends at next role marker
+		if inToolSection && (strings.HasPrefix(lower, "user:") || strings.HasPrefix(lower, "assistant:") ||
+			strings.HasPrefix(lower, "system:") || strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:")) {
+			flushBuffer()
+			inToolSection = false
+		}
+		if inToolSection {
+			sectionBuf.WriteString(line)
+			sectionBuf.WriteString("\n")
+		} else {
+			result.WriteString(line)
+			result.WriteString("\n")
+		}
+	}
+	flushBuffer()
+	return result.String()
+}
+
+// pruneOldSections replaces old tool result sections with placeholders.
+func (c *Compressor) pruneOldSections(prompt string) string {
+	// Simple approach: keep the last ~50% of the prompt, replace earlier
+	// tool sections with short placeholders.
+	lines := strings.Split(prompt, "\n")
+	totalLines := len(lines)
+	if totalLines < 20 {
+		return prompt
+	}
+
+	keepFrom := int(float64(totalLines) * 0.5)
+	var result strings.Builder
+	inToolSection := false
+	toolSectionLines := 0
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		lower := strings.ToLower(trimmed)
+		if strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:") {
+			if i < keepFrom {
+				inToolSection = true
+				toolSectionLines = 0
+				result.WriteString(line)
+				result.WriteString("\n")
+				continue
+			}
+			inToolSection = true
+			toolSectionLines = 0
+			result.WriteString(line)
+			result.WriteString("\n")
+			result.WriteString("[elided tool result]\n")
+			continue
+		}
+		if inToolSection {
+			if strings.HasPrefix(lower, "user:") || strings.HasPrefix(lower, "assistant:") ||
+				strings.HasPrefix(lower, "system:") || strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:") {
+				inToolSection = false
+				result.WriteString(line)
+				result.WriteString("\n")
+				continue
+			}
+			toolSectionLines++
+			if i < keepFrom {
+				// Skip old tool section content, already wrote placeholder
+				continue
+			}
+		}
+		if !inToolSection {
+			result.WriteString(line)
+			result.WriteString("\n")
+		}
+	}
+	return result.String()
 }
 
 // CompressMessages compresses a list of message maps.
@@ -92,6 +208,32 @@ func (c *Compressor) CompressMessages(messages []map[string]any) *CompressedMess
 	return result
 }
 
+// CompressAnyMessages compresses a list of messages in the []any format
+// used by the prompt builder. Each element must be a map[string]any.
+func (c *Compressor) CompressAnyMessages(messages []any) ([]any, CompressionLevel) {
+	if !c.config.Enabled || len(messages) == 0 {
+		return messages, CompressionNone
+	}
+	msgMaps := make([]map[string]any, 0, len(messages))
+	for _, m := range messages {
+		if mm, ok := m.(map[string]any); ok {
+			msgMaps = append(msgMaps, mm)
+		}
+	}
+	if len(msgMaps) == 0 {
+		return messages, CompressionNone
+	}
+	result := c.CompressMessages(msgMaps)
+	if result.Level == CompressionNone {
+		return messages, CompressionNone
+	}
+	out := make([]any, len(result.Messages))
+	for i, m := range result.Messages {
+		out[i] = m
+	}
+	return out, result.Level
+}
+
 // NeedsCompression checks if the text exceeds the configured ratio.
 func (c *Compressor) NeedsCompression(text string) bool {
 	if !c.config.Enabled {
@@ -106,19 +248,6 @@ func (c *Compressor) GetTokenCount(text string) int {
 	return EstimateTokensForPrompt(text)
 }
 
-// snipLongContent trims sections of prompt that are too long.
-// Focuses on "tool result" sections and long code blocks.
-func (c *Compressor) snipLongContent(prompt string) string {
-	// For prompt-level compression, we focus on what we can do without
-	// breaking the message structure. The main snipping happens at the
-	// message level via the Pruner.
-	return prompt
-}
-
-// pruneOldContent removes old content from the prompt.
-func (c *Compressor) pruneOldContent(prompt string) string {
-	return prompt
-}
 
 // truncateToFit truncates the prompt to fit within maxTokens.
 func (c *Compressor) truncateToFit(prompt string, maxTokens int) string {

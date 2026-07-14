@@ -1,8 +1,9 @@
 import { Loader2, RefreshCcw, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import clsx from 'clsx'
 
 import { useI18n } from '../../i18n'
+import Button from '../../components/ui/Button'
+import SegmentedControl from '../../components/ui/SegmentedControl'
 import { ChatHistoryListPane, ConfirmClearDialog, DesktopDetailPane, MobileDetailModal } from './ChatHistoryPanels'
 import {
     DISABLED_LIMIT,
@@ -316,8 +317,15 @@ export default function ChatHistoryContainer({ authFetch, onMessage }) {
 
     if (loading) {
         return (
-            <div className="h-[calc(100vh-140px)] rounded-2xl border border-border bg-card shadow-sm flex items-center justify-center">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <div
+                className="h-[calc(100vh-140px)] flex items-center justify-center"
+                style={{
+                    background: 'var(--ds-card)',
+                    border: '1px solid var(--ds-border)',
+                    borderRadius: 'var(--radius-card)',
+                }}
+            >
+                <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--ds-text-secondary)' }}>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     {t('chatHistory.loading')}
                 </div>
@@ -327,38 +335,77 @@ export default function ChatHistoryContainer({ authFetch, onMessage }) {
 
     return (
         <div className="space-y-6">
-            <div className="rounded-2xl border border-border bg-card shadow-sm p-4 lg:p-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div
+                className="p-4 lg:p-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+                style={{
+                    background: 'var(--ds-card)',
+                    border: '1px solid var(--ds-border)',
+                    borderRadius: 'var(--radius-card)',
+                }}
+            >
                 <div>
-                    <div className="text-sm font-semibold text-foreground">{t('chatHistory.retentionTitle')}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{t('chatHistory.retentionDesc')}</div>
+                    <div className="text-sm font-semibold" style={{ color: 'var(--ds-text)' }}>
+                        {t('chatHistory.retentionTitle')}
+                    </div>
+                    <div className="text-xs mt-1" style={{ color: 'var(--ds-text-secondary)' }}>
+                        {t('chatHistory.retentionDesc')}
+                    </div>
                 </div>
                 <div className="flex flex-wrap gap-2 items-center">
-                    {LIMIT_OPTIONS.map(option => (
-                        <button
-                            key={option}
-                            type="button"
-                            disabled={savingLimit}
-                            onClick={() => handleLimitChange(option)}
-                            className={clsx(
-                                'h-9 px-3 rounded-lg border text-sm transition-colors',
-                                option === limit
-                                    ? (option === DISABLED_LIMIT
-                                        ? 'border-destructive bg-destructive text-destructive-foreground'
-                                        : 'border-primary bg-primary text-primary-foreground')
-                                    : 'border-border bg-background text-muted-foreground hover:text-foreground hover:bg-secondary/70'
-                            )}
-                        >
-                            {option === DISABLED_LIMIT ? t('chatHistory.off') : option}
-                        </button>
-                    ))}
+                    {LIMIT_OPTIONS.map(option => {
+                        const active = option === limit
+                        const isDestructive = option === DISABLED_LIMIT
+                        return (
+                            <button
+                                key={option}
+                                type="button"
+                                disabled={savingLimit}
+                                onClick={() => handleLimitChange(option)}
+                                className="h-9 px-3 text-sm font-medium transition-colors"
+                                style={{
+                                    borderRadius: 'var(--radius-ctrl)',
+                                    border: active
+                                        ? (isDestructive ? '1px solid var(--ds-danger)' : '1px solid var(--ds-blue)')
+                                        : '1px solid var(--ds-border)',
+                                    background: active
+                                        ? (isDestructive ? 'var(--ds-danger-bg)' : 'var(--ds-blue)')
+                                        : 'transparent',
+                                    color: active
+                                        ? (isDestructive ? 'var(--ds-danger)' : 'var(--ds-text-on-primary)')
+                                        : 'var(--ds-text-secondary)',
+                                    cursor: savingLimit ? 'not-allowed' : 'pointer',
+                                    opacity: savingLimit ? 0.5 : 1,
+                                }}
+                            >
+                                {option === DISABLED_LIMIT ? t('chatHistory.off') : option}
+                            </button>
+                        )
+                    })}
                     <button
                         type="button"
                         onClick={() => handleRefresh({ manual: true })}
                         disabled={refreshing}
-                        className={clsx(
-                            'h-9 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-secondary/70 flex items-center',
-                            isMobileView ? 'w-9 justify-center px-0' : 'gap-2 px-3'
-                        )}
+                        className="h-9 flex items-center justify-center transition-colors"
+                        style={{
+                            borderRadius: 'var(--radius-ctrl)',
+                            border: '1px solid var(--ds-border)',
+                            background: 'transparent',
+                            color: 'var(--ds-text-secondary)',
+                            cursor: refreshing ? 'not-allowed' : 'pointer',
+                            padding: isMobileView ? '0' : '0 0.75rem',
+                            width: isMobileView ? '36px' : 'auto',
+                            gap: isMobileView ? '0' : '0.5rem',
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!refreshing) {
+                                e.currentTarget.style.color = 'var(--ds-text)'
+                                e.currentTarget.style.background = 'var(--ds-surface-hover)'
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--ds-text-secondary)'
+                            e.currentTarget.style.background = 'transparent'
+                        }}
                     >
                         {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
                         {!isMobileView && t('chatHistory.refresh')}
@@ -367,7 +414,25 @@ export default function ChatHistoryContainer({ authFetch, onMessage }) {
                         type="button"
                         onClick={() => setConfirmClearOpen(true)}
                         disabled={clearing || !items.length}
-                        className="h-10 w-10 rounded-xl border border-border bg-[#111214] text-muted-foreground hover:text-destructive hover:bg-[#181a1d] disabled:opacity-50 flex items-center justify-center"
+                        className="h-10 w-10 flex items-center justify-center transition-colors"
+                        style={{
+                            borderRadius: 'var(--radius-ctrl)',
+                            border: '1px solid var(--ds-border)',
+                            background: 'var(--ds-bg)',
+                            color: 'var(--ds-text-tertiary)',
+                            cursor: (clearing || !items.length) ? 'not-allowed' : 'pointer',
+                            opacity: (clearing || !items.length) ? 0.5 : 1,
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!clearing && items.length) {
+                                e.currentTarget.style.color = 'var(--ds-danger)'
+                                e.currentTarget.style.background = 'var(--ds-surface-hover)'
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--ds-text-tertiary)'
+                            e.currentTarget.style.background = 'var(--ds-bg)'
+                        }}
                         title={t('chatHistory.clearAll')}
                     >
                         {clearing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -376,7 +441,15 @@ export default function ChatHistoryContainer({ authFetch, onMessage }) {
             </div>
 
             {detail && (
-                <div className="rounded-xl border border-destructive/20 bg-destructive/10 text-destructive px-4 py-3 text-sm">
+                <div
+                    className="px-4 py-3 text-sm"
+                    style={{
+                        borderRadius: 'var(--radius-ctrl)',
+                        border: '1px solid var(--ds-danger-border)',
+                        background: 'var(--ds-danger-bg)',
+                        color: 'var(--ds-danger)',
+                    }}
+                >
                     {detail}
                 </div>
             )}

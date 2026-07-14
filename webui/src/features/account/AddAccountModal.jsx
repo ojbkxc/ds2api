@@ -14,71 +14,150 @@ export default function AddAccountModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-card w-full max-w-md rounded-xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95">
-                <div className="p-4 border-b border-border flex justify-between items-center">
-                    <h3 className="font-semibold">{t('accountManager.modalAddAccountTitle')}</h3>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-                        <X className="w-5 h-5" />
+        <div className="ds-modal-overlay" onClick={onClose}>
+            <div className="ds-modal-card" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
+                    <h3 className="ds-modal-title">{t('accountManager.modalAddAccountTitle')}</h3>
+                    <button
+                        onClick={onClose}
+                        className="ds-action-btn"
+                        style={{ borderRadius: 'var(--radius-ctrl)', padding: 4 }}
+                    >
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
-                <div className="p-6 space-y-4">
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.nameOptional')}</label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.nameOptional')}
+                        </label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="ds-input"
                             placeholder={t('accountManager.namePlaceholder')}
                             value={newAccount.name}
                             onChange={e => setNewAccount({ ...newAccount, name: e.target.value })}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.remarkOptional')}</label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.remarkOptional')}
+                        </label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="ds-input"
                             placeholder={t('accountManager.remarkPlaceholder')}
                             value={newAccount.remark}
                             onChange={e => setNewAccount({ ...newAccount, remark: e.target.value })}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.emailOptional')}</label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.emailOptional')}
+                        </label>
                         <input
                             type="email"
-                            className="input-field"
+                            className="ds-input"
                             placeholder="user@example.com"
                             value={newAccount.email}
                             onChange={e => setNewAccount({ ...newAccount, email: e.target.value })}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.mobileOptional')}</label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.mobileOptional')}
+                        </label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="ds-input"
                             placeholder="+86..."
                             value={newAccount.mobile}
                             onChange={e => setNewAccount({ ...newAccount, mobile: e.target.value })}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.passwordLabel')} <span className="text-destructive">*</span></label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.passwordLabel')}{' '}
+                            <span style={{ color: 'var(--ds-danger)' }}>*</span>
+                        </label>
                         <input
                             type="password"
-                            className="input-field bg-[#09090b]"
+                            className="ds-input"
+                            style={{ background: 'var(--ds-shell-bg)' }}
                             placeholder={t('accountManager.passwordPlaceholder')}
                             value={newAccount.password}
                             onChange={e => setNewAccount({ ...newAccount, password: e.target.value })}
                         />
                     </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border hover:bg-secondary transition-colors text-sm font-medium">{t('actions.cancel')}</button>
-                        <button onClick={onAdd} disabled={loading} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50">
-                            {loading ? t('accountManager.addAccountLoading') : t('accountManager.addAccountAction')}
-                        </button>
-                    </div>
+                </div>
+
+                <div className="ds-modal-actions">
+                    <button
+                        onClick={onClose}
+                        className="ds-btn-secondary"
+                        style={{ padding: '0.5rem 1rem', fontSize: 13 }}
+                    >
+                        {t('actions.cancel')}
+                    </button>
+                    <button
+                        onClick={onAdd}
+                        disabled={loading}
+                        className="ds-btn-primary"
+                        style={{ padding: '0.5rem 1rem', fontSize: 13 }}
+                    >
+                        {loading ? t('accountManager.addAccountLoading') : t('accountManager.addAccountAction')}
+                    </button>
                 </div>
             </div>
         </div>

@@ -15,27 +15,64 @@ export default function EditAccountModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-card w-full max-w-md rounded-xl border border-border shadow-2xl overflow-hidden animate-in zoom-in-95">
-                <div className="p-4 border-b border-border flex justify-between items-start gap-4">
-                    <div className="min-w-0">
-                        <h3 className="font-semibold">{t('accountManager.modalEditAccountTitle')}</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">{t('accountManager.editAccountHint')}</p>
+        <div className="ds-modal-overlay" onClick={onClose}>
+            <div className="ds-modal-card" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+                <div className="flex items-start justify-between" style={{ marginBottom: 16, gap: 16 }}>
+                    <div style={{ minWidth: 0 }}>
+                        <h3 className="ds-modal-title">{t('accountManager.modalEditAccountTitle')}</h3>
+                        <p style={{ marginTop: 4, fontSize: 11, color: 'var(--ds-text-tertiary)' }}>
+                            {t('accountManager.editAccountHint')}
+                        </p>
                     </div>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-                        <X className="w-5 h-5" />
+                    <button
+                        onClick={onClose}
+                        className="ds-action-btn"
+                        style={{ borderRadius: 'var(--radius-ctrl)', padding: 4, flexShrink: 0 }}
+                    >
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
-                <div className="p-6 space-y-4">
-                    <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-                        <div className="text-xs font-medium text-muted-foreground mb-1">{t('accountManager.accountIdentifierLabel')}</div>
-                        <code className="text-sm font-mono text-foreground break-all">{editingAccount.identifier}</code>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div
+                        style={{
+                            borderRadius: 'var(--radius-ctrl)',
+                            border: '1px solid var(--ds-border)',
+                            background: 'var(--ds-bg)',
+                            padding: '8px 12px',
+                        }}
+                    >
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ds-text-tertiary)', marginBottom: 4 }}>
+                            {t('accountManager.accountIdentifierLabel')}
+                        </div>
+                        <code
+                            style={{
+                                fontSize: 13,
+                                fontFamily: 'monospace',
+                                color: 'var(--ds-text)',
+                                wordBreak: 'break-all',
+                            }}
+                        >
+                            {editingAccount.identifier}
+                        </code>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.nameOptional')}</label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.nameOptional')}
+                        </label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="ds-input"
                             placeholder={t('accountManager.namePlaceholder')}
                             value={editAccount.name}
                             onChange={e => setEditAccount({ ...editAccount, name: e.target.value })}
@@ -43,21 +80,45 @@ export default function EditAccountModal({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('accountManager.remarkOptional')}</label>
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--ds-text-secondary)',
+                                marginBottom: 6,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.04em',
+                            }}
+                        >
+                            {t('accountManager.remarkOptional')}
+                        </label>
                         <input
                             type="text"
-                            className="input-field"
+                            className="ds-input"
                             placeholder={t('accountManager.remarkPlaceholder')}
                             value={editAccount.remark}
                             onChange={e => setEditAccount({ ...editAccount, remark: e.target.value })}
                         />
                     </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border hover:bg-secondary transition-colors text-sm font-medium">{t('actions.cancel')}</button>
-                        <button onClick={onSave} disabled={loading} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50">
-                            {loading ? t('accountManager.editAccountLoading') : t('accountManager.editAccountAction')}
-                        </button>
-                    </div>
+                </div>
+
+                <div className="ds-modal-actions">
+                    <button
+                        onClick={onClose}
+                        className="ds-btn-secondary"
+                        style={{ padding: '0.5rem 1rem', fontSize: 13 }}
+                    >
+                        {t('actions.cancel')}
+                    </button>
+                    <button
+                        onClick={onSave}
+                        disabled={loading}
+                        className="ds-btn-primary"
+                        style={{ padding: '0.5rem 1rem', fontSize: 13 }}
+                    >
+                        {loading ? t('accountManager.editAccountLoading') : t('accountManager.editAccountAction')}
+                    </button>
                 </div>
             </div>
         </div>
