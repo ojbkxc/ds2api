@@ -128,8 +128,8 @@ flowchart LR
 | Gemini 兼容 | `POST /v1beta/models/{model}:generateContent`、`POST /v1beta/models/{model}:streamGenerateContent`（及 `/v1/models/{model}:*` 路径�?|
 | Ollama 兼容 | `GET /api/version`、`GET /api/tags`、`POST /api/show` |
 | 统一 CORS 兼容 | `/v1/*`、`/anthropic/*`、`/v1beta/models/*`、`/api/*`、`/admin/*` 统一走同一�?CORS 策略；Vercel �?`/v1/chat/completions` �?Node Runtime 也对齐相同放行规则，尽量减少第三方预检请求头限�?|
-| 多账号轮�?| 自动 token 刷新、邮�?手机号双登录方式 |
-| 并发队列控制 | 每账�?in-flight 上限 + 等待队列，动态计算建议并发�?|
+| 多账号轮询 | 自动 token 刷新（含随机抖动避免同时刷新）、邮箱/手机号双登录方式，401/403 自动禁用账号 |
+| 并发队列控制 | 每账号 in-flight 上限 + 等待队列，动态计算建议并发，会话池复用 + parent_message_id 链式连接，72h TTL，单账号 50 消息上限 |
 | DeepSeek PoW | �?Go 高性能实现（DeepSeekHashV1），毫秒级响�?|
 | Tool Calling | 防泄漏处理：非代码块高置信特征识别、`delta.tool_calls` 早发、结构化增量输出 |
 | Admin API | 配置管理、运行时设置热更新、代理管理、账号测�?/ 批量测试、会话清理、导入导出、Vercel 同步、版本检�?|
@@ -305,7 +305,7 @@ go run ./cmd/ds2api
 
 `README` 只保留快速入口，完整字段请以 [config.example.json](config.example.json) 为模板，并参�?[部署指南](docs/DEPLOY.md#0-前置要求) �?[API 配置最佳实践](API.md#配置最佳实�?�?
 常用字段�?
-- `keys` / `api_keys`：客户端访问密钥，`api_keys` 支持 `name` �?`remark` 元信息，`keys` 继续兼容�?- `accounts`：DeepSeek 托管账号，支�?`email` �?`mobile` 登录，可配置代理、名称和备注�?- `model_aliases`：OpenAI / Claude / Gemini 共用的模�?alias 映射�?- `runtime`：账号并发、队列与 token 刷新策略，可通过 Admin Settings 热更新�?- `auto_delete.mode`：请求结束后的远端会话清理策略，支持 `none` / `single` / `all`�?- `current_input_file`：全局生效的上下文拆分上传策略；默认开启且阈值为 `0`，触发时将完整上下文合并上传�?`deepseek.txt` 上下文文件�?- 如果关闭 `current_input_file`，请求会直接透传，不上传拆分上下文文件�?- `thinking_injection`：默认开启；在最�?user 消息末尾追加思考增强提示词，提高高强度推理与工具调用前的思考稳定性；`prompt` 留空时使用内置默认提示词�?
+- `keys` / `api_keys`：客户端访问密钥，`api_keys` 支持 `name` �?`remark` 元信息，`keys` 继续兼容�?- `accounts`：DeepSeek 托管账号，支�?`email` �?`mobile` 登录，可配置代理、名称和备注�?- `model_aliases`：OpenAI / Claude / Gemini 共用的模�?alias 映射�?- `runtime`：账号并发、队列、token 刷新策略（含刷新抖动）、最大账号切换次数与每会话消息上限，可通过 Admin Settings 热更新�?- `auto_delete.mode`：请求结束后的远端会话清理策略，支持 `none` / `single` / `all`；`auto_delete.delay_hours` 控制延迟清理小时数（默认 72h）�?- `current_input_file`：全局生效的上下文拆分上传策略；默认开启，首条消息无历史时阈值提升至 3 倍（最低 2000 字符），触发时将完整上下文合并上传�?`deepseek.txt` 上下文文件�?- 如果关闭 `current_input_file`，请求会直接透传，不上传拆分上下文文件�?- `thinking_injection`：默认开启；在最�?user 消息末尾追加思考增强提示词，提高高强度推理与工具调用前的思考稳定性；`prompt` 留空时使用内置默认提示词�?
 环境变量完整列表�?[部署指南](docs/DEPLOY.md)，接口鉴权规则见 [API.md](API.md#鉴权规则)�?
 ## 鉴权模式
 
