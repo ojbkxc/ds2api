@@ -32,6 +32,8 @@ type ConfigStore interface {
 	RuntimeAccountMaxQueue(defaultSize int) int
 	RuntimeGlobalMaxInflight(defaultSize int) int
 	RuntimeTokenRefreshIntervalHours() int
+	RuntimeMaxAccountSwitches() int
+	RuntimeMaxMessagesPerSession() int
 	AutoDeleteMode() string
 	CurrentInputFileEnabled() bool
 	CurrentInputFileMinChars() int

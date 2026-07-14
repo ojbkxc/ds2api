@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"math/rand/v2"
 	"net/http"
 	"strings"
 	"sync"
@@ -356,7 +357,9 @@ func (r *Resolver) shouldForceRefresh(accountID string) bool {
 	defer r.mu.Unlock()
 	last, ok := r.tokenRefreshedAt[accountID]
 	if !ok || last.IsZero() {
-		r.tokenRefreshedAt[accountID] = now
+		// 错峰：首次记录时随机回退 0~intervalHours 小时，避免所有账号同时刷新
+		jitterHours := rand.IntN(intervalHours + 1)
+		r.tokenRefreshedAt[accountID] = now.Add(-time.Duration(jitterHours) * time.Hour)
 		return false
 	}
 	return now.Sub(last) >= time.Duration(intervalHours)*time.Hour

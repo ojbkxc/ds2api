@@ -73,7 +73,6 @@
   },
   "auto_delete": {
     "mode": "single",
-    "delay_hours": 12
+    "delay_hours": 72
   }
-}
 }
