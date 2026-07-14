@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"ds2api/internal/config"
+	"ds2api/internal/contextcompression"
 	"ds2api/internal/prompt"
 	"ds2api/internal/promptcompat"
 	"ds2api/internal/util"
@@ -52,6 +53,13 @@ func normalizeClaudeRequest(store ConfigReader, req map[string]any) (claudeNorma
 		if localPrompt != "" {
 			finalPrompt = finalPrompt + "\n\n" + localPrompt
 			toolNames = append(localNames, toolNames...)
+		}
+	}
+
+	// Apply context compression to keep prompt within token limits
+	if compressor := contextcompression.GlobalCompressor; compressor != nil && compressor.Config().Enabled {
+		if compressed, level, _, _ := compressor.CompressPrompt(finalPrompt); level > contextcompression.CompressionNone {
+			finalPrompt = compressed
 		}
 	}
 
