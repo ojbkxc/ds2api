@@ -90,6 +90,18 @@ func parseSettingsUpdateRequest(req map[string]any) (*config.AdminConfig, *confi
 			}
 			cfg.TokenRefreshIntervalHours = n
 		}
+		if v, exists := raw["max_account_switches"]; exists {
+			n := intFrom(v)
+			if n > 0 {
+				cfg.MaxAccountSwitches = n
+			}
+		}
+		if v, exists := raw["max_messages_per_session"]; exists {
+			n := intFrom(v)
+			if n > 0 {
+				cfg.MaxMessagesPerSession = n
+			}
+		}
 		if cfg.AccountMaxInflight > 0 && cfg.GlobalMaxInflight > 0 && cfg.GlobalMaxInflight < cfg.AccountMaxInflight {
 			return nil, nil, nil, nil, nil, nil, nil, nil, fmt.Errorf("runtime.global_max_inflight must be >= runtime.account_max_inflight")
 		}
@@ -148,6 +160,9 @@ func parseSettingsUpdateRequest(req map[string]any) (*config.AdminConfig, *confi
 		}
 		if v, exists := raw["sessions"]; exists {
 			cfg.Sessions = boolFrom(v)
+		}
+		if v, exists := raw["delay_hours"]; exists {
+			cfg.DelayHours = intFrom(v)
 		}
 		autoDeleteCfg = cfg
 	}

@@ -26,6 +26,8 @@ func (h *Handler) getSettings(w http.ResponseWriter, _ *http.Request) {
 			"account_max_queue":            h.Store.RuntimeAccountMaxQueue(recommended),
 			"global_max_inflight":          h.Store.RuntimeGlobalMaxInflight(recommended),
 			"token_refresh_interval_hours": h.Store.RuntimeTokenRefreshIntervalHours(),
+			"max_account_switches":         h.Store.RuntimeMaxAccountSwitches(),
+			"max_messages_per_session":     h.Store.RuntimeMaxMessagesPerSession(),
 		},
 		"responses":   snap.Responses,
 		"embeddings":  snap.Embeddings,

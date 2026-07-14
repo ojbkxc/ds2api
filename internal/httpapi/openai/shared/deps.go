@@ -43,6 +43,7 @@ type ConfigReader interface {
 	EmbeddingsProvider() string
 	AutoDeleteMode() string
 	AutoDeleteSessions() bool
+	AutoDeleteDelayHours() int
 	CurrentInputFileEnabled() bool
 	CurrentInputFileMinChars() int
 	CurrentInputFileFilenameTemplate() string

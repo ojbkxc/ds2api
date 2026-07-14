@@ -14,6 +14,8 @@ import (
 	"ds2api/internal/promptcompat"
 )
 
+var largeTestInput = strings.Repeat("this is a large input to trigger file upload with first-message threshold. ", 40)
+
 type fakeDeepSeekCaller struct {
 	responses          []*http.Response
 	payloads           []map[string]any
@@ -203,10 +205,10 @@ func TestExecuteNonStreamWithRetryReuploadsCurrentInputFileAfterAccountSwitch(t 
 		ResolvedModel:  "deepseek-v4-flash",
 		ResponseModel:  "deepseek-v4-flash",
 		Messages: []any{
-			map[string]any{"role": "user", "content": "large current input"},
+			map[string]any{"role": "user", "content": largeTestInput},
 		},
-		PromptTokenText: "large current input",
-		FinalPrompt:     "large current input",
+		PromptTokenText: largeTestInput,
+		FinalPrompt:     largeTestInput,
 		Thinking:        true,
 	}
 
@@ -289,10 +291,10 @@ func TestStartCompletionAppliesCurrentInputFileGlobally(t *testing.T) {
 		RequestedModel:  "deepseek-v4-flash",
 		ResolvedModel:   "deepseek-v4-flash",
 		ResponseModel:   "deepseek-v4-flash",
-		PromptTokenText: "first user turn",
-		FinalPrompt:     "first user turn",
+		PromptTokenText: largeTestInput,
+		FinalPrompt:     largeTestInput,
 		Messages: []any{
-			map[string]any{"role": "user", "content": "first user turn"},
+			map[string]any{"role": "user", "content": largeTestInput},
 		},
 	}
 

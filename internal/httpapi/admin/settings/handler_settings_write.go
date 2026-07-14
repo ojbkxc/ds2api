@@ -56,6 +56,12 @@ func (h *Handler) updateSettings(w http.ResponseWriter, r *http.Request) {
 			if runtimeCfg.TokenRefreshIntervalHours > 0 {
 				c.Runtime.TokenRefreshIntervalHours = runtimeCfg.TokenRefreshIntervalHours
 			}
+			if runtimeCfg.MaxAccountSwitches > 0 {
+				c.Runtime.MaxAccountSwitches = runtimeCfg.MaxAccountSwitches
+			}
+			if runtimeCfg.MaxMessagesPerSession > 0 {
+				c.Runtime.MaxMessagesPerSession = runtimeCfg.MaxMessagesPerSession
+			}
 		}
 		if responsesCfg != nil && responsesCfg.StoreTTLSeconds > 0 {
 			c.Responses.StoreTTLSeconds = responsesCfg.StoreTTLSeconds
@@ -66,6 +72,7 @@ func (h *Handler) updateSettings(w http.ResponseWriter, r *http.Request) {
 		if autoDeleteCfg != nil {
 			c.AutoDelete.Mode = autoDeleteCfg.Mode
 			c.AutoDelete.Sessions = autoDeleteCfg.Sessions
+			c.AutoDelete.DelayHours = autoDeleteCfg.DelayHours
 		}
 		if currentInputCfg != nil {
 			if currentInputEnabledSet {

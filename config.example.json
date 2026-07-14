@@ -74,5 +74,6 @@
   "auto_delete": {
     "mode": "single",
     "delay_hours": 12
-  },}
+  }
+}
 }
