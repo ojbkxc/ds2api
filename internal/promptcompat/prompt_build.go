@@ -2,6 +2,7 @@ package promptcompat
 
 import (
 	"ds2api/internal/config"
+	"ds2api/internal/contextcompression"
 	"ds2api/internal/prompt"
 	"strings"
 )
@@ -32,7 +33,16 @@ func buildOpenAIPrompt(messagesRaw []any, toolsRaw any, traceID string, toolPoli
 			messages, toolNames = injectToolPromptWithDescriptionsAndFilename(messages, tools, toolPolicy, false, toolsFilename)
 		}
 	}
-	return prompt.MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, skipGuard), toolNames
+	finalPrompt := prompt.MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, skipGuard)
+
+	// Apply context compression if needed
+	if compressor := contextcompression.GlobalCompressor; compressor != nil && compressor.Config().Enabled {
+		if compressed, level, _, _ := compressor.CompressPrompt(finalPrompt); level > contextcompression.CompressionNone {
+			finalPrompt = compressed
+		}
+	}
+
+	return finalPrompt, toolNames
 }
 
 // buildOpenAIPromptWithLocalTools is like buildOpenAIPrompt but also injects
@@ -62,7 +72,18 @@ func buildOpenAIPromptWithLocalTools(messagesRaw []any, toolsRaw any, traceID st
 		toolNames = MergeLocalToolNames(toolNames, resolvedModel)
 	}
 
-	return prompt.MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, skipGuard), toolNames
+	finalPrompt := prompt.MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, skipGuard)
+
+	// Apply context compression if needed
+	if compressor := contextcompression.GlobalCompressor; compressor != nil && compressor.Config().Enabled {
+		if compressed, level, origTokens, newTokens := compressor.CompressPrompt(finalPrompt); level > contextcompression.CompressionNone {
+			_ = origTokens
+			_ = newTokens
+			finalPrompt = compressed
+		}
+	}
+
+	return finalPrompt, toolNames
 }
 
 // BuildOpenAIPromptWithModel is like BuildOpenAIPrompt but also injects local

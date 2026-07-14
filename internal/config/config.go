@@ -20,6 +20,8 @@ type Config struct {
 	AutoDelete AutoDeleteConfig `json:"auto_delete"`
 	CurrentInputFile CurrentInputFileConfig `json:"current_input_file,omitempty"`
 	ThinkingInjection ThinkingInjectionConfig `json:"thinking_injection,omitempty"`
+	MCPServers []MCPServerConfig `json:"mcp_servers,omitempty"`
+	ContextCompression ContextCompressionConfig `json:"context_compression,omitempty"`
 	Vercel VercelConfig `json:"vercel,omitempty"`
 	VercelSyncHash string `json:"_vercel_sync_hash,omitempty"`
 	VercelSyncTime int64 `json:"_vercel_sync_time,omitempty"`
@@ -196,6 +198,29 @@ func NormalizeVercelConfig(v VercelConfig) VercelConfig {
 		ProjectID: strings.TrimSpace(v.ProjectID),
 		TeamID:    strings.TrimSpace(v.TeamID),
 	}
+}
+
+type MCPServerConfig struct {
+	Name        string            `json:"name"`
+	Type        string            `json:"type"` // "stdio" or "http"
+	Command     string            `json:"command,omitempty"`
+	Args        []string          `json:"args,omitempty"`
+	Env         map[string]string `json:"env,omitempty"`
+	URL         string            `json:"url,omitempty"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	Enabled     bool              `json:"enabled"`
+	TimeoutSecs int               `json:"timeout_secs,omitempty"`
+}
+
+type ContextCompressionConfig struct {
+	Enabled          bool    `json:"enabled"`
+	SnipRatio        float64 `json:"snip_ratio,omitempty"`
+	PruneRatio       float64 `json:"prune_ratio,omitempty"`
+	CompactRatio     float64 `json:"compact_ratio,omitempty"`
+	ContextWindow    int     `json:"context_window,omitempty"`
+	SnipHeadLines    int     `json:"snip_head_lines,omitempty"`
+	SnipTailLines    int     `json:"snip_tail_lines,omitempty"`
+	MaxToolResultLen int     `json:"max_tool_result_len,omitempty"`
 }
 
 func (c *Config) ClearVercelCredentials() {

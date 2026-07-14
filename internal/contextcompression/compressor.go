@@ -11,6 +11,14 @@ type Compressor struct {
 	logger *logrus.Entry
 }
 
+// GlobalCompressor is the package-level compressor instance, set at startup.
+var GlobalCompressor *Compressor
+
+// SetGlobal sets the global compressor instance.
+func SetGlobal(c *Compressor) {
+	GlobalCompressor = c
+}
+
 // NewCompressor creates a new Compressor.
 func NewCompressor(config CompressionConfig) *Compressor {
 	return &Compressor{

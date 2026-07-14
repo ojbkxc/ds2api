@@ -3,6 +3,7 @@ package promptcompat
 import (
 	"ds2api/internal/config"
 	"ds2api/internal/localtool"
+	"ds2api/internal/toolcall"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -38,16 +39,13 @@ Use the web_search tool when any of these apply:
 - If one search is not enough, call web_search again with different keywords
 - Do not invent real-time information without searching`
 
-// BuildLocalToolDescriptors returns the local web tools (web_search, web_fetch)
+// BuildLocalToolDescriptors returns all local tools (web_search, web_fetch, MCP tools)
 // as OpenAI-format tool definitions suitable for prompt injection.
 func BuildLocalToolDescriptors() []map[string]any {
 	descs := localtool.DefaultRegistry.List()
 	tools := make([]map[string]any, 0, len(descs))
 	for _, desc := range descs {
-		// Only include web tools, not memory tools
-		if desc.Name != "web_search" && desc.Name != "web_fetch" {
-			continue
-		}
+		// Include all local tools: web_search, web_fetch, and MCP tools
 		params := map[string]any{
 			"type":       desc.InputSchema.Type,
 			"properties": desc.InputSchema.Properties,
@@ -69,8 +67,8 @@ func BuildLocalToolDescriptors() []map[string]any {
 }
 
 // BuildLocalToolPromptParts generates the tool descriptions and instructions
-// for the local web tools, in the same format as buildToolPromptParts in
-// tool_prompt.go.
+// for all local tools (web_search, web_fetch, MCP tools),
+// in the same format as buildToolPromptParts in tool_prompt.go.
 func BuildLocalToolPromptParts() (descriptions string, toolNames []string) {
 	descs := localtool.DefaultRegistry.List()
 	if len(descs) == 0 {
@@ -79,7 +77,9 @@ func BuildLocalToolPromptParts() (descriptions string, toolNames []string) {
 
 	var schemas []string
 	for _, desc := range descs {
-		if desc.Name != "web_search" && desc.Name != "web_fetch" {
+		// Include all tools: web_search, web_fetch, memory, and MCP tools
+		// Skip the memory tool since it's not a web-accessible tool
+		if desc.Name == "memory" {
 			continue
 		}
 		name := desc.Name
@@ -109,14 +109,25 @@ func BuildLocalToolPromptParts() (descriptions string, toolNames []string) {
 }
 
 // BuildLocalToolPrompt returns the complete prompt text for local web tools,
-// including tool descriptions, usage instructions, and web search guidance.
+// including tool descriptions, DSML format instructions, and web search guidance.
 func BuildLocalToolPrompt() (promptText string, toolNames []string) {
 	descriptions, toolNames := BuildLocalToolPromptParts()
 	if descriptions == "" {
 		return "", nil
 	}
+
+	// Generate DSML tool call format instructions for local tools.
+	// CRITICAL: without these instructions, the model sees JSON schema
+	// descriptions and outputs JSON tool calls (e.g. {"tool":"web_fetch",...}),
+	// but the tool sieve only recognizes XML/DSML format
+	// (<|DSML|tool_calls> wrapper). This causes tool calls to be silently
+	// ignored and treated as plain text.
+	instructions := toolcall.BuildToolCallInstructions(toolNames)
+
 	var b strings.Builder
 	b.WriteString(descriptions)
+	b.WriteString("\n\n")
+	b.WriteString(instructions)
 	b.WriteString("\n\n")
 	b.WriteString(webSearchGuidance)
 	return b.String(), toolNames

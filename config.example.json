@@ -72,5 +72,38 @@
   "auto_delete": {
     "mode": "single",
     "delay_hours": 72
+  },
+  "mcp_servers": [
+    {
+      "_comment": "MCP 插件服务器配置示例 - stdio 类型",
+      "name": "filesystem",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/files"],
+      "enabled": false,
+      "timeout_secs": 10
+    },
+    {
+      "_comment": "MCP 插件服务器配置示例 - HTTP 类型",
+      "name": "my-http-server",
+      "type": "http",
+      "url": "http://localhost:3000/mcp",
+      "headers": {
+        "Authorization": "Bearer your-token"
+      },
+      "enabled": false,
+      "timeout_secs": 30
+    }
+  ],
+  "context_compression": {
+    "_comment": "上下文压缩配置 - 渐进式压缩长对话以减少 token 消耗",
+    "enabled": true,
+    "snip_ratio": 0.6,
+    "prune_ratio": 0.8,
+    "compact_ratio": 0.9,
+    "context_window": 128000,
+    "snip_head_lines": 80,
+    "snip_tail_lines": 12,
+    "max_tool_result_len": 5000
   }
 }

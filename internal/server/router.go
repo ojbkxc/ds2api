@@ -20,6 +20,7 @@ import (
 	"ds2api/internal/auth"
 	"ds2api/internal/chathistory"
 	"ds2api/internal/config"
+	"ds2api/internal/contextcompression"
 	dsclient "ds2api/internal/deepseek/client"
 	"ds2api/internal/httpapi/admin"
 	"ds2api/internal/httpapi/claude"
@@ -31,15 +32,19 @@ import (
 	"ds2api/internal/httpapi/openai/responses"
 	"ds2api/internal/httpapi/openai/shared"
 	"ds2api/internal/httpapi/requestbody"
+	"ds2api/internal/localtool"
+	"ds2api/internal/mcp"
 	"ds2api/internal/webui"
 )
 
 type App struct {
-	Store    *config.Store
-	Pool     *account.Pool
-	Resolver *auth.Resolver
-	DS       *dsclient.Client
-	Router   http.Handler
+	Store      *config.Store
+	Pool       *account.Pool
+	Resolver   *auth.Resolver
+	DS         *dsclient.Client
+	MCPHost    *mcp.Host
+	Compressor *contextcompression.Compressor
+	Router     http.Handler
 }
 
 func NewApp() (*App, error) {
@@ -62,6 +67,11 @@ func NewApp() (*App, error) {
 	if err := chatHistoryStore.Err(); err != nil {
 		config.Logger.Warn("[chat_history] unavailable", "path", chatHistoryStore.Path(), "error", err)
 	}
+
+	// Initialize MCP host and register tools
+	cfg := store.Snapshot()
+	mcpHost := initMCPHost(cfg.MCPServers)
+	compressor := initCompressor(cfg.ContextCompression)
 
 	modelsHandler := &shared.ModelsHandler{Store: store}
 	chatHandler := &chat.Handler{Store: store, Auth: resolver, DS: dsClient, ChatHistory: chatHistoryStore}
@@ -131,7 +141,7 @@ func NewApp() (*App, error) {
 		http.NotFound(w, req)
 	})
 
-	return &App{Store: store, Pool: pool, Resolver: resolver, DS: dsClient, Router: r}, nil
+	return &App{Store: store, Pool: pool, Resolver: resolver, DS: dsClient, MCPHost: mcpHost, Compressor: compressor, Router: r}, nil
 }
 
 func timeout(d time.Duration) func(http.Handler) http.Handler {
@@ -414,6 +424,76 @@ func WriteUnhandledError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusInternalServerError)
 	_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]any{"type": "api_error", "message": "Internal Server Error", "detail": err.Error()}})
+}
+
+// initMCPHost creates an MCP Host from config and registers MCP tools into the DefaultRegistry.
+func initMCPHost(servers []config.MCPServerConfig) *mcp.Host {
+	if len(servers) == 0 {
+		return nil
+	}
+	specs := make([]mcp.MCPServerSpec, 0, len(servers))
+	for _, s := range servers {
+		if !s.Enabled {
+			continue
+		}
+		specs = append(specs, mcp.MCPServerSpec{
+			Name:        s.Name,
+			Type:        s.Type,
+			Command:     s.Command,
+			Args:        s.Args,
+			Env:         s.Env,
+			URL:         s.URL,
+			Headers:     s.Headers,
+			Enabled:     s.Enabled,
+			TimeoutSecs: s.TimeoutSecs,
+		})
+	}
+	if len(specs) == 0 {
+		return nil
+	}
+	host := mcp.NewHost(specs)
+	if err := host.Start(context.Background()); err != nil {
+		config.Logger.Warn("[mcp] host start failed", "error", err)
+		return host
+	}
+	// Register MCP tools into the default registry
+	registerMCPTools(host)
+	return host
+}
+
+// registerMCPTools registers all MCP tools from the host into the DefaultRegistry.
+func registerMCPTools(host *mcp.Host) {
+	if host == nil {
+		return
+	}
+	for _, serverName := range host.ClientNames() {
+		client, ok := host.GetClient(serverName)
+		if !ok {
+			continue
+		}
+		for _, tool := range client.Tools() {
+			adapter := mcp.NewMCPToolAdapter(host, serverName, tool)
+			localtool.DefaultRegistry.Register(adapter)
+			config.Logger.Info("[mcp] registered tool", "tool", adapter.GetDescriptor().Name, "server", serverName)
+		}
+	}
+}
+
+// initCompressor creates a Compressor from config.
+func initCompressor(cfg config.ContextCompressionConfig) *contextcompression.Compressor {
+	cc := contextcompression.CompressionConfig{
+		Enabled:          cfg.Enabled,
+		SnipRatio:        cfg.SnipRatio,
+		PruneRatio:       cfg.PruneRatio,
+		CompactRatio:     cfg.CompactRatio,
+		ContextWindow:    cfg.ContextWindow,
+		SnipHeadLines:    cfg.SnipHeadLines,
+		SnipTailLines:    cfg.SnipTailLines,
+		MaxToolResultLen: cfg.MaxToolResultLen,
+	}
+	c := contextcompression.NewCompressor(cc)
+	contextcompression.SetGlobal(c)
+	return c
 }
 
 // serveFavicon serves favicon.png from the working directory.
