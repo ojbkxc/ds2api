@@ -226,6 +226,10 @@ func exampleBasicParams(name string) (string, bool) {
 		return wrapParameter("file_path", promptCDATA("README.md")) + "\n" + wrapParameter("old_string", promptCDATA("foo")) + "\n" + wrapParameter("new_string", promptCDATA("bar")), true
 	case "MultiEdit":
 		return wrapParameter("file_path", promptCDATA("README.md")) + "\n" + `<|DSML|parameter name="edits"><item><old_string>` + promptCDATA("foo") + `</old_string><new_string>` + promptCDATA("bar") + `</new_string></item></|DSML|parameter>`, true
+	case "web_search":
+		return wrapParameter("query", promptCDATA("latest news about AI")), true
+	case "web_fetch":
+		return wrapParameter("url", promptCDATA("https://example.com/article")), true
 	}
 	return "", false
 }
