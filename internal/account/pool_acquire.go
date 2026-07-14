@@ -2,7 +2,6 @@ package account
 
 import (
 	"context"
-	"strings"
 
 	"ds2api/internal/config"
 )
