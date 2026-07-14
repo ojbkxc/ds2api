@@ -509,16 +509,17 @@ func initCompressor(cfg config.ContextCompressionConfig) *contextcompression.Com
 
 // serveFavicon serves favicon.png from the working directory.
 // Falls back to a minimal inline PNG if the file is not found.
-func serveFavicon(w http.ResponseWriter, _ *http.Request) {
+func serveFavicon(w http.ResponseWriter, r *http.Request) {
 	candidates := []string{
 		"favicon.png",
 		filepath.Join(config.BaseDir(), "favicon.png"),
+		filepath.Join(config.StaticAdminDir(), "favicon.png"),
 	}
 	for _, p := range candidates {
 		if fi, err := os.Stat(p); err == nil && fi.Mode().IsRegular() {
 			w.Header().Set("Content-Type", "image/png")
 			w.Header().Set("Cache-Control", "public, max-age=86400")
-			http.ServeFile(w, nil, p)
+			http.ServeFile(w, r, p)
 			return
 		}
 	}

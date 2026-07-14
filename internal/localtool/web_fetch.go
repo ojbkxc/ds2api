@@ -1,7 +1,9 @@
 package localtool
 
 import (
+	"crypto/tls"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -11,6 +13,28 @@ import (
 
 	"golang.org/x/net/html"
 )
+
+// fetchHTTPClient is a shared HTTP client tuned for web fetching.
+// It uses a longer timeout and a custom transport with explicit
+// TLS handshake and dial timeouts to handle slow or distant hosts.
+var fetchHTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+	Transport: &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   15 * time.Second,
+		ResponseHeaderTimeout: 20 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		},
+		MaxIdleConns:        10,
+		IdleConnTimeout:     90 * time.Second,
+		DisableCompression:  false,
+	},
+}
 
 type WebFetchExecutor struct{}
 
@@ -62,7 +86,7 @@ func (e *WebFetchExecutor) Execute(call ToolCall, context ToolExecutionContext) 
 		return &ToolResult{Ok: false, Name: call.Name, CallId: call.ID, Summary: "Unsupported protocol", Error: &ToolError{Code: "unsupported_protocol", Message: "only http and https are supported", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := fetchHTTPClient
 	req, err := http.NewRequest("GET", parsedURL.String(), nil)
 	if err != nil {
 		return &ToolResult{Ok: false, Name: call.Name, CallId: call.ID, Summary: "Failed to create request", Error: &ToolError{Code: "request_error", Message: err.Error(), Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
