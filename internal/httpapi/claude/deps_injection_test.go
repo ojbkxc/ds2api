@@ -6,14 +6,14 @@ type mockClaudeConfig struct {
 	aliases map[string]string
 }
 
-func (m mockClaudeConfig) ModelAliases() map[string]string        { return m.aliases }
-func (mockClaudeConfig) CurrentInputFileEnabled() bool            { return true }
-func (mockClaudeConfig) CurrentInputFileMinChars() int            { return 0 }
+func (m mockClaudeConfig) ModelAliases() map[string]string { return m.aliases }
+func (mockClaudeConfig) CurrentInputFileEnabled() bool { return true }
+func (mockClaudeConfig) CurrentInputFileMinChars() int { return 0 }
 func (mockClaudeConfig) CurrentInputFileDisabledModels() []string { return nil }
 func (mockClaudeConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
-func (mockClaudeConfig) RuntimeMaxAccountSwitches() int          { return 3 }
-func (mockClaudeConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
-func (mockClaudeConfig) DisableAccount(identifier string) error   { return nil }
+func (mockClaudeConfig) RuntimeMaxAccountSwitches() int { return 3 }
+func (mockClaudeConfig) RuntimeMaxMessagesPerSession() int { return 50 }
+func (mockClaudeConfig) DisableAccount(identifier string) error { return nil }
 
 var _ ConfigReader = (*mockClaudeConfig)(nil)
 

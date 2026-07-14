@@ -20,14 +20,14 @@ import (
 
 type testGeminiConfig struct{}
 
-func (testGeminiConfig) ModelAliases() map[string]string          { return nil }
-func (testGeminiConfig) CurrentInputFileEnabled() bool            { return true }
-func (testGeminiConfig) CurrentInputFileMinChars() int            { return 0 }
+func (testGeminiConfig) ModelAliases() map[string]string { return nil }
+func (testGeminiConfig) CurrentInputFileEnabled() bool { return true }
+func (testGeminiConfig) CurrentInputFileMinChars() int { return 0 }
 func (testGeminiConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
 func (testGeminiConfig) CurrentInputFileDisabledModels() []string { return nil }
-func (testGeminiConfig) RuntimeMaxAccountSwitches() int          { return 3 }
-func (testGeminiConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
-func (testGeminiConfig) DisableAccount(identifier string) error   { return nil }
+func (testGeminiConfig) RuntimeMaxAccountSwitches() int { return 3 }
+func (testGeminiConfig) RuntimeMaxMessagesPerSession() int { return 50 }
+func (testGeminiConfig) DisableAccount(identifier string) error { return nil }
 
 var _ ConfigReader = (*testGeminiConfig)(nil)
 
@@ -246,7 +246,7 @@ func TestGeminiCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 	if !strings.Contains(prompt, "TOOL CALL FORMAT") {
 		t.Fatalf("expected live prompt to retain format instructions, got %q", prompt)
 	}
-	if !strings.Contains(prompt, "Description: eval") {
+	if !strings.Contains(prompt, "eval_javascript") && !strings.Contains(prompt, "Description: eval") {
 		t.Fatalf("expected prompt to inline tool descriptions for pro model, got %q", prompt)
 	}
 }

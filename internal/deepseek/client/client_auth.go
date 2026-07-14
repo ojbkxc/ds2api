@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	dsprotocol "ds2api/internal/deepseek/protocol"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 
 	"ds2api/internal/auth"
 	"ds2api/internal/config"
+	dsprotocol "ds2api/internal/deepseek/protocol"
 )
 
 var ErrAccountBanned = errors.New("account_banned")

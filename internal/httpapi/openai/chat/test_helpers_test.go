@@ -25,19 +25,19 @@ type mockOpenAIConfig struct {
 	thinkingPrompt      string
 }
 
-func (m mockOpenAIConfig) ModelAliases() map[string]string     { return m.aliases }
-func (m mockOpenAIConfig) ToolcallMode() string                { return m.toolMode }
+func (m mockOpenAIConfig) ModelAliases() map[string]string { return m.aliases }
+func (m mockOpenAIConfig) ToolcallMode() string { return m.toolMode }
 func (m mockOpenAIConfig) ToolcallEarlyEmitConfidence() string { return m.earlyEmit }
-func (m mockOpenAIConfig) ResponsesStoreTTLSeconds() int       { return m.responsesTTL }
-func (m mockOpenAIConfig) EmbeddingsProvider() string          { return m.embedProv }
+func (m mockOpenAIConfig) ResponsesStoreTTLSeconds() int { return m.responsesTTL }
+func (m mockOpenAIConfig) EmbeddingsProvider() string { return m.embedProv }
 func (m mockOpenAIConfig) AutoDeleteMode() string {
 	if m.autoDeleteMode == "" {
 		return "none"
 	}
 	return m.autoDeleteMode
 }
-func (m mockOpenAIConfig) AutoDeleteSessions() bool      { return false }
-func (m mockOpenAIConfig) AutoDeleteDelayHours() int     { return 0 }
+func (m mockOpenAIConfig) AutoDeleteSessions() bool { return false }
+func (m mockOpenAIConfig) AutoDeleteDelayHours() int { return 0 }
 func (m mockOpenAIConfig) CurrentInputFileEnabled() bool { return m.currentInputEnabled }
 func (m mockOpenAIConfig) CurrentInputFileMinChars() int {
 	return m.currentInputMin
@@ -51,9 +51,9 @@ func (m mockOpenAIConfig) ThinkingInjectionEnabled() bool {
 	return *m.thinkingInjection
 }
 func (m mockOpenAIConfig) ThinkingInjectionPrompt() string { return m.thinkingPrompt }
-func (mockOpenAIConfig) RuntimeMaxAccountSwitches() int          { return 3 }
-func (mockOpenAIConfig) RuntimeMaxMessagesPerSession() int       { return 50 }
-func (mockOpenAIConfig) DisableAccount(identifier string) error   { return nil }
+func (mockOpenAIConfig) RuntimeMaxAccountSwitches() int { return 3 }
+func (mockOpenAIConfig) RuntimeMaxMessagesPerSession() int { return 50 }
+func (mockOpenAIConfig) DisableAccount(identifier string) error { return nil }
 
 var _ shared.ConfigReader = (*mockOpenAIConfig)(nil)
 

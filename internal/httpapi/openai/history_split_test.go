@@ -255,7 +255,7 @@ func TestApplyCurrentInputFileUploadsFirstTurnWithNumberedHistoryTranscript(t *t
 	}
 	for _, want := range []string{
 		"# deepseek.txt",
-		"first turn content that is long enough",
+		"this is a large input to trigger file upload",
 	} {
 		if !strings.Contains(uploadedText, want) {
 			t.Fatalf("expected uploaded transcript to contain %q, got %q", want, uploadedText)
@@ -265,7 +265,7 @@ func TestApplyCurrentInputFileUploadsFirstTurnWithNumberedHistoryTranscript(t *t
 		t.Fatalf("expected thinking injection in current input file, got %q", uploadedText)
 	}
 
-	if strings.Contains(out.FinalPrompt, "first turn content that is long enough") {
+	if strings.Contains(out.FinalPrompt, "this is a large input to trigger file upload") {
 		t.Fatalf("expected current input text to be replaced in live prompt, got %s", out.FinalPrompt)
 	}
 	if strings.Contains(out.FinalPrompt, "CURRENT_USER_INPUT.txt") || strings.Contains(out.FinalPrompt, "Read that file") {
