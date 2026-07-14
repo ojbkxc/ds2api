@@ -57,7 +57,7 @@ func (c *Client) Initialize(ctx context.Context) error {
 
 	// Send initialized notification.
 	notifParams, _ := json.Marshal(map[string]interface{}{})
-	c.transport.Call(ctx, "notifications/initialized", notifParams)
+	_, _ = c.transport.Call(ctx, "notifications/initialized", notifParams)
 
 	// Discover tools if the server advertises tool capability.
 	if caps, ok := initResult.Capabilities["tools"]; ok && caps != nil {

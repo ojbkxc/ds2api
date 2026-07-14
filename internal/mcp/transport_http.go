@@ -81,7 +81,7 @@ func (t *httpTransport) Call(ctx context.Context, method string, params json.Raw
 	if err != nil {
 		return nil, fmt.Errorf("http request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Capture session id for future requests.
 	if sid := resp.Header.Get("Mcp-Session-Id"); sid != "" {

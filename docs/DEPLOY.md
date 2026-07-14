@@ -70,7 +70,7 @@ cp config.example.json config.json
 
 | 平台 | 架构 | 文件格式 |
 | --- | --- | --- |
-| Linux | amd64, arm64, armv7 | `.tar.gz` |
+| Linux | amd64, arm64 | `.tar.gz` |
 | macOS | amd64, arm64 | `.tar.gz` |
 | Windows | amd64, arm64 | `.zip` |
 

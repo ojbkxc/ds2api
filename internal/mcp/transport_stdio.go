@@ -57,7 +57,7 @@ func newStdioTransport(name, command string, args []string, env map[string]strin
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		stdin.Close()
+		_ = stdin.Close()
 		return nil, fmt.Errorf("stdout pipe: %w", err)
 	}
 	// stderr is forwarded to logrus at debug level so operators can inspect
@@ -65,8 +65,8 @@ func newStdioTransport(name, command string, args []string, env map[string]strin
 	cmd.Stderr = logrus.StandardLogger().WriterLevel(logrus.DebugLevel)
 
 	if err := cmd.Start(); err != nil {
-		stdin.Close()
-		stdout.Close()
+		_ = stdin.Close()
+		_ = stdout.Close()
 		return nil, fmt.Errorf("start command: %w", err)
 	}
 
@@ -178,17 +178,17 @@ func (t *stdioTransport) Close() error {
 	t.closed = true
 	t.mu.Unlock()
 
-	t.stdin.Close()
+	_ = t.stdin.Close()
 	// Give process a moment to exit gracefully.
 	done := make(chan struct{})
 	go func() {
-		t.cmd.Wait()
+		_ = t.cmd.Wait()
 		close(done)
 	}()
 	select {
 	case <-done:
 	case <-time.After(3 * time.Second):
-		t.cmd.Process.Kill()
+		_ = t.cmd.Process.Kill()
 	}
 	return nil
 }

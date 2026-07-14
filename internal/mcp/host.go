@@ -74,7 +74,7 @@ func (h *Host) Start(ctx context.Context) error {
 		client := NewClient(spec.Name, transport)
 		if err := client.Initialize(initCtx); err != nil {
 			cancel()
-			client.Close()
+			_ = client.Close()
 			h.logger.Warnf("failed to initialize %s: %v", spec.Name, err)
 			continue
 		}
@@ -138,7 +138,7 @@ func (h *Host) Close() {
 
 	for name, client := range h.clients {
 		h.logger.Infof("closing MCP server %s", name)
-		client.Close()
+		_ = client.Close()
 	}
 	h.clients = make(map[string]*Client)
 	h.started = false

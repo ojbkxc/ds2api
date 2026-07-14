@@ -70,7 +70,7 @@ Built-in GitHub Actions workflow: `.github/workflows/release-artifacts.yml`
 
 | Platform | Architecture | Format |
 | --- | --- | --- |
-| Linux | amd64, arm64, armv7 | `.tar.gz` |
+| Linux | amd64, arm64 | `.tar.gz` |
 | macOS | amd64, arm64 | `.tar.gz` |
 | Windows | amd64, arm64 | `.zip` |
 

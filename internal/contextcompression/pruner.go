@@ -237,7 +237,7 @@ func snipContent(content string, headLines, tailLines, headChars, tailChars int)
 		}
 	}
 
-	b.WriteString(fmt.Sprintf("\n... [%d lines snipped] ...\n\n", len(lines)-headLines-tailLines))
+	fmt.Fprintf(&b, "\n... [%d lines snipped] ...\n\n", len(lines)-headLines-tailLines)
 
 	// Tail
 	tailStart := len(lines) - tailLines
