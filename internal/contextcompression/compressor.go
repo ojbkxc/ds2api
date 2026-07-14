@@ -106,7 +106,7 @@ func (c *Compressor) snipToolSections(prompt string) string {
 			}
 			tail := string([]rune(content)[tailStart:])
 			result.WriteString(head)
-			result.WriteString(fmt.Sprintf("\n... [%d chars snipped] ...\n", runeLen-headRunes-tailRunes))
+			fmt.Fprintf(&result, "\n... [%d chars snipped] ...\n", runeLen-headRunes-tailRunes)
 			result.WriteString(tail)
 		} else {
 			result.WriteString(content)
