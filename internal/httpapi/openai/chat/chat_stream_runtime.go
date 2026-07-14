@@ -212,6 +212,87 @@ func (s *chatStreamRuntime) resetStreamToolCallState() {
 	s.streamToolNames = map[int]string{}
 }
 
+// buildTurnFromAccumulator builds the assistant turn from the current stream
+// accumulator state without sending any output to the client.
+func (s *chatStreamRuntime) buildTurnFromAccumulator(finishReason string) assistantturn.Turn {
+	finalThinking := s.accumulator.Thinking.String()
+	finalToolDetectionThinking := s.accumulator.ToolDetectionThinking.String()
+	finalText := s.accumulator.Text.String()
+	turn := assistantturn.BuildTurnFromStreamSnapshot(assistantturn.StreamSnapshot{
+		RawText:               s.accumulator.RawText.String(),
+		VisibleText:           finalText,
+		RawThinking:           s.accumulator.RawThinking.String(),
+		VisibleThinking:       finalThinking,
+		DetectionThinking:     finalToolDetectionThinking,
+		ContentFilter:         finishReason == "content_filter",
+		ResponseMessageID:     s.responseMessageID,
+		AlreadyEmittedCalls:   s.toolCallsEmitted,
+		AlreadyEmittedToolRaw: s.toolCallsDoneEmitted,
+	}, assistantturn.BuildOptions{
+		Model:                 s.model,
+		Prompt:                s.finalPrompt,
+		RefFileTokens:         s.refFileTokens,
+		SearchEnabled:         s.searchEnabled,
+		StripReferenceMarkers: s.stripReferenceMarkers,
+		ToolNames:             s.toolNames,
+		ToolsRaw:              s.toolsRaw,
+		ToolChoice:            s.toolChoice,
+	})
+	return turn
+}
+
+// flushBufferedContentOnly flushes any remaining buffered content to the
+// client without emitting tool calls, finish reason, or [DONE]. Used by the
+// local tool loop to drain content before silently executing tools.
+func (s *chatStreamRuntime) flushBufferedContentOnly() {
+	if !s.bufferToolContent {
+		return
+	}
+	batch := chatDeltaBatch{runtime: s}
+	for _, evt := range toolstream.Flush(&s.toolSieve, s.toolNames) {
+		// Skip tool calls entirely — the local tool loop handles them silently.
+		if len(evt.ToolCalls) > 0 || len(evt.ToolCallDeltas) > 0 {
+			s.toolCallsEmitted = true
+			s.toolCallsDoneEmitted = true
+			s.resetStreamToolCallState()
+			continue
+		}
+		if evt.Content == "" {
+			continue
+		}
+		cleaned := cleanVisibleOutput(evt.Content, s.stripReferenceMarkers)
+		if cleaned == "" || (s.searchEnabled && sse.IsCitation(cleaned)) {
+			continue
+		}
+		batch.append("content", cleaned)
+	}
+	batch.flush()
+}
+
+// resetForNextIteration clears per-iteration accumulator state so the same
+// stream runtime can be reused across tool-loop iterations while preserving
+// client-visible state (firstChunkSent, completionID, etc.).
+func (s *chatStreamRuntime) resetForNextIteration() {
+	s.toolSieve = toolstream.State{}
+	s.streamToolCallIDs = map[int]string{}
+	s.streamToolNames = map[int]string{}
+	s.accumulator = shared.StreamAccumulator{
+		ThinkingEnabled:       s.thinkingEnabled,
+		SearchEnabled:         s.searchEnabled,
+		StripReferenceMarkers: s.stripReferenceMarkers,
+	}
+	s.responseMessageID = 0
+	s.toolCallsEmitted = false
+	s.toolCallsDoneEmitted = false
+	s.finalThinking = ""
+	s.finalText = ""
+	s.finalFinishReason = ""
+	s.finalUsage = nil
+	s.finalErrorStatus = 0
+	s.finalErrorMessage = ""
+	s.finalErrorCode = ""
+}
+
 func (s *chatStreamRuntime) finalize(finishReason string, deferEmptyOutput bool) bool {
 	s.finalErrorStatus = 0
 	s.finalErrorMessage = ""

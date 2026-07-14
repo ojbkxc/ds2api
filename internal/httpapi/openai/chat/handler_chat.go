@@ -112,6 +112,19 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Stream mode with local web tools: use the streaming tool loop so that
+	// web_search / web_fetch calls are executed silently on the server.
+	// Only activate when there are no client-provided tools to avoid mixed
+	// tool-call scenarios where we'd need to distinguish local vs client tools.
+	hasClientTools := false
+	if tools, ok := stdReq.ToolsRaw.([]any); ok && len(tools) > 0 {
+		hasClientTools = true
+	}
+	if config.ModelSupportsLocalWebTools(stdReq.ResolvedModel) && !hasClientTools {
+		h.executeStreamWithToolCalls(w, r, a, stdReq, &sessionID, historySession)
+		return
+	}
+
 	start, outErr := completionruntime.StartCompletion(r.Context(), h.DS, a, stdReq, completionruntime.Options{
 		CurrentInputFile: h.Store,
 		Store:            h.Store,

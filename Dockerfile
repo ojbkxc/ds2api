@@ -42,6 +42,7 @@ COPY --from=go-builder /out/ds2api /usr/local/bin/ds2api
 
 COPY --from=go-builder --chown=ds2api:ds2api /app/config.example.json /app/config.example.json
 COPY --from=webui-builder --chown=ds2api:ds2api /app/static/admin /app/static/admin
+COPY --chown=ds2api:ds2api favicon.png /app/favicon.png
 USER ds2api
 
 FROM busybox-tools AS dist-extract
