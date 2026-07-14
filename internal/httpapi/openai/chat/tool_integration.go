@@ -302,6 +302,23 @@ func (h *Handler) executeStreamWithToolCalls(
 
 		// If no tool calls, this is the final iteration.
 		if len(turn.ToolCalls) == 0 {
+			// Check for empty output — upstream returned nothing useful.
+			// This mirrors the same check in the normal stream path so that
+			// clients receive a failure frame instead of a silent success.
+			outcome := assistantturn.FinalizeTurn(turn, assistantturn.FinalizeOptions{})
+			if outcome.ShouldFail {
+				streamRuntime.sendFailedChunk(outcome.Error.Status, outcome.Error.Message, outcome.Error.Code)
+				if historySession != nil {
+					finalHistText := historyTextForArchive(accumulatedRawText.String()+streamRuntime.accumulator.RawText.String(), accumulatedText.String()+streamRuntime.accumulator.Text.String())
+					finalHistThink := historyThinkingForArchive(accumulatedRawThinking.String()+streamRuntime.accumulator.RawThinking.String(), "", accumulatedThinking.String()+streamRuntime.accumulator.Thinking.String())
+					historySession.error(outcome.Error.Status, outcome.Error.Message, outcome.Error.Code, finalHistThink, finalHistText)
+				}
+				config.Logger.Info("[stream_tool_loop] empty output detected, sending failure frame",
+					"iterations", toolIterations,
+					"status", outcome.Error.Status,
+					"code", outcome.Error.Code)
+				return
+			}
 			// Drain any remaining buffered content before sending finish.
 			streamRuntime.flushBufferedContentOnly()
 			break
@@ -438,7 +455,7 @@ func (h *Handler) consumeToolLoopIteration(
 
 	if streamRuntime.finalErrorCode == string(streamengine.StopReasonContextCancelled) {
 		// Drain any remaining response body to prevent goroutine leaks.
-		io.Copy(io.Discard, resp.Body)
+		_, _ = io.Copy(io.Discard, resp.Body)
 		return false
 	}
 
