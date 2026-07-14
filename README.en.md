@@ -66,7 +66,7 @@ Documentation entry: [Docs Index](docs/README.md) / [Architecture](docs/ARCHITEC
 
 ```mermaid
 flowchart LR
-    Client["🖥�?Clients / SDKs\n(OpenAI / Claude / Gemini)"]
+    Client["🖥️ Clients / SDKs\n(OpenAI / Claude / Gemini)"]
     Upstream["☁️ DeepSeek API"]
 
     subgraph DS2API["DS2API 4.x (Modular HTTP Surface + PromptCompat Core)"]
@@ -90,7 +90,7 @@ flowchart LR
             DSClient["DeepSeek Client\n(session / auth / completion / files)"]
             Pow["PoW Solver\n(Pure Go)"]
             Tool["Tool Sieve\n(Go/Node semantic parity)"]
-            History["Current Input File\n(deepseek.txt)"]
+            History["Current Input File\n(DS2API_HISTORY.txt)"]
         end
     end
 
@@ -147,12 +147,12 @@ OpenAI `/v1/*` routes remain canonical, and DS2API also accepts root shortcuts s
 
 | Tier | Platform | Status |
 | --- | --- | --- |
-| P0 | Codex CLI/SDK (`wire_api=chat` / `wire_api=responses`) | �?|
-| P0 | OpenAI SDK (JS/Python, chat + responses) | �?|
-| P0 | Vercel AI SDK (openai-compatible) | �?|
-| P0 | Anthropic SDK (messages) | �?|
-| P0 | Google Gemini SDK (generateContent) | �?|
-| P1 | LangChain / LlamaIndex / OpenWebUI (OpenAI-compatible integration) | �?|
+| P0 | Codex CLI/SDK (`wire_api=chat` / `wire_api=responses`) | ✅ |
+| P0 | OpenAI SDK (JS/Python, chat + responses) | ✅ |
+| P0 | Vercel AI SDK (openai-compatible) | ✅ |
+| P0 | Anthropic SDK (messages) | ✅ |
+| P0 | Google Gemini SDK (generateContent) | ✅ |
+| P1 | LangChain / LlamaIndex / OpenWebUI (OpenAI-compatible integration) | ✅ |
 
 ## Model Support
 
@@ -160,11 +160,11 @@ OpenAI `/v1/*` routes remain canonical, and DS2API also accepts root shortcuts s
 
 | Family | Model ID | thinking | search |
 | --- | --- | --- | --- |
-| default | `deepseek-v4-flash` | enabled by default, request-controlled | �?|
-| expert | `deepseek-v4-pro` | enabled by default, request-controlled | �?|
-| default | `deepseek-v4-flash-search` | enabled by default, request-controlled | �?|
-| expert | `deepseek-v4-pro-search` | enabled by default, request-controlled | �?|
-| vision | `deepseek-v4-vision` | enabled by default, request-controlled | �?|
+| default | `deepseek-v4-flash` | enabled by default, request-controlled | ❌ |
+| expert | `deepseek-v4-pro` | enabled by default, request-controlled | ❌ |
+| default | `deepseek-v4-flash-search` | enabled by default, request-controlled | ✅ |
+| expert | `deepseek-v4-pro-search` | enabled by default, request-controlled | ✅ |
+| vision | `deepseek-v4-vision` | enabled by default, request-controlled | ❌ |
 
 Besides native IDs, DS2API also accepts common aliases as input (for example `gpt-4.1`, `gpt-5`, `gpt-5-codex`, `o3`, `claude-*`, `gemini-*`), but `/v1/models` returns normalized DeepSeek native model IDs. The complete alias behavior is documented in [API.en.md](API.en.md#model-alias-resolution) and `config.example.json`.
 Current upstream vision support exposes only the `vision` lane and does not provide a separate search-enabled vision variant.
@@ -189,7 +189,7 @@ Besides the primary aliases above, `/anthropic/v1/models` also returns Claude 4.
 
 ### Gemini Endpoint
 
-The Gemini adapter maps model names to DeepSeek native models via `model_aliases` or exact built-in aliases (covering common `gemini-2.5-*`, `gemini-3*`, and `gemini-pro-vision` names), supporting both `generateContent` and `streamGenerateContent` call patterns with full Tool Calling support (`functionDeclarations` �?`functionCall` output). If the Gemini model name has a `-nothinking` suffix, such as `gemini-2.5-pro-nothinking`, it maps to the corresponding forced no-thinking model.
+The Gemini adapter maps model names to DeepSeek native models via `model_aliases` or exact built-in aliases (covering common `gemini-2.5-*`, `gemini-3*`, and `gemini-pro-vision` names), supporting both `generateContent` and `streamGenerateContent` call patterns with full Tool Calling support (`functionDeclarations` → `functionCall` output). If the Gemini model name has a `-nothinking` suffix, such as `gemini-2.5-pro-nothinking`, it maps to the corresponding forced no-thinking model.
 
 ## Quick Start
 
@@ -215,7 +215,7 @@ Recommended per deployment mode:
 - Local run: read `config.json` directly
 - Docker / Vercel: generate Base64 from `config.json` and inject as `DS2API_CONFIG_JSON`, or paste raw JSON directly
 
-The WebUI admin panel’s “Full configuration template�?is loaded from the same `config.example.json`, so updating that file keeps the frontend template in sync.
+The WebUI admin panel’s “Full configuration template” is loaded from the same `config.example.json`, so updating that file keeps the frontend template in sync.
 
 ### Option 1: Download Release Binaries
 
@@ -237,7 +237,7 @@ cp config.example.json config.json
 docker pull ghcr.io/ojbkxc/ds2api:latest
 
 # Or run a pinned version
-# docker pull ghcr.io/ojbkxc/ds2api:v1.0.1
+# docker pull ghcr.io/ojbkxc/ds2api:v3.0.0
 
 # Prepare env file and config file
 cp .env.example .env
@@ -252,38 +252,9 @@ It also mounts `./config.json` to `/data/config.json` and sets `DS2API_CONFIG_PA
 
 Rebuild after updates: `docker-compose up -d --build`
 
-#### Option 2.2: Pull image directly
-
-**Pull from GHCR (recommended, no extra config needed)**:
-```bash
-docker pull ghcr.io/ojbkxc/ds2api:latest
-
-docker run -d \
-  --name ds2api \
-  -p 6011:5001 \
-  -v ./config.json:/data/config.json \
-  -e DS2API_CONFIG_PATH=/data/config.json \
-  -e DS2API_ADMIN_KEY=your-strong-password \
-  ghcr.io/ojbkxc/ds2api:latest
-```
-
-**Pull from Docker Hub**:
-```bash
-docker pull ojbkxc/ds2api:latest
-
-docker run -d \
-  --name ds2api \
-  -p 6011:5001 \
-  -v ./config.json:/data/config.json \
-  -e DS2API_CONFIG_PATH=/data/config.json \
-  -e DS2API_ADMIN_KEY=your-strong-password \
-  ojbkxc/ds2api:latest
-```
-
-
 #### Zeabur One-Click (Dockerfile)
 
-1. Click the “Deploy on Zeabur�?button above to deploy.
+1. Click the “Deploy on Zeabur” button above to deploy.
 2. After deployment, open `/admin` and login with `DS2API_ADMIN_KEY` shown in Zeabur env/template instructions.
 3. Import / edit config in Admin UI (it will be written and persisted to `/data/config.json`).
 
@@ -351,7 +322,7 @@ Common fields:
 - `model_aliases`: one shared alias map for OpenAI / Claude / Gemini model names.
 - `runtime`: account concurrency, queueing, and token refresh behavior, hot-reloadable via Admin Settings.
 - `auto_delete.mode`: remote session cleanup after each request, supporting `none` / `single` / `all`.
-- `current_input_file`: the global context split/upload mode; it is enabled by default and uploads the full context as a `deepseek.txt` context file once the character threshold is reached.
+- `current_input_file`: the global context split/upload mode; it is enabled by default and uploads the full context as a `DS2API_HISTORY.txt` context file once the character threshold is reached.
 - If you turn off `current_input_file`, requests pass through directly without uploading any split context file.
 
 For the full environment variable list, see [docs/DEPLOY.en.md](docs/DEPLOY.en.md). For auth behavior, see [API.en.md](API.en.md#authentication).
@@ -375,10 +346,10 @@ Gemini routes also accept `x-goog-api-key`, or `?key=` / `?api_key=` when no aut
 Per-account inflight = DS2API_ACCOUNT_MAX_INFLIGHT (default 2)
 Recommended concurrency = account_count × per_account_inflight
 Queue limit = DS2API_ACCOUNT_MAX_QUEUE (default = recommended concurrency)
-429 threshold = inflight + queue �?account_count × 4
+429 threshold = inflight + queue ≈ account_count × 4
 ```
 
-- When inflight slots are full, requests enter a waiting queue �?**no immediate 429**
+- When inflight slots are full, requests enter a waiting queue — **no immediate 429**
 - 429 is returned only when total load exceeds inflight + queue capacity; current responses do not include `Retry-After`
 - Completion empty-output 429s first get the same-account compensation retry; managed-account mode also tries one alternate-account fresh retry before returning the final 429
 - `GET /admin/queue/status` returns real-time concurrency state
@@ -388,12 +359,12 @@ Queue limit = DS2API_ACCOUNT_MAX_QUEUE (default = recommended concurrency)
 When `tools` is present in the request, DS2API performs anti-leak handling:
 
 1. Toolcall feature matching is enabled only in **non-code-block context** (fenced examples are ignored)
-2. The parser treats the halfwidth-pipe DSML shell as the recommended executable tool-calling syntax: `<|DSML|tool_calls>` �?`<|DSML|invoke name="...">` �?`<|DSML|parameter name="...">`; it also accepts legacy canonical XML `<tool_calls>` �?`<invoke name="...">` �?`<parameter name="...">`, plus common DSML prefix/separator drift. DSML is a shell alias and internal parsing remains XML-based; legacy `<tools>` / `<tool_call>` / `<tool_name>` / `<param>`, `<function_call>`, `tool_use`, antml variants, and standalone JSON `tool_calls` payloads are treated as plain text, and complete but malformed wrappers are released as plain text too
+2. The parser treats the halfwidth-pipe DSML shell as the recommended executable tool-calling syntax: `<|DSML|tool_calls>` → `<|DSML|invoke name="...">` → `<|DSML|parameter name="...">`; it also accepts legacy canonical XML `<tool_calls>` → `<invoke name="...">` → `<parameter name="...">`, plus common DSML prefix/separator drift. DSML is a shell alias and internal parsing remains XML-based; legacy `<tools>` / `<tool_call>` / `<tool_name>` / `<param>`, `<function_call>`, `tool_use`, antml variants, and standalone JSON `tool_calls` payloads are treated as plain text, and complete but malformed wrappers are released as plain text too
 3. `responses` streaming strictly uses official item lifecycle events (`response.output_item.*`, `response.content_part.*`, `response.function_call_arguments.*`)
 4. `responses` supports and enforces `tool_choice` (`auto`/`none`/`required`/forced function); `required` violations return `422` for non-stream and `response.failed` for stream
 5. The output protocol follows the client request (OpenAI / Claude / Gemini native shapes); model-side prompting can prefer XML, and the compatibility layer handles the protocol-specific translation
 
-> Note: the current parser still prioritizes “parse successfully whenever possible�? hard allow-list rejection for undeclared tool names is not enabled yet.
+> Note: the current parser still prioritizes “parse successfully whenever possible”; hard allow-list rejection for undeclared tool names is not enabled yet.
 > Explicit empty strings or whitespace-only parameters are preserved by the parser; prompting tells the model not to emit blank parameters, and missing/empty argument rejection belongs in the tool executor or client schema validation.
 
 ## Local Dev Packet Capture
@@ -458,7 +429,7 @@ npm run build --prefix webui
 Workflow: `.github/workflows/release-artifacts.yml`
 
 - **Trigger**: by default only on GitHub Release `published`; you can also run it manually via `workflow_dispatch` and pass `release_tag` to rerun / backfill
-- **Outputs**: multi-platform binary archives (`linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`, `windows/arm64`), Linux Docker image export tarballs, and `sha256sums.txt`
+- **Outputs**: multi-platform binary archives (`linux/amd64`, `linux/arm64`, `linux/armv7`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`, `windows/arm64`), Linux Docker image export tarballs, and `sha256sums.txt`
 - **Container publishing**: GHCR only (`ghcr.io/ojbkxc/ds2api`)
 - **Each binary archive includes**: the `ds2api` executable, `static/admin`, `config.example.json`, `.env.example`, `README.MD`, `README.en.md`, and `LICENSE`
 
