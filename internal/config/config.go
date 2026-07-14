@@ -200,6 +200,7 @@ type RuntimeConfig struct {
 	AccountMaxQueue           int `json:"account_max_queue,omitempty"`
 	GlobalMaxInflight         int `json:"global_max_inflight,omitempty"`
 	TokenRefreshIntervalHours int `json:"token_refresh_interval_hours,omitempty"`
+	MaxAccountSwitches        int `json:"max_account_switches,omitempty"`
 }
 
 type ResponsesConfig struct {
@@ -211,8 +212,9 @@ type EmbeddingsConfig struct {
 }
 
 type AutoDeleteConfig struct {
-	Mode     string `json:"mode,omitempty"`
-	Sessions bool   `json:"sessions,omitempty"`
+	Mode         string `json:"mode,omitempty"`
+	Sessions     bool   `json:"sessions,omitempty"`
+	DelayHours   int    `json:"delay_hours,omitempty"`
 }
 
 type CurrentInputFileConfig struct {

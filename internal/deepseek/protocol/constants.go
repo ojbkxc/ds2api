@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"math/rand/v2"
 )
 
 const (
@@ -113,16 +114,8 @@ func buildBaseHeaders(client clientConstants, overrides map[string]string) map[s
 		}
 		out[k] = v
 	}
-	if client.Name != "" && client.Version != "" {
-		userAgent := client.Name + "/" + client.Version
-		if client.Platform == "android" && client.AndroidAPILevel != "" {
-			userAgent += " Android/" + client.AndroidAPILevel
-		}
-		out["User-Agent"] = userAgent
-	}
-	if client.Platform != "" {
-		out["x-client-platform"] = client.Platform
-	}
+	out["User-Agent"] = randomChromeUserAgent()
+	out["x-client-platform"] = "web"
 	if client.Version != "" {
 		out["x-client-version"] = client.Version
 	}
@@ -130,6 +123,21 @@ func buildBaseHeaders(client clientConstants, overrides map[string]string) map[s
 		out["x-client-locale"] = client.Locale
 	}
 	return out
+}
+
+var chromeUserAgents = []string{
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+}
+
+func randomChromeUserAgent() string {
+	return chromeUserAgents[rand.IntN(len(chromeUserAgents))]
 }
 
 func cloneStringMap(in map[string]string) map[string]string {

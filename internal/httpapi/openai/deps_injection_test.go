@@ -45,6 +45,8 @@ func (m mockOpenAIConfig) ThinkingInjectionEnabled() bool {
 	return *m.thinkingInjection
 }
 func (m mockOpenAIConfig) ThinkingInjectionPrompt() string { return m.thinkingPrompt }
+func (mockOpenAIConfig) RuntimeMaxAccountSwitches() int          { return 3 }
+func (mockOpenAIConfig) DisableAccount(identifier string) error   { return nil }
 
 func TestNormalizeOpenAIChatRequestWithConfigInterface(t *testing.T) {
 	cfg := mockOpenAIConfig{

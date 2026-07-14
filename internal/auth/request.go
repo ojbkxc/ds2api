@@ -31,6 +31,7 @@ type RequestAuth struct {
 	TargetAccount  string
 	Account        config.Account
 	TriedAccounts  map[string]bool
+	SwitchCount    int
 	resolver       *Resolver
 }
 

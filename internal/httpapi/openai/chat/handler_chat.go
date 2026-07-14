@@ -114,6 +114,7 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 
 	start, outErr := completionruntime.StartCompletion(r.Context(), h.DS, a, stdReq, completionruntime.Options{
 		CurrentInputFile: h.Store,
+		Store:            h.Store,
 	})
 	sessionID = start.SessionID
 	if outErr != nil {
@@ -131,6 +132,27 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) autoDeleteRemoteSession(ctx context.Context, a *auth.RequestAuth, sessionID string) {
 	mode := h.Store.AutoDeleteMode()
 	if mode == "none" || a.DeepSeekToken == "" {
+		return
+	}
+
+	delayHours := h.Store.AutoDeleteDelayHours()
+	if delayHours > 0 && mode == "single" && sessionID != "" {
+		// 延迟删除：在后台等 delayHours 小时后执行删除
+		token := a.DeepSeekToken
+		sid := sessionID
+		accID := a.AccountID
+		ds := h.DS
+		go func() {
+			time.Sleep(time.Duration(delayHours) * time.Hour)
+			deleteCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_, err := ds.DeleteSessionForToken(deleteCtx, token, sid)
+			if err != nil {
+				config.Logger.Warn("[auto_delete_delayed] failed", "account", accID, "session_id", sid, "delay_hours", delayHours, "error", err)
+				return
+			}
+			config.Logger.Debug("[auto_delete_delayed] success", "account", accID, "session_id", sid, "delay_hours", delayHours)
+		}()
 		return
 	}
 

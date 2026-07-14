@@ -11,6 +11,8 @@ func (mockClaudeConfig) CurrentInputFileEnabled() bool            { return true 
 func (mockClaudeConfig) CurrentInputFileMinChars() int            { return 0 }
 func (mockClaudeConfig) CurrentInputFileDisabledModels() []string { return nil }
 func (mockClaudeConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
+func (mockClaudeConfig) RuntimeMaxAccountSwitches() int          { return 3 }
+func (mockClaudeConfig) DisableAccount(identifier string) error   { return nil }
 
 func TestNormalizeClaudeRequestUsesGlobalAliasMapping(t *testing.T) {
 	req := map[string]any{

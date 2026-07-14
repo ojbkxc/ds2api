@@ -25,6 +25,8 @@ func (testGeminiConfig) CurrentInputFileEnabled() bool            { return true 
 func (testGeminiConfig) CurrentInputFileMinChars() int            { return 0 }
 func (testGeminiConfig) CurrentInputFileFilenameTemplate() string { return "deepseek.txt" }
 func (testGeminiConfig) CurrentInputFileDisabledModels() []string { return nil }
+func (testGeminiConfig) RuntimeMaxAccountSwitches() int          { return 3 }
+func (testGeminiConfig) DisableAccount(identifier string) error   { return nil }
 
 type testGeminiAuth struct {
 	a   *auth.RequestAuth

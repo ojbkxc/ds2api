@@ -28,6 +28,8 @@ type ConfigReader interface {
 	CurrentInputFileMinChars() int
 	CurrentInputFileFilenameTemplate() string
 	CurrentInputFileDisabledModels() []string
+	RuntimeMaxAccountSwitches() int
+	DisableAccount(identifier string) error
 }
 
 type OpenAIChatRunner interface {

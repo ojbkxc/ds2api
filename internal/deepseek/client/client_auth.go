@@ -2,11 +2,14 @@ package client
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	dsprotocol "ds2api/internal/deepseek/protocol"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 	"unicode"
 
 	"ds2api/internal/auth"
@@ -35,8 +38,8 @@ func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) 
 	clients := c.requestClientsForAccount(acc)
 	payload := map[string]any{
 		"password":  strings.TrimSpace(acc.Password),
-		"device_id": "deepseek_to_api",
-		"os":        "android",
+		"device_id": randomDeviceID(),
+		"os":        "web",
 	}
 	if email := strings.TrimSpace(acc.Email); email != "" {
 		payload["email"] = email
@@ -320,4 +323,13 @@ func normalizeMobileForLogin(raw string) (mobile string, areaCode any) {
 		return digits[2:], nil
 	}
 	return digits, nil
+}
+
+func randomDeviceID() string {
+	b := make([]byte, 64)
+	if _, err := rand.Read(b); err != nil {
+		// fallback: use a timestamp-based string
+		return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("ds2api_%d", time.Now().UnixNano())))
+	}
+	return base64.StdEncoding.EncodeToString(b)
 }

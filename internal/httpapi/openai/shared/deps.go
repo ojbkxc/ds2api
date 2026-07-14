@@ -48,6 +48,8 @@ type ConfigReader interface {
 	CurrentInputFileDisabledModels() []string
 	ThinkingInjectionEnabled() bool
 	ThinkingInjectionPrompt() string
+	RuntimeMaxAccountSwitches() int
+	DisableAccount(identifier string) error
 }
 
 type Deps struct {

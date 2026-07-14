@@ -141,8 +141,26 @@ func (s *Store) RuntimeTokenRefreshIntervalHours() int {
 	return 6
 }
 
+func (s *Store) RuntimeMaxAccountSwitches() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.cfg.Runtime.MaxAccountSwitches > 0 {
+		return s.cfg.Runtime.MaxAccountSwitches
+	}
+	return 3
+}
+
 func (s *Store) AutoDeleteSessions() bool {
 	return s.AutoDeleteMode() != "none"
+}
+
+func (s *Store) AutoDeleteDelayHours() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.cfg.AutoDelete.DelayHours > 0 {
+		return s.cfg.AutoDelete.DelayHours
+	}
+	return 0
 }
 
 func (s *Store) CurrentInputFileEnabled() bool {
@@ -209,4 +227,20 @@ func (s *Store) ThinkingInjectionPrompt() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return strings.TrimSpace(s.cfg.ThinkingInjection.Prompt)
+}
+
+func (s *Store) DisableAccount(identifier string) error {
+	identifier = strings.TrimSpace(identifier)
+	if identifier == "" {
+		return nil
+	}
+	return s.Update(func(c *Config) error {
+		for i := range c.Accounts {
+			if strings.EqualFold(strings.TrimSpace(c.Accounts[i].Identifier()), identifier) {
+				c.Accounts[i].Disabled = true
+				return nil
+			}
+		}
+		return nil
+	})
 }

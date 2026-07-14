@@ -113,6 +113,7 @@ func (h *Handler) handleClaudeDirect(w http.ResponseWriter, r *http.Request) boo
 	result, outErr := completionruntime.ExecuteNonStreamWithRetry(r.Context(), h.DS, a, stdReq, completionruntime.Options{
 		RetryEnabled:     true,
 		CurrentInputFile: h.Store,
+		Store:            h.Store,
 	})
 	if outErr != nil {
 		if historySession != nil {

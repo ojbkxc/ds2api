@@ -30,6 +30,13 @@ type Options struct {
 	RetryEnabled          bool
 	RetryMaxAttempts      int
 	CurrentInputFile      history.CurrentInputConfigReader
+	MaxAccountSwitches    int
+	Store                 AccountDisabler
+}
+
+type AccountDisabler interface {
+	RuntimeMaxAccountSwitches() int
+	DisableAccount(identifier string) error
 }
 
 type NonStreamResult struct {
@@ -112,7 +119,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 	for {
 		turn, outErr := collectAttempt(currentResp, stdReq, usagePrompt, opts)
 		if outErr != nil {
-			if canRetryOnAlternateAccount(ctx, a, outErr, opts.RetryEnabled, nil) {
+			if canRetryOnAlternateAccount(ctx, a, outErr, opts.RetryEnabled, &opts) {
 				switched, switchErr := startStandardCompletionOnAlternateAccount(ctx, ds, a, stdReq, opts, maxAttempts)
 				if switchErr != nil {
 					return NonStreamResult{SessionID: sessionID, Payload: payload, Attempts: attempts}, switchErr
@@ -157,7 +164,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 				status, message, code := assistantturn.UpstreamEmptyOutputDetail(turn.ContentFilter, turn.Text, turn.Thinking)
 				lastErr = &assistantturn.OutputError{Status: status, Message: message, Code: code}
 			}
-			if canRetryOnAlternateAccount(ctx, a, lastErr, opts.RetryEnabled, nil) {
+			if canRetryOnAlternateAccount(ctx, a, lastErr, opts.RetryEnabled, &opts) {
 				switched, switchErr := startStandardCompletionOnAlternateAccount(ctx, ds, a, stdReq, opts, maxAttempts)
 				if switchErr != nil {
 					return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, switchErr
@@ -207,7 +214,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 				emptyOutputErr.Message = "Upstream account hit a rate limit and returned reasoning without visible output."
 				emptyOutputErr.Code = "upstream_empty_output"
 			}
-			if canRetryOnAlternateAccount(ctx, a, emptyOutputErr, opts.RetryEnabled, nil) {
+			if canRetryOnAlternateAccount(ctx, a, emptyOutputErr, opts.RetryEnabled, &opts) {
 				switched, switchErr := startStandardCompletionOnAlternateAccount(ctx, ds, a, stdReq, opts, maxAttempts)
 				if switchErr != nil {
 					return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, switchErr
@@ -244,7 +251,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 	}
 }
 
-func canRetryOnAlternateAccount(ctx context.Context, a *auth.RequestAuth, outErr *assistantturn.OutputError, retryEnabled bool, _ *bool) bool {
+func canRetryOnAlternateAccount(ctx context.Context, a *auth.RequestAuth, outErr *assistantturn.OutputError, retryEnabled bool, opts *Options) bool {
 	if outErr == nil {
 		return false
 	}
@@ -257,7 +264,41 @@ func canRetryOnAlternateAccount(ctx context.Context, a *auth.RequestAuth, outErr
 	if a == nil || !a.UseConfigToken {
 		return false
 	}
-	return a.SwitchAccount(ctx)
+
+	// 自动禁用：当账号遇到封禁类错误时标记为禁用
+	maybeAutoDisableAccount(a, outErr, opts)
+
+	// 检查换号次数限制
+	maxSwitches := 3
+	if opts != nil && opts.MaxAccountSwitches > 0 {
+		maxSwitches = opts.MaxAccountSwitches
+	} else if opts != nil && opts.Store != nil {
+		maxSwitches = opts.Store.RuntimeMaxAccountSwitches()
+	}
+	if a.SwitchCount >= maxSwitches {
+		config.Logger.Warn("[account_switch] max switch count reached", "account", a.AccountID, "switches", a.SwitchCount, "max", maxSwitches)
+		return false
+	}
+
+	switched := a.SwitchAccount(ctx)
+	if switched {
+		a.SwitchCount++
+	}
+	return switched
+}
+
+func maybeAutoDisableAccount(a *auth.RequestAuth, outErr *assistantturn.OutputError, opts *Options) {
+	if a == nil || a.AccountID == "" || outErr == nil {
+		return
+	}
+	// 只在封禁类错误时自动禁用（非临时性错误）
+	if outErr.Status == http.StatusForbidden || outErr.Status == http.StatusUnauthorized {
+		if opts != nil && opts.Store != nil {
+			config.Logger.Warn("[account_auto_disable] disabling account due to auth error", "account", a.AccountID, "status", outErr.Status, "message", outErr.Message)
+			_ = opts.Store.DisableAccount(a.AccountID)
+		}
+	}
+	// 429 (too many requests) 不自动禁用，可能是临时限流
 }
 
 func isAccountSwitchRetryable(outErr *assistantturn.OutputError) bool {

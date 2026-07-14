@@ -20,6 +20,7 @@ func executeWithToolCalls(ctx context.Context, ds completionruntime.DeepSeekCall
 		result, outErr := completionruntime.ExecuteNonStreamWithRetry(ctx, ds, a, stdReq, completionruntime.Options{
 			RetryEnabled:     true,
 			CurrentInputFile: store,
+			Store:            nil,
 		})
 		if outErr != nil {
 			return result, outErr

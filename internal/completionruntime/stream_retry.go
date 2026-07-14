@@ -15,14 +15,16 @@ import (
 )
 
 type StreamRetryOptions struct {
-	Surface          string
-	Stream           bool
-	RetryEnabled     bool
-	RetryMaxAttempts int
-	MaxAttempts      int
-	UsagePrompt      string
-	Request          promptcompat.StandardRequest
-	CurrentInputFile history.CurrentInputConfigReader
+	Surface             string
+	Stream              bool
+	RetryEnabled        bool
+	RetryMaxAttempts    int
+	MaxAttempts         int
+	UsagePrompt         string
+	Request             promptcompat.StandardRequest
+	CurrentInputFile    history.CurrentInputConfigReader
+	MaxAccountSwitches  int
+	Store               AccountDisabler
 }
 
 type StreamRetryHooks struct {
@@ -80,7 +82,10 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 					lastErr = e
 				}
 			}
-			if canRetryOnAlternateAccount(ctx, a, lastErr, opts.RetryEnabled, nil) {
+			if canRetryOnAlternateAccount(ctx, a, lastErr, opts.RetryEnabled, &Options{
+				MaxAccountSwitches: opts.MaxAccountSwitches,
+				Store:              opts.Store,
+			}) {
 				switched, switchErr := startPayloadCompletionOnAlternateAccount(ctx, ds, a, payload, opts, maxAttempts)
 				if switchErr != nil {
 					if hooks.OnRetryFailure != nil {

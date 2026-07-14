@@ -67,6 +67,16 @@ func (s Service) ApplyCurrentInputFile(ctx context.Context, a *auth.RequestAuth,
 	if index < 0 {
 		return stdReq, nil
 	}
+	// 第一次请求（无历史记录）：尽量不上传文件，除非文本非常大
+	if len(stdReq.Messages) <= 1 {
+		flashThreshold := threshold * 3
+		if flashThreshold < 2000 {
+			flashThreshold = 2000
+		}
+		if len([]rune(text)) < flashThreshold {
+			return stdReq, nil
+		}
+	}
 	if len([]rune(text)) < threshold {
 		return stdReq, nil
 	}
