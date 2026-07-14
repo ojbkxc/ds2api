@@ -48,13 +48,12 @@ func (c *Compressor) CompressPrompt(prompt string) (string, CompressionLevel, in
 
 	c.logger.Debugf("compressing prompt: %d tokens (limit: %d)", originalTokens, maxTokens)
 
-	level := CompressionNone
 	compressed := prompt
 
 	// Level 1: Snip — trim sections that look like tool results
 	// (early return above already ensures we exceed SnipRatio)
 	compressed = c.snipToolSections(compressed)
-	level = CompressionSnip
+	level := CompressionSnip
 
 	currentTokens := EstimateTokensForPrompt(compressed)
 
