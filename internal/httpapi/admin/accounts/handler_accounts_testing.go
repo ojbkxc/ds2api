@@ -65,8 +65,13 @@ func (h *Handler) testAllAccounts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Concurrent testing with a semaphore to limit parallelism.
-	const maxConcurrency = 5
+	// Use maxConcurrency=2 to avoid triggering DeepSeek rate limiting
+	// on concurrent logins from the same IP.
+	const maxConcurrency = 2
 	results := runAccountTestsConcurrently(accounts, maxConcurrency, func(_ int, account config.Account) map[string]any {
+		// Add a small per-account delay to spread out login requests
+		// and avoid DeepSeek rate limiting.
+		time.Sleep(1500 * time.Millisecond)
 		return h.testAccount(r.Context(), account, model, "")
 	})
 

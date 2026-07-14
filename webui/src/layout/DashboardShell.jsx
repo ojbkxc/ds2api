@@ -152,7 +152,7 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
                 <div className="p-6">
                     <div className="flex items-center gap-2.5 font-bold text-xl tracking-tight" style={{ color: 'var(--ds-text)' }}>
                         <img
-                            src="/favicon.png"
+                            src={`${import.meta.env.BASE_URL}favicon.png`}
                             alt="DS2API"
                             className="w-8 h-8 object-contain"
                             style={{ borderRadius: 'var(--radius-ctrl)' }}
@@ -290,7 +290,7 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
                 <header className="lg:hidden h-14 flex items-center justify-between px-4 border-b" style={{ borderColor: 'var(--ds-border)', background: 'var(--ds-card)' }}>
                     <div className="flex items-center gap-2">
                         <img
-                            src="/favicon.png"
+                            src={`${import.meta.env.BASE_URL}favicon.png`}
                             alt="DS2API"
                             className="w-6 h-6 object-contain"
                             style={{ borderRadius: 'var(--radius-ctrl)' }}
