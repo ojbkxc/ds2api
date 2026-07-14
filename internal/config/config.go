@@ -220,6 +220,8 @@ type ContextCompressionConfig struct {
 	ContextWindow    int     `json:"context_window,omitempty"`
 	SnipHeadLines    int     `json:"snip_head_lines,omitempty"`
 	SnipTailLines    int     `json:"snip_tail_lines,omitempty"`
+	SnipHeadChars    int     `json:"snip_head_chars,omitempty"`
+	SnipTailChars    int     `json:"snip_tail_chars,omitempty"`
 	MaxToolResultLen int     `json:"max_tool_result_len,omitempty"`
 }
 

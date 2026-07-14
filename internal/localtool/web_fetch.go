@@ -63,10 +63,13 @@ func (e *WebFetchExecutor) Execute(call ToolCall, context ToolExecutionContext) 
 	}
 
 	client := &http.Client{Timeout: 15 * time.Second}
-	req, _ := http.NewRequest("GET", parsedURL.String(), nil)
+	req, err := http.NewRequest("GET", parsedURL.String(), nil)
+	if err != nil {
+		return &ToolResult{Ok: false, Name: call.Name, CallId: call.ID, Summary: "Failed to create request", Error: &ToolError{Code: "request_error", Message: err.Error(), Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,application/json;q=0.7,*/*;q=0.6")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -79,10 +82,13 @@ func (e *WebFetchExecutor) Execute(call ToolCall, context ToolExecutionContext) 
 	}
 
 	contentType := resp.Header.Get("Content-Type")
-	if strings.Contains(contentType, "text/html") {
+	contentTypeLower := strings.ToLower(contentType)
+	if strings.Contains(contentTypeLower, "text/html") {
 		return e.fetchHTML(resp.Body, call.Name, call.ID, startTime)
 	}
-	if strings.Contains(contentType, "text/plain") {
+	if strings.Contains(contentTypeLower, "text/plain") || strings.Contains(contentTypeLower, "text/xml") ||
+		strings.Contains(contentTypeLower, "application/json") || strings.Contains(contentTypeLower, "application/xml") ||
+		strings.Contains(contentTypeLower, "text/markdown") || strings.Contains(contentTypeLower, "text/csv") {
 		return e.fetchText(resp.Body, call.Name, call.ID, startTime)
 	}
 

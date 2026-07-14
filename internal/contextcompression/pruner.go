@@ -178,10 +178,12 @@ func (p *Pruner) pruneOldToolResults(messages []map[string]any) ([]map[string]an
 		return messages, nil
 	}
 
-	// Keep the most recent ~30% of messages intact
-	keepFrom := int(float64(len(messages)) * 0.7)
-	if keepFrom < 2 {
-		keepFrom = 2
+	// Keep the most recent ~30% of messages intact.
+	// pruneStart marks the boundary: messages before this index are "old"
+	// and eligible for pruning; messages at or after this index are "recent" and kept.
+	pruneStart := int(float64(len(messages)) * 0.7)
+	if pruneStart > len(messages)-2 {
+		pruneStart = len(messages) - 2
 	}
 
 	var archived []ArchivedMsg
@@ -190,7 +192,7 @@ func (p *Pruner) pruneOldToolResults(messages []map[string]any) ([]map[string]an
 	for i, msg := range messages {
 		role, _ := msg["role"].(string)
 
-		if role == "tool" && i < keepFrom {
+		if role == "tool" && i < pruneStart {
 			content, _ := msg["content"].(string)
 			tokens := EstimateTokens(content)
 

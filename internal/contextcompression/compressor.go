@@ -52,10 +52,9 @@ func (c *Compressor) CompressPrompt(prompt string) (string, CompressionLevel, in
 	compressed := prompt
 
 	// Level 1: Snip — trim sections that look like tool results
-	if float64(originalTokens) > float64(maxTokens)*c.config.SnipRatio {
-		compressed = c.snipToolSections(compressed)
-		level = CompressionSnip
-	}
+	// (early return above already ensures we exceed SnipRatio)
+	compressed = c.snipToolSections(compressed)
+	level = CompressionSnip
 
 	currentTokens := EstimateTokensForPrompt(compressed)
 
@@ -143,16 +142,17 @@ func (c *Compressor) snipToolSections(prompt string) string {
 }
 
 // pruneOldSections replaces old tool result sections with placeholders.
+// Keeps the most recent ~50% of lines intact; older tool sections are elided.
 func (c *Compressor) pruneOldSections(prompt string) string {
-	// Simple approach: keep the last ~50% of the prompt, replace earlier
-	// tool sections with short placeholders.
 	lines := strings.Split(prompt, "\n")
 	totalLines := len(lines)
 	if totalLines < 20 {
 		return prompt
 	}
 
-	keepFrom := int(float64(totalLines) * 0.5)
+	// pruneEnd marks the boundary: lines before this index are "old" and
+	// eligible for pruning; lines at or after this index are "recent" and kept.
+	pruneEnd := int(float64(totalLines) * 0.5)
 	var result strings.Builder
 	inToolSection := false
 	toolSectionLines := 0
@@ -161,7 +161,7 @@ func (c *Compressor) pruneOldSections(prompt string) string {
 		trimmed := strings.TrimSpace(line)
 		lower := strings.ToLower(trimmed)
 		if strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:") {
-			if i < keepFrom {
+			if i < pruneEnd {
 				inToolSection = true
 				toolSectionLines = 0
 				result.WriteString(line)
@@ -184,7 +184,7 @@ func (c *Compressor) pruneOldSections(prompt string) string {
 				continue
 			}
 			toolSectionLines++
-			if i < keepFrom {
+			if i < pruneEnd {
 				// Skip old tool section content, already wrote placeholder
 				continue
 			}

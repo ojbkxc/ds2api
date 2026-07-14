@@ -144,6 +144,15 @@ func NewApp() (*App, error) {
 	return &App{Store: store, Pool: pool, Resolver: resolver, DS: dsClient, MCPHost: mcpHost, Compressor: compressor, Router: r}, nil
 }
 
+// Close shuts down the application gracefully, releasing all resources
+// including MCP host connections, compressor, and other managed resources.
+func (app *App) Close() {
+	if app.MCPHost != nil {
+		app.MCPHost.Close()
+		config.Logger.Info("[app] MCP host connections closed")
+	}
+}
+
 func timeout(d time.Duration) func(http.Handler) http.Handler {
 	if d <= 0 {
 		return func(next http.Handler) http.Handler { return next }
@@ -489,6 +498,8 @@ func initCompressor(cfg config.ContextCompressionConfig) *contextcompression.Com
 		ContextWindow:    cfg.ContextWindow,
 		SnipHeadLines:    cfg.SnipHeadLines,
 		SnipTailLines:    cfg.SnipTailLines,
+		SnipHeadChars:    cfg.SnipHeadChars,
+		SnipTailChars:    cfg.SnipTailChars,
 		MaxToolResultLen: cfg.MaxToolResultLen,
 	}
 	c := contextcompression.NewCompressor(cc)
