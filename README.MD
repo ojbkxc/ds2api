@@ -58,6 +58,8 @@
 - [配置说明](#配置说明)
 - [鉴权模式](#鉴权模式)
 - [并发模型](#并发模型)
+- [会话与上下文管理](#会话与上下文管理)
+- [Prompt 格式](#prompt-格式)
 - [Tool Call 适配](#tool-call-适配)
 - [本地开发抓包工具](#本地开发抓包工具)
 - [文档索引](#文档索引)
@@ -367,6 +369,20 @@ go run ./cmd/ds2api
 未指定目标账号时，如果 completion 因上游 thinking-only 空输出在同账号补偿重试后仍将返回 `429 upstream_empty_output`，托管账号模式会自动切到下一个可用账号，新建 session，并用原始 payload 再 fresh retry 一次。
 Gemini 路由还可以使用 `x-goog-api-key`，或在没有认证头时使用 `?key=` / `?api_key=` 作为调用方凭据。
 
+### DeepSeek 客户端认证
+
+DS2API 内部使用 Android App 风格的请求头与 DeepSeek API 通信，关键参数：
+
+| 参数 | 值 | 说明 |
+| --- | --- | --- |
+| `os` | `android` | 操作系统标识 |
+| `x-client-platform` | `android` | 客户端平台 |
+| `x-client-version` | `2.2.0` | 客户端版本 |
+| `device_id` | `deepseek_to_api` | 固定设备标识 |
+| `User-Agent` | Chrome 149/150 Android 池 | 模拟 Android Chrome 浏览器 |
+
+登录时携带 `x-client-bundle-id`、`accept-language` 和 `x-client-timezone-offset` 等头，确保与 DeepSeek Android App 的请求行为一致。
+
 ## 并发模型
 
 ```
@@ -381,6 +397,30 @@ Gemini 路由还可以使用 `x-goog-api-key`，或在没有认证头时使用 `
 - completion 空输出类 429 会先做同账号补偿重试；托管账号模式还会在最终返回 429 前切到另一个可用账号 fresh retry 一次
 - `GET /admin/queue/status` 返回实时并发状态
 
+## 会话与上下文管理
+
+DS2API 对不同模型采用不同的会话与上下文管理策略，以在保持对话连续性的同时避免 prompt 膨胀。
+
+### v4-pro 会话复用
+
+`deepseek-v4-pro`（Expert 模式）不支持文件上传，DeepSeek 通过 `parent_message_id` 维护完整会话上下文。当会话复用时（`parentMessageID > 0`），下游已持有完整历史，再发送完整消息列表会造成重复发送。因此项目会**自动剥离历史消息**，仅保留系统提示词和最新一条用户消息，通过 `StripHistoryForSessionReuse()` 实现。
+
+### v4-pro 新会话创建
+
+当 v4-pro 会话超出上限需要新建会话时，新会话在 DeepSeek 侧没有上下文。此时需要保留最近若干轮对话以便模型理解背景，但不能保留太多导致 prompt 爆炸。项目通过 `TrimHistoryForNewSession(20)` 实现，保留最近 20 轮用户/助手对话（跳过压缩后的工具输出）。
+
+### 上下文压缩
+
+当 prompt token 数超过配置的上下文窗口阈值时，DS2API 会进行三级渐进式压缩，仅作用于工具输出内容：
+
+| 级别 | 触发条件 | 策略 |
+| --- | --- | --- |
+| **Snip** | 超过窗口 60% | 裁剪过长的工具结果段落，保留头尾 |
+| **Prune** | 超过窗口 80% | 将旧工具输出替换为摘要占位符 |
+| **Compact** | 超过窗口 90% | 截断到上下文窗口上限 |
+
+压缩通过 `contextcompression.GlobalCompressor` 在构建 prompt 时自动执行，不会影响已存储的对话历史。对于 v4-pro 等不支持文件上传的模型，上下文压缩在 `TrimHistoryForNewSession` 之前执行，确保只保留必要内容。
+
 ## Tool Call 适配
 
 当请求中带 `tools` 时，DS2API 会做防泄漏处理与结构化转译：
@@ -394,7 +434,38 @@ Gemini 路由还可以使用 `x-goog-api-key`，或在没有认证头时使用 `
 > 说明：当前版本 parser 层以”尽量解析成功”为优先，所有格式合法的 XML 工具调用都会通过，不做工具名 allow-list 过滤。
 > 解析层会保留显式空字符串或纯空白参数；Prompt 会要求模型不要主动输出空参数，缺参/空命令的拒绝应由工具执行侧或客户端 schema 校验负责。
 >
-> 想评估”把工具调用封装成 XML 再输入模型”的方案，可参考：`docs/toolcall-semantics.md`。
+> 想评估“把工具调用封装成 XML 再输入模型”的方案，可参考：`docs/toolcall-semantics.md`。
+
+## Prompt 格式
+
+DS2API 使用 DeepSeek 原生标记格式构建 prompt，确保模型能正确理解角色边界和工具上下文：
+
+```
+<|begin▁of▁sentence|>
+<|System|>系统提示词内容<|end▁of▁instructions|>
+<|User|>用户消息内容
+<|Assistant|>助手回复内容<|end▁of▁sentence|>
+<|Tool|>工具返回内容<|end▁of▁toolresults|>
+<|Assistant|>
+```
+
+### 关键标记
+
+| 标记 | 用途 |
+| --- | --- |
+| `<|begin▁of▁sentence|>` | 对话开始 |
+| `<|System|>` / `<|end▁of▁instructions|>` | 系统提示词边界 |
+| `<|User|>` | 用户消息 |
+| `<|Assistant|>` / `<|end▁of▁sentence|>` | 助手回复边界 |
+| `<|Tool|>` / `<|end▁of▁toolresults|>` | 工具返回边界 |
+
+### 输出完整性保护
+
+构建 prompt 时，系统会自动在最前面插入一条 `Output integrity guard` 系统消息，用于防止模型模仿或回显上游上下文中的乱码、损坏、重复或畸形的片段。
+
+### 本地工具注入
+
+对于支持本地工具的模型（`deepseek-v4-flash`、`deepseek-v4-pro`、`deepseek-v4-vision`），系统会在构建 prompt 时自动注入 `web_search` 和 `web_fetch` 工具的描述、DSML 调用格式说明、以及使用指南。对于有原生搜索的模型（`deepseek-v4-flash-search`），仅注入 `web_fetch`，避免两个搜索工具冲突。详见 [模型支持](#模型支持) 中的工具共存说明。
 
 ## 本地开发抓包工具
 
