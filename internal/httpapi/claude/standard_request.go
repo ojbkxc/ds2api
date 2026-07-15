@@ -48,13 +48,15 @@ func normalizeClaudeRequest(store ConfigReader, req map[string]any) (claudeNorma
 	}
 
 	// Inject local web tools for models that support them.
-	// Skip local web_search when the model has native search to avoid conflicts.
+	// Skip all local tools when the model has native search to avoid conflicts.
 	if config.ModelSupportsLocalWebTools(dsModel) {
 		_, searchEnabled, _ := config.GetModelConfig(dsModel)
-		localPrompt, localNames := promptcompat.BuildLocalToolPrompt(searchEnabled)
-		if localPrompt != "" {
-			finalPrompt = finalPrompt + "\n\n" + localPrompt
-			toolNames = append(localNames, toolNames...)
+		if !searchEnabled {
+			localPrompt, localNames := promptcompat.BuildLocalToolPrompt(false)
+			if localPrompt != "" {
+				finalPrompt = finalPrompt + "\n\n" + localPrompt
+				toolNames = append(localNames, toolNames...)
+			}
 		}
 	}
 

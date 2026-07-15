@@ -106,9 +106,13 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 	// prompt for models that don't support file uploads (e.g. deepseek-v4-pro).
 	// DeepSeek already has the full conversation from session context — keeping
 	// the full history in the prompt would send duplicate context every request.
-	if parentMessageID > 0 {
+	//
+	// Skip stripping when the messages contain tool results (role "tool") —
+	// this means we're in the middle of a tool loop iteration and the tool
+	// results must be preserved in the prompt so the model can see them.
+	if parentMessageID > 0 && !stdReq.HasToolMessages() {
 		stdReq.StripHistoryForSessionReuse()
-	} else if len(stdReq.Messages) > 3 {
+	} else if !stdReq.HasToolMessages() && len(stdReq.Messages) > 3 {
 		// New session (sessionID was empty) with many messages: the previous
 		// session was likely full and DeepSeek has no context. For models that
 		// don't support file uploads, keep only the most recent 20 turns to

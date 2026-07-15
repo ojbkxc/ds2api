@@ -79,6 +79,24 @@ func (r *StandardRequest) StripHistoryForSessionReuse() {
 	r.trimHistory(1, false)
 }
 
+// HasToolMessages returns true if any message in the request has role "tool".
+// This is used to detect when we're in the middle of a tool loop iteration
+// — in that case the tool results must be preserved in the prompt so the
+// model can see them and continue.
+func (r *StandardRequest) HasToolMessages() bool {
+	for _, m := range r.Messages {
+		msg, ok := m.(map[string]any)
+		if !ok {
+			continue
+		}
+		role := strings.ToLower(strings.TrimSpace(asString(msg["role"])))
+		if role == "tool" {
+			return true
+		}
+	}
+	return false
+}
+
 // TrimHistoryForNewSession keeps the most recent N user/assistant turns when a
 // new session is created because the previous one was full. For models that
 // don't support file uploads (e.g. deepseek-v4-pro), the new session has no
