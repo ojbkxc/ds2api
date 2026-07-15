@@ -177,6 +177,19 @@ OpenAI `/v1/*` 仍是推荐的规范路径；同时支持 `/models`、`/chat/com
 除原生模型外，也支持常见 alias 输入（如 `gpt-4.1`、`gpt-5`、`gpt-5-codex`、`o3`、`claude-*`、`gemini-*` 等），但 `/v1/models` 返回的是规范化后的 DeepSeek 原生模型 ID。若 alias 名本身追加 `-nothinking` 后缀，也会映射到对应的强制关思考模型。完整 alias 行为以 [API.md](API.md#模型-alias-解析策略) 和 `config.example.json` 为准。
 当前上游视觉模型只暴露 `vision` 通道，不提供独立的联网搜索视觉变体。
 
+> **关于本地工具与原生搜索的共存**
+>
+> 项目内置了本地 `web_search` 和 `web_fetch` 工具，用于增强非搜索模型的联网能力。对于自带原生搜索的模型（`deepseek-v4-flash-search` / `deepseek-v4-flash-search-nothinking`），为避免两个搜索工具同时存在导致模型选择困难（只输出思考不调用工具），项目会**自动跳过本地 `web_search` 工具注入**，仅保留 `web_fetch` 工具。
+>
+> | 模型类型 | 原生搜索 | 本地 web_search | 本地 web_fetch |
+> | --- | --- | --- | --- |
+> | `deepseek-v4-flash` | 无 | 注入 | 注入 |
+> | `deepseek-v4-flash-search` | 有 | 跳过 | 注入 |
+> | `deepseek-v4-pro` | 无 | 注入 | 注入 |
+> | `deepseek-v4-vision` | 无 | 注入 | 注入 |
+>
+> 之所以保留 `web_fetch`：原生搜索只能搜索，无法直接抓取用户指定的 URL 内容。当用户发送链接要求分析时，模型需要 `web_fetch` 来完成。
+
 ### Claude 接口（`GET /anthropic/v1/models`）
 
 | 当前常用模型 | 默认映射 |
