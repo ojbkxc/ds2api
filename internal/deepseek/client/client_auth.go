@@ -40,6 +40,8 @@ func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) 
 		"password":  strings.TrimSpace(acc.Password),
 		"device_id": randomDeviceID(),
 		"os":        "web",
+		"mobile":    "",
+		"area_code": "",
 	}
 	if email := strings.TrimSpace(acc.Email); email != "" {
 		payload["email"] = email
@@ -69,7 +71,7 @@ func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) 
 			}
 		}
 
-		resp, err := c.postJSON(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekLoginURL, dsprotocol.BaseHeaders, payload)
+		resp, err := c.postJSON(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekLoginURL, dsprotocol.LoginHeaders, payload)
 		if err != nil {
 			lastErr = err
 			continue

@@ -30,6 +30,11 @@ var defaultStaticBaseHeaders = map[string]string{
 	"accept-charset": "UTF-8",
 }
 
+var loginExtraHeaders = map[string]string{
+	"origin":  "https://chat.deepseek.com",
+	"referer": "https://chat.deepseek.com/sign_in",
+}
+
 var defaultSkipContainsPatterns = []string{
 	"quasi_status",
 	"elapsed_secs",
@@ -47,6 +52,7 @@ var defaultSkipExactPaths = []string{
 
 var ClientVersion string
 var BaseHeaders = map[string]string{}
+var LoginHeaders = map[string]string{}
 var SkipContainsPatterns = cloneStringSlice(defaultSkipContainsPatterns)
 var SkipExactPathSet = toStringSet(defaultSkipExactPaths)
 
@@ -80,6 +86,10 @@ func applySharedConstants(cfg sharedConstants) {
 	client := normalizeClientConstants(cfg.Client)
 	ClientVersion = client.Version
 	BaseHeaders = buildBaseHeaders(client, cfg.BaseHeaders)
+	LoginHeaders = cloneStringMap(BaseHeaders)
+	for k, v := range loginExtraHeaders {
+		LoginHeaders[k] = v
+	}
 	SkipContainsPatterns = cloneStringSlice(defaultSkipContainsPatterns)
 	if len(cfg.SkipContainsPattern) > 0 {
 		SkipContainsPatterns = cloneStringSlice(cfg.SkipContainsPattern)
@@ -122,6 +132,10 @@ func buildBaseHeaders(client clientConstants, overrides map[string]string) map[s
 	if client.Locale != "" {
 		out["x-client-locale"] = client.Locale
 	}
+	// Browser client hints (sec-ch-ua) — DeepSeek may check these for anti-bot
+	out["sec-ch-ua"] = `"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"`
+	out["sec-ch-ua-mobile"] = "?1"
+	out["sec-ch-ua-platform"] = `"Android"`
 	return out
 }
 
