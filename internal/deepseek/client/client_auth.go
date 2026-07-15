@@ -2,13 +2,10 @@ package client
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 	"unicode"
 
 	"ds2api/internal/auth"
