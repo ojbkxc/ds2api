@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 
 	"ds2api/internal/config"
@@ -17,7 +17,7 @@ func (c *Client) postJSON(ctx context.Context, doer trans.Doer, fallback trans.D
 		return nil, err
 	}
 	if status == 0 {
-		return nil, fmt.Errorf("request failed: empty status from %s", url)
+		return nil, errors.New("request failed")
 	}
 	return body, nil
 }

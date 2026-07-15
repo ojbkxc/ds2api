@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 )
 
@@ -15,11 +14,11 @@ func TestSharedConstantsLoaded(t *testing.T) {
 	if ClientVersion != client.Version {
 		t.Fatalf("unexpected client version=%q", ClientVersion)
 	}
-	ua := BaseHeaders["User-Agent"]
-	if !strings.HasPrefix(ua, "Mozilla/5.0") || !strings.Contains(ua, "Chrome/") {
-		t.Fatalf("unexpected user agent=%q", ua)
+	wantUserAgent := client.Name + "/" + client.Version + " Android/" + client.AndroidAPILevel
+	if BaseHeaders["User-Agent"] != wantUserAgent {
+		t.Fatalf("unexpected user agent=%q", BaseHeaders["User-Agent"])
 	}
-	if BaseHeaders["x-client-platform"] != "web" {
+	if BaseHeaders["x-client-platform"] != "android" {
 		t.Fatalf("unexpected base header x-client-platform=%q", BaseHeaders["x-client-platform"])
 	}
 	if BaseHeaders["x-client-version"] != ClientVersion {
@@ -48,14 +47,10 @@ func TestClientHeadersDerivedFromSharedVersion(t *testing.T) {
 		"User-Agent":       "stale",
 		"x-client-version": "stale",
 	})
-	ua := headers["User-Agent"]
-	if !strings.HasPrefix(ua, "Mozilla/5.0") || !strings.Contains(ua, "Chrome/") {
-		t.Fatalf("unexpected derived user agent=%q", ua)
+	if headers["User-Agent"] != "DeepSeek/9.8.7 Android/35" {
+		t.Fatalf("unexpected derived user agent=%q", headers["User-Agent"])
 	}
 	if headers["x-client-version"] != "9.8.7" {
 		t.Fatalf("unexpected derived client version=%q", headers["x-client-version"])
-	}
-	if headers["x-client-platform"] != "web" {
-		t.Fatalf("unexpected derived x-client-platform=%q", headers["x-client-platform"])
 	}
 }

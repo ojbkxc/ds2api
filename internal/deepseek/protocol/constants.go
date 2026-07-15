@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"math/rand/v2"
 )
 
 const (
@@ -30,11 +29,6 @@ var defaultStaticBaseHeaders = map[string]string{
 	"accept-charset": "UTF-8",
 }
 
-var loginExtraHeaders = map[string]string{
-	"origin":  "https://chat.deepseek.com",
-	"referer": "https://chat.deepseek.com/sign_in",
-}
-
 var defaultSkipContainsPatterns = []string{
 	"quasi_status",
 	"elapsed_secs",
@@ -52,7 +46,6 @@ var defaultSkipExactPaths = []string{
 
 var ClientVersion string
 var BaseHeaders = map[string]string{}
-var LoginHeaders = map[string]string{}
 var SkipContainsPatterns = cloneStringSlice(defaultSkipContainsPatterns)
 var SkipExactPathSet = toStringSet(defaultSkipExactPaths)
 
@@ -86,10 +79,6 @@ func applySharedConstants(cfg sharedConstants) {
 	client := normalizeClientConstants(cfg.Client)
 	ClientVersion = client.Version
 	BaseHeaders = buildBaseHeaders(client, cfg.BaseHeaders)
-	LoginHeaders = cloneStringMap(BaseHeaders)
-	for k, v := range loginExtraHeaders {
-		LoginHeaders[k] = v
-	}
 	SkipContainsPatterns = cloneStringSlice(defaultSkipContainsPatterns)
 	if len(cfg.SkipContainsPattern) > 0 {
 		SkipContainsPatterns = cloneStringSlice(cfg.SkipContainsPattern)
@@ -124,34 +113,23 @@ func buildBaseHeaders(client clientConstants, overrides map[string]string) map[s
 		}
 		out[k] = v
 	}
-	out["User-Agent"] = randomChromeUserAgent()
-	out["x-client-platform"] = "web"
+	if client.Name != "" && client.Version != "" {
+		userAgent := client.Name + "/" + client.Version
+		if client.Platform == "android" && client.AndroidAPILevel != "" {
+			userAgent += " Android/" + client.AndroidAPILevel
+		}
+		out["User-Agent"] = userAgent
+	}
+	if client.Platform != "" {
+		out["x-client-platform"] = client.Platform
+	}
 	if client.Version != "" {
 		out["x-client-version"] = client.Version
 	}
 	if client.Locale != "" {
 		out["x-client-locale"] = client.Locale
 	}
-	// Browser client hints (sec-ch-ua) — DeepSeek may check these for anti-bot
-	out["sec-ch-ua"] = `"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"`
-	out["sec-ch-ua-mobile"] = "?1"
-	out["sec-ch-ua-platform"] = `"Android"`
 	return out
-}
-
-var chromeUserAgents = []string{
-	"Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
-	"Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36",
-	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
-	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
-	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
-	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-}
-
-func randomChromeUserAgent() string {
-	return chromeUserAgents[rand.IntN(len(chromeUserAgents))]
 }
 
 func cloneStringMap(in map[string]string) map[string]string {
