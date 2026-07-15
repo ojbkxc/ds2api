@@ -321,11 +321,4 @@ func normalizeMobileForLogin(raw string) (mobile string, areaCode any) {
 	return digits, nil
 }
 
-func randomDeviceID() string {
-	b := make([]byte, 64)
-	if _, err := rand.Read(b); err != nil {
-		// fallback: use a timestamp-based string
-		return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("ds2api_%d", time.Now().UnixNano())))
-	}
-	return base64.StdEncoding.EncodeToString(b)
-}
+
