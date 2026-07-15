@@ -91,7 +91,7 @@ func (r *StandardRequest) TrimHistoryForNewSession(maxTurns int) {
 	r.trimHistory(maxTurns, true)
 }
 
-const v4proDefaultMaxTurns = 20
+const V4ProDefaultMaxTurns = 20
 
 // trimHistory is the shared implementation. When keepRecentTurns is false
 // (session reuse), only the system message and the latest user message are
