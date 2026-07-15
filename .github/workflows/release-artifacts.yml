@@ -174,7 +174,15 @@ jobs:
           )
 
           if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release upload "${TAG}" "${FILES[@]}" --clobber
+            # gh release upload --clobber can fail with HTTP 422 if the asset
+            # already exists; delete existing assets with the same names first.
+            for f in "${FILES[@]}"; do
+              name="$(basename "${f}")"
+              if gh release view "${TAG}" --json assets -q ".assets[].name" 2>/dev/null | grep -qx "${name}"; then
+                gh release delete-asset "${TAG}" "${name}" -y
+              fi
+            done
+            gh release upload "${TAG}" "${FILES[@]}"
           else
             gh release create "${TAG}" "${FILES[@]}" --title "${TAG}" --notes ""
           fi
