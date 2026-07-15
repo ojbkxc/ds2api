@@ -33,8 +33,15 @@ type RequestAuth struct {
 	Account        config.Account
 	TriedAccounts  map[string]bool
 	SwitchCount    int
+	lastSwitchAt   time.Time
 	resolver       *Resolver
 }
+
+const (
+	// minSwitchInterval is the minimum time between account switches
+	// to avoid rapid switching that risk engines may flag as automation.
+	minSwitchInterval = 30 * time.Second
+)
 
 type LoginFunc func(ctx context.Context, acc config.Account) (string, error)
 
@@ -192,6 +199,12 @@ func (r *Resolver) SwitchAccount(ctx context.Context, a *RequestAuth) bool {
 	if strings.TrimSpace(a.TargetAccount) != "" {
 		return false
 	}
+	// Enforce cooldown to avoid rapid switching patterns detectable by risk engines.
+	if time.Since(a.lastSwitchAt) < minSwitchInterval {
+		config.Logger.Debug("[switch_account] cooldown active, skipping switch", "account", a.AccountID, "since_last_switch", time.Since(a.lastSwitchAt))
+		return false
+	}
+	a.lastSwitchAt = time.Now()
 	if a.TriedAccounts == nil {
 		a.TriedAccounts = map[string]bool{}
 	}
@@ -222,6 +235,12 @@ func (r *Resolver) SwitchAccountForModel(ctx context.Context, a *RequestAuth, mo
 	if strings.TrimSpace(a.TargetAccount) != "" {
 		return false
 	}
+	// Enforce cooldown to avoid rapid switching patterns.
+	if time.Since(a.lastSwitchAt) < minSwitchInterval {
+		config.Logger.Debug("[switch_account_model] cooldown active, skipping switch", "account", a.AccountID, "since_last_switch", time.Since(a.lastSwitchAt))
+		return false
+	}
+	a.lastSwitchAt = time.Now()
 	if a.TriedAccounts == nil {
 		a.TriedAccounts = map[string]bool{}
 	}

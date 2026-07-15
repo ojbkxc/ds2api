@@ -73,7 +73,10 @@ func Global() *Store {
 }
 
 func NewFromEnv() *Store {
-	enabled := !isVercelRuntime()
+	// Default to disabled in all environments to prevent accidental
+	// exposure of user conversation data. Explicitly opt in with
+	// DS2API_DEV_PACKET_CAPTURE=true only for local debugging.
+	enabled := false
 	if raw, ok := os.LookupEnv("DS2API_DEV_PACKET_CAPTURE"); ok {
 		enabled = parseBool(raw)
 	}
@@ -94,10 +97,6 @@ func NewFromEnv() *Store {
 		maxBodyBytes: maxBodyBytes,
 		items:        make([]Entry, 0, limit),
 	}
-}
-
-func isVercelRuntime() bool {
-	return strings.TrimSpace(os.Getenv("VERCEL")) != "" || strings.TrimSpace(os.Getenv("NOW_REGION")) != ""
 }
 
 func (s *Store) Enabled() bool {

@@ -14,6 +14,60 @@ import (
 	"golang.org/x/net/html"
 )
 
+// privateCIDRs defines IP ranges that must not be reachable via web_fetch
+// to prevent SSRF attacks against internal infrastructure.
+var privateCIDRs = []string{
+	"127.0.0.0/8",    // loopback
+	"10.0.0.0/8",     // private
+	"172.16.0.0/12",  // private
+	"192.168.0.0/16", // private
+	"169.254.0.0/16", // link-local
+	"0.0.0.0/8",      // current network
+	"::1/128",        // IPv6 loopback
+	"fc00::/7",       // IPv6 unique local
+	"fe80::/10",      // IPv6 link-local
+}
+
+var privateNetworks []*net.IPNet
+
+func init() {
+	privateNetworks = make([]*net.IPNet, 0, len(privateCIDRs))
+	for _, cidr := range privateCIDRs {
+		_, n, err := net.ParseCIDR(cidr)
+		if err != nil {
+			continue
+		}
+		privateNetworks = append(privateNetworks, n)
+	}
+}
+
+// isPrivateHost checks whether the given hostname resolves to any private IP.
+func isPrivateHost(host string) bool {
+	// Direct IP check
+	if ip := net.ParseIP(host); ip != nil {
+		for _, n := range privateNetworks {
+			if n.Contains(ip) {
+				return true
+			}
+		}
+		return false
+	}
+	// DNS resolution check
+	ips, err := net.LookupIP(host)
+	if err != nil {
+		// If DNS fails, err on the side of caution and block.
+		return true
+	}
+	for _, ip := range ips {
+		for _, n := range privateNetworks {
+			if n.Contains(ip) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // fetchHTTPClient is a shared HTTP client tuned for web fetching.
 // It uses a longer timeout and a custom transport with explicit
 // TLS handshake and dial timeouts to handle slow or distant hosts.
@@ -84,6 +138,11 @@ func (e *WebFetchExecutor) Execute(call ToolCall, context ToolExecutionContext) 
 
 	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
 		return &ToolResult{Ok: false, Name: call.Name, CallId: call.ID, Summary: "Unsupported protocol", Error: &ToolError{Code: "unsupported_protocol", Message: "only http and https are supported", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
+	}
+
+	// SSRF protection: block requests to private/internal IP ranges.
+	if isPrivateHost(parsedURL.Hostname()) {
+		return &ToolResult{Ok: false, Name: call.Name, CallId: call.ID, Summary: "Access denied", Error: &ToolError{Code: "ssrf_blocked", Message: "access to private/internal addresses is not allowed", Retryable: false}, StartedAt: startTime, CompletedAt: time.Now(), DurationMs: time.Since(startTime).Milliseconds()}, nil
 	}
 
 	client := fetchHTTPClient

@@ -318,6 +318,19 @@ func (h *Handler) executeStreamWithToolCalls(
 			// clients receive a failure frame instead of a silent success.
 			outcome := assistantturn.FinalizeTurn(turn, assistantturn.FinalizeOptions{})
 			if outcome.ShouldFail {
+				// On the first iteration, the upstream returned empty before any
+				// tool calls were made. This typically indicates an invalid model
+				// configuration (e.g. unsupported model_type or incompatible
+				// thinking+search combination). Log the payload for diagnostics.
+				if i == 0 {
+					config.Logger.Warn("[stream_tool_loop] first iteration returned empty output — possible model config issue",
+						"model", stdReq.ResolvedModel,
+						"thinking_enabled", stdReq.Thinking,
+						"search_enabled", stdReq.Search,
+						"tool_names", stdReq.ToolNames,
+						"status", outcome.Error.Status,
+						"code", outcome.Error.Code)
+				}
 				streamRuntime.sendFailedChunk(outcome.Error.Status, outcome.Error.Message, outcome.Error.Code)
 				if historySession != nil {
 					finalHistText := historyTextForArchive(accumulatedRawText.String()+streamRuntime.accumulator.RawText.String(), accumulatedText.String()+streamRuntime.accumulator.Text.String())

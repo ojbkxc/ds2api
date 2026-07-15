@@ -3,6 +3,7 @@ package localtool
 import (
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -11,6 +12,15 @@ import (
 
 	"golang.org/x/net/html"
 )
+
+// searchUserAgents provides a pool of realistic browser User-Agent strings
+// rotated per-request to reduce the chance of Bing treating us as a bot.
+var searchUserAgents = []string{
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+}
 
 type WebSearchExecutor struct{}
 
@@ -78,6 +88,11 @@ func (e *WebSearchExecutor) Execute(call ToolCall, context ToolExecutionContext)
 			lastError = "Search timed out (>18s)"
 			break
 		}
+		// Add a small random delay between attempts to avoid triggering
+		// rate limiting on Bing's side.
+		if domain != domains[0] {
+			time.Sleep(time.Duration(500+rand.IntN(1500)) * time.Millisecond)
+		}
 		results, err := bingSearch(domain, query, topK)
 		if err != nil {
 			lastError = err.Error()
@@ -128,9 +143,12 @@ func bingSearch(domain, query string, topK int) ([]SearchResult, error) {
 
 	client := &http.Client{Timeout: 8 * time.Second}
 	req, _ := http.NewRequest("GET", u.String(), nil)
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	// Rotate User-Agent from a pool to reduce bot detection.
+	req.Header.Set("User-Agent", searchUserAgents[rand.IntN(len(searchUserAgents))])
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml")
+	// Set a basic cookie to appear more like a real browser session.
+	req.Header.Set("Cookie", "SRCHHPGUSR=SRCHLANG=zh-CN; _EDGE_S=F=1&SID="+fmtInt(int(time.Now().UnixNano()))[:8])
 
 	resp, err := client.Do(req)
 	if err != nil {

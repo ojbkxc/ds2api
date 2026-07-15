@@ -15,7 +15,7 @@ import (
 func (c *Client) CallCompletion(ctx context.Context, a *auth.RequestAuth, payload map[string]any, powResp string, maxAttempts int) (*http.Response, error) {
 	_ = maxAttempts
 	clients := c.requestClientsForAuth(ctx, a)
-	headers := c.authHeaders(a.DeepSeekToken)
+	headers := c.authHeadersForAccount(a)
 	headers["x-ds-pow-response"] = powResp
 	captureSession := c.capture.Start("deepseek_completion", dsprotocol.DeepSeekCompletionURL, a.AccountID, payload)
 	resp, err := c.streamPostOnce(ctx, clients.stream, dsprotocol.DeepSeekCompletionURL, headers, payload)
@@ -40,6 +40,7 @@ func (c *Client) streamPostOnce(ctx context.Context, doer trans.Doer, url string
 }
 
 func (c *Client) streamPostWithFallback(ctx context.Context, doer trans.Doer, url string, headers map[string]string, payload any, allowFallback bool) (*http.Response, error) {
+	requestJitter()
 	ctx = ctxWithFingerprintFromContext(ctx)
 	b, err := json.Marshal(payload)
 	if err != nil {

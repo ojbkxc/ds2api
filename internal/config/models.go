@@ -90,7 +90,10 @@ func GetModelConfig(model string) (thinking bool, search bool, ok bool) {
 	case "deepseek-v4-flash":
 		return !noThinking, false, true
 	case "deepseek-v4-flash-search":
-		return !noThinking, true, true
+		// Search and thinking cannot be enabled simultaneously — the upstream
+		// DeepSeek API returns empty responses when both are true. Force
+		// thinking to false when search is enabled.
+		return false, true, true
 	case "deepseek-v4-pro", "deepseek-v4-vision":
 		return !noThinking, false, true
 	default:
@@ -107,12 +110,11 @@ func GetModelType(model string) (modelType string, ok bool) {
 	}
 	baseModel, _ = splitNoThinkingModel(baseModel)
 	switch baseModel {
-	case "deepseek-v4-flash", "deepseek-v4-flash-search":
+	case "deepseek-v4-flash", "deepseek-v4-flash-search", "deepseek-v4-pro", "deepseek-v4-vision":
+		// Unified to "default" — "expert" and "vision" model_type values
+		// are no longer recognized by the upstream DeepSeek API and cause
+		// empty responses ("Upstream service is unavailable").
 		return "default", true
-	case "deepseek-v4-pro":
-		return "expert", true
-	case "deepseek-v4-vision":
-		return "vision", true
 	default:
 		return "", false
 	}
@@ -150,11 +152,10 @@ func IsNoThinkingModel(model string) bool {
 }
 
 // ModelSupportsLocalWebTools reports whether the resolved DeepSeek model should
-// have local web_search and web_fetch tools injected into the system prompt.
-// This is true for all models except those that already have native search
-// (deepseek-v4-flash-search), where local tools are still available but
-// the native search is the primary mechanism.
-// Pro and Vision models benefit from local tools since they lack native search.
+// have local web_search and web_fetch tools injected into the system prompt and
+// route through the tool loop. Models with native search (deepseek-v4-flash-search)
+// are excluded — they use DeepSeek's built-in search and must not go through the
+// project's local tool loop, as that would cause conflicts and empty responses.
 func ModelSupportsLocalWebTools(model string) bool {
 	baseModel, _ := splitNoThinkingModel(model)
 	aliases := DefaultModelAliases()
@@ -163,8 +164,12 @@ func ModelSupportsLocalWebTools(model string) bool {
 	}
 	baseModel, _ = splitNoThinkingModel(baseModel)
 	switch baseModel {
-	case "deepseek-v4-flash", "deepseek-v4-flash-search", "deepseek-v4-pro", "deepseek-v4-vision":
+	case "deepseek-v4-flash", "deepseek-v4-pro", "deepseek-v4-vision":
 		return true
+	case "deepseek-v4-flash-search":
+		// Search models use DeepSeek's native search — local tools
+		// must not be injected and the tool loop must not be entered.
+		return false
 	default:
 		return false
 	}

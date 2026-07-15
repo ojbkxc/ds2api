@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -30,11 +32,24 @@ func isAccountBanned(msg string) bool {
 	return false
 }
 
+// generateDeviceID produces a deterministic per-account device_id to avoid
+// all accounts sharing the same device fingerprint, which is a clear anomaly
+// detectable by DeepSeek's risk engine.
+func generateDeviceID(acc config.Account) string {
+	id := acc.Identifier()
+	if id == "" {
+		return "deepseek_to_api"
+	}
+	h := sha256.Sum256([]byte(id))
+	return "ds2api_" + hex.EncodeToString(h[:8])
+}
+
 func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) {
+	ctx = ctxWithAccountFingerprint(ctx, acc)
 	clients := c.requestClientsForAccount(acc)
 	payload := map[string]any{
 		"password":  strings.TrimSpace(acc.Password),
-		"device_id": "deepseek_to_api",
+		"device_id": generateDeviceID(acc),
 		"os":        "android",
 	}
 	if email := strings.TrimSpace(acc.Email); email != "" {
@@ -81,7 +96,7 @@ func (c *Client) CreateSession(ctx context.Context, a *auth.RequestAuth, maxAtte
 	attempts := 0
 	refreshed := false
 	for attempts < maxAttempts {
-		headers := c.authHeaders(a.DeepSeekToken)
+		headers := c.authHeadersForAccount(a)
 		resp, status, err := c.postJSONWithStatus(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekCreateSessionURL, headers, map[string]any{"agent": "chat"})
 		if err != nil {
 			config.Logger.Warn("[create_session] request error", "error", err, "account", a.AccountID)
@@ -133,7 +148,7 @@ func (c *Client) GetPowForTarget(ctx context.Context, a *auth.RequestAuth, targe
 	lastFailureKind := FailureUnknown
 	lastFailureMessage := ""
 	for attempts < maxAttempts {
-		headers := c.authHeaders(a.DeepSeekToken)
+		headers := c.authHeadersForAccount(a)
 		resp, status, err := c.postJSONWithStatus(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekCreatePowURL, headers, map[string]any{"target_path": targetPath})
 		if err != nil {
 			config.Logger.Warn("[get_pow] request error", "error", err, "account", a.AccountID, "target_path", targetPath)
@@ -188,6 +203,18 @@ func (c *Client) authHeaders(token string) map[string]string {
 		headers[k] = v
 	}
 	headers["authorization"] = "Bearer " + token
+	return headers
+}
+
+// authHeadersForAccount produces per-account request headers with a
+// client variant selected deterministically from the account ID, avoiding
+// the detectable pattern of all accounts sharing identical client fingerprints.
+func (c *Client) authHeadersForAccount(a *auth.RequestAuth) map[string]string {
+	if a == nil || a.AccountID == "" {
+		return c.authHeaders("")
+	}
+	headers := dsprotocol.BuildAccountHeaders(a.AccountID, dsprotocol.BaseHeaders)
+	headers["authorization"] = "Bearer " + a.DeepSeekToken
 	return headers
 }
 
