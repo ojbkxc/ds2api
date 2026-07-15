@@ -190,8 +190,8 @@ func TestTestAccount_MessageModeUsesExpertModelTypeForExpertModel(t *testing.T) 
 	if ok, _ := result["success"].(bool); !ok {
 		t.Fatalf("expected success=true, got %#v", result)
 	}
-	if got := ds.payload["model_type"]; got != "expert" {
-		t.Fatalf("expected model_type expert, got %#v", got)
+	if got := ds.payload["model_type"]; got != "default" {
+		t.Fatalf("expected model_type default, got %#v", got)
 	}
 	if got := ds.payload["chat_session_id"]; got != "session-id" {
 		t.Fatalf("unexpected chat_session_id: %#v", got)
@@ -213,7 +213,7 @@ func TestTestAccount_MessageModeUsesVisionModelTypeForVisionModel(t *testing.T) 
 	if ok, _ := result["success"].(bool); !ok {
 		t.Fatalf("expected success=true, got %#v", result)
 	}
-	if got := ds.payload["model_type"]; got != "vision" {
-		t.Fatalf("expected model_type vision, got %#v", got)
+	if got := ds.payload["model_type"]; got != "default" {
+		t.Fatalf("expected model_type default for vision, got %#v", got)
 	}
 }

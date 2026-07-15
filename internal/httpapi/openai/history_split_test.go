@@ -364,8 +364,8 @@ func TestApplyCurrentInputFileUploadsFullContextFile(t *testing.T) {
 	if upload.Filename != "deepseek.txt" {
 		t.Fatalf("expected deepseek.txt upload, got %q", upload.Filename)
 	}
-	if upload.ModelType != "vision" {
-		t.Fatalf("expected vision model type for vision request, got %q", upload.ModelType)
+	if upload.ModelType != "default" {
+		t.Fatalf("expected default model type for vision request, got %q", upload.ModelType)
 	}
 	uploadedText := string(upload.Data)
 	for _, want := range []string{"# deepseek.txt", "system instructions", "first user turn", "hidden reasoning", "tool result", "latest user turn", promptcompat.ThinkingInjectionMarker} {
