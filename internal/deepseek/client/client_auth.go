@@ -34,11 +34,10 @@ func isAccountBanned(msg string) bool {
 }
 
 func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) {
-	ctx = ctxWithAccountFingerprint(ctx, acc)
 	clients := c.requestClientsForAccount(acc)
 	payload := map[string]any{
 		"password":  strings.TrimSpace(acc.Password),
-		"device_id": randomDeviceID(),
+		"device_id": "deepseek_to_api",
 		"os":        "android",
 	}
 	if email := strings.TrimSpace(acc.Email); email != "" {
@@ -50,62 +49,30 @@ func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) 
 	} else {
 		return "", errors.New("missing email/mobile")
 	}
-
-	// Retry with backoff when login returns success but no token
-	// (DeepSeek rate-limits concurrent logins from the same IP)
-	const maxRetries = 3
-	var lastErr error
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		if attempt > 0 {
-			delay := time.Duration(attempt*2) * time.Second
-			config.Logger.Info("[login] retrying after missing token",
-				"account", acc.Identifier(),
-				"attempt", attempt+1,
-				"delay", delay.String())
-			select {
-			case <-ctx.Done():
-				return "", ctx.Err()
-			case <-time.After(delay):
-			}
-		}
-
-		resp, err := c.postJSON(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekLoginURL, dsprotocol.BaseHeaders, payload)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-		code := intFrom(resp["code"])
-		if code != 0 {
-			msg := fmt.Sprintf("%v", resp["msg"])
-			if isAccountBanned(msg) {
-				return "", fmt.Errorf("%w: %s", ErrAccountBanned, msg)
-			}
-			return "", fmt.Errorf("login failed: %s", msg)
-		}
-		data, _ := resp["data"].(map[string]any)
-		bizCode := intFrom(data["biz_code"])
-		if bizCode != 0 {
-			bizMsg := fmt.Sprintf("%v", data["biz_msg"])
-			if isAccountBanned(bizMsg) {
-				return "", fmt.Errorf("%w: %s", ErrAccountBanned, bizMsg)
-			}
-			return "", fmt.Errorf("login failed: %s", bizMsg)
-		}
-		bizData, _ := data["biz_data"].(map[string]any)
-		user, _ := bizData["user"].(map[string]any)
-		token, _ := user["token"].(string)
-		if strings.TrimSpace(token) != "" {
-			return token, nil
-		}
-
-		// code=0, biz_code=0, but no token — likely rate-limited
-		lastErr = errors.New("missing login token")
-		config.Logger.Warn("[login] missing token despite success response",
-			"account", acc.Identifier(),
-			"attempt", attempt+1,
-			"resp_data", fmt.Sprintf("%+v", data))
+	resp, err := c.postJSON(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekLoginURL, dsprotocol.BaseHeaders, payload)
+	if err != nil {
+		return "", err
 	}
-	return "", lastErr
+	code := intFrom(resp["code"])
+	if code != 0 {
+		msg := fmt.Sprintf("%v", resp["msg"])
+		if isAccountBanned(msg) {
+			return "", fmt.Errorf("%w: %s", ErrAccountBanned, msg)
+		}
+		return "", fmt.Errorf("login failed: %s", msg)
+	}
+	data, _ := resp["data"].(map[string]any)
+	bizCode := intFrom(data["biz_code"])
+	if bizCode != 0 {
+		return "", fmt.Errorf("login failed: %v", data["biz_msg"])
+	}
+	bizData, _ := data["biz_data"].(map[string]any)
+	user, _ := bizData["user"].(map[string]any)
+	token, _ := user["token"].(string)
+	if strings.TrimSpace(token) == "" {
+		return "", errors.New("missing login token")
+	}
+	return token, nil
 }
 
 func (c *Client) CreateSession(ctx context.Context, a *auth.RequestAuth, maxAttempts int) (string, error) {
