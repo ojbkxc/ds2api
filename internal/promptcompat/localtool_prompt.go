@@ -92,7 +92,11 @@ func BuildLocalToolDescriptors() []map[string]any {
 // BuildLocalToolPromptParts generates the tool descriptions and instructions
 // for all local tools (web_search, web_fetch, MCP tools),
 // in the same format as buildToolPromptParts in tool_prompt.go.
-func BuildLocalToolPromptParts() (descriptions string, toolNames []string) {
+//
+// When skipWebSearch is true, the web_search tool is excluded. This is used
+// for models that have native search (e.g. deepseek-v4-flash-search with
+// search=true) to avoid conflicting with the model's built-in search.
+func BuildLocalToolPromptParts(skipWebSearch bool) (descriptions string, toolNames []string) {
 	descs := localtool.DefaultRegistry.List()
 	if len(descs) == 0 {
 		return "", nil
@@ -102,7 +106,11 @@ func BuildLocalToolPromptParts() (descriptions string, toolNames []string) {
 	for _, desc := range descs {
 		// Include all tools: web_search, web_fetch, and MCP tools
 		// Skip internal memory tools (they are not exposed to the LLM)
+		// Skip web_search when the model has native search to avoid confusion
 		if strings.HasPrefix(desc.Name, "memory") {
+			continue
+		}
+		if skipWebSearch && desc.Name == "web_search" {
 			continue
 		}
 		name := desc.Name
@@ -134,8 +142,12 @@ func BuildLocalToolPromptParts() (descriptions string, toolNames []string) {
 // BuildLocalToolPrompt returns the complete prompt text for local web tools,
 // including tool descriptions, DSML format instructions, web search guidance,
 // and web fetch guidance.
-func BuildLocalToolPrompt() (promptText string, toolNames []string) {
-	descriptions, toolNames := BuildLocalToolPromptParts()
+//
+// When skipWebSearch is true, the web_search tool is excluded from descriptions
+// and the web search guidance is omitted. The web_fetch tool is always included
+// because native search does not handle direct URL fetching.
+func BuildLocalToolPrompt(skipWebSearch bool) (promptText string, toolNames []string) {
+	descriptions, toolNames := BuildLocalToolPromptParts(skipWebSearch)
 	if descriptions == "" {
 		return "", nil
 	}
@@ -152,8 +164,10 @@ func BuildLocalToolPrompt() (promptText string, toolNames []string) {
 	b.WriteString(descriptions)
 	b.WriteString("\n\n")
 	b.WriteString(instructions)
-	b.WriteString("\n\n")
-	b.WriteString(webSearchGuidance)
+	if !skipWebSearch {
+		b.WriteString("\n\n")
+		b.WriteString(webSearchGuidance)
+	}
 	b.WriteString("\n\n")
 	b.WriteString(webFetchGuidance)
 	return b.String(), toolNames
@@ -162,12 +176,20 @@ func BuildLocalToolPrompt() (promptText string, toolNames []string) {
 // InjectLocalToolsIntoPrompt checks if the model supports local web tools and,
 // if so, injects the local tool schemas and web search guidance into the
 // system prompt. It merges local tools with any client-provided tools.
+//
+// For models with native search (search=true, e.g. deepseek-v4-flash-search),
+// the local web_search tool is skipped to avoid conflicting with the model's
+// built-in search. The web_fetch tool is always injected since native search
+// does not handle direct URL fetching.
 func InjectLocalToolsIntoPrompt(messages []map[string]any, toolsRaw any, resolvedModel string) ([]map[string]any, []string) {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
 		return messages, nil
 	}
 
-	localPrompt, localNames := BuildLocalToolPrompt()
+	// Skip local web_search when the model has native search enabled.
+	// This avoids the model being confused about which tool to use.
+	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
+	localPrompt, localNames := BuildLocalToolPrompt(searchEnabled)
 	if localPrompt == "" || len(localNames) == 0 {
 		return messages, nil
 	}
@@ -186,11 +208,13 @@ func InjectLocalToolsIntoPrompt(messages []map[string]any, toolsRaw any, resolve
 }
 
 // MergeLocalToolNames merges local tool names with client-provided tool names.
+// When the model has native search, web_search is excluded from the merged list.
 func MergeLocalToolNames(clientNames []string, resolvedModel string) []string {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
 		return clientNames
 	}
-	_, localNames := BuildLocalToolPromptParts()
+	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
+	_, localNames := BuildLocalToolPromptParts(searchEnabled)
 	merged := make([]string, 0, len(clientNames)+len(localNames))
 	seen := make(map[string]bool)
 	for _, name := range localNames {
