@@ -153,9 +153,13 @@ func IsNoThinkingModel(model string) bool {
 
 // ModelSupportsLocalWebTools reports whether the resolved DeepSeek model should
 // have local web_search and web_fetch tools injected into the system prompt and
-// route through the tool loop. Models with native search (deepseek-v4-flash-search)
-// are excluded — they use DeepSeek's built-in search and must not go through the
-// project's local tool loop, as that would cause conflicts and empty responses.
+// route through the tool loop.
+//
+// For models with native search (deepseek-v4-flash-search), web_search is
+// excluded at the tool-injection layer (BuildLocalToolPrompt skips it when
+// searchEnabled=true), but web_fetch is always included because native search
+// cannot handle direct URL fetching. Without web_fetch, the model cannot
+// retrieve content from user-provided URLs and will fail with empty output.
 func ModelSupportsLocalWebTools(model string) bool {
 	baseModel, _ := splitNoThinkingModel(model)
 	aliases := DefaultModelAliases()
@@ -164,12 +168,8 @@ func ModelSupportsLocalWebTools(model string) bool {
 	}
 	baseModel, _ = splitNoThinkingModel(baseModel)
 	switch baseModel {
-	case "deepseek-v4-flash", "deepseek-v4-pro", "deepseek-v4-vision":
+	case "deepseek-v4-flash", "deepseek-v4-pro", "deepseek-v4-vision", "deepseek-v4-flash-search":
 		return true
-	case "deepseek-v4-flash-search":
-		// Search models use DeepSeek's native search — local tools
-		// must not be injected and the tool loop must not be entered.
-		return false
 	default:
 		return false
 	}

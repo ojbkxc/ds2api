@@ -5,19 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"math/rand/v2"
 	"net/http"
-	"time"
 
 	"ds2api/internal/config"
 	trans "ds2api/internal/deepseek/transport"
 )
-
-// requestJitter adds a small random delay (50-200ms) before each request to
-// avoid the mechanically precise timing pattern that automation detectors flag.
-func requestJitter() {
-	time.Sleep(time.Duration(50+rand.IntN(150)) * time.Millisecond)
-}
 
 func (c *Client) postJSON(ctx context.Context, doer trans.Doer, fallback trans.Doer, url string, headers map[string]string, payload any) (map[string]any, error) {
 	body, status, err := c.postJSONWithStatus(ctx, doer, fallback, url, headers, payload)
@@ -31,7 +23,6 @@ func (c *Client) postJSON(ctx context.Context, doer trans.Doer, fallback trans.D
 }
 
 func (c *Client) postJSONWithStatus(ctx context.Context, doer trans.Doer, fallback trans.Doer, url string, headers map[string]string, payload any) (map[string]any, int, error) {
-	requestJitter()
 	ctx = ctxWithFingerprintFromContext(ctx)
 	b, err := json.Marshal(payload)
 	if err != nil {
@@ -75,7 +66,6 @@ func (c *Client) postJSONWithStatus(ctx context.Context, doer trans.Doer, fallba
 }
 
 func (c *Client) getJSONWithStatus(ctx context.Context, doer trans.Doer, url string, headers map[string]string) (map[string]any, int, error) {
-	requestJitter()
 	ctx = ctxWithFingerprintFromContext(ctx)
 	clients := c.requestClientsFromContext(ctx)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

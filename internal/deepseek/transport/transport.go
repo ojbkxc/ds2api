@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"net/http"
 	"time"
@@ -29,10 +30,6 @@ var browserFingerprints = []utls.ClientHelloID{
 	utls.HelloIOS_Auto,
 }
 
-// defaultFingerprint is used as fallback when no per-account seed is available.
-// A fixed fingerprint is less suspicious than random switching across requests.
-var defaultFingerprint = browserFingerprints[0] // Chrome
-
 type fingerprintSeedKey struct{}
 
 func WithFingerprintSeed(ctx context.Context, seed uint32) context.Context {
@@ -47,9 +44,7 @@ func selectFingerprint(ctx context.Context) utls.ClientHelloID {
 	if seed, ok := ctx.Value(fingerprintSeedKey{}).(uint32); ok {
 		return browserFingerprints[seed%uint32(len(browserFingerprints))]
 	}
-	// Use a fixed default instead of random to avoid fingerprint switching
-	// which is a detectable anomaly for risk engines.
-	return defaultFingerprint
+	return browserFingerprints[rand.IntN(len(browserFingerprints))]
 }
 
 func New(timeout time.Duration) *Client {

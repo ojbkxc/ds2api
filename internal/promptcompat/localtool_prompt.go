@@ -178,24 +178,18 @@ func BuildLocalToolPrompt(skipWebSearch bool) (promptText string, toolNames []st
 // system prompt. It merges local tools with any client-provided tools.
 //
 // For models with native search (search=true, e.g. deepseek-v4-flash-search),
-// local tools are skipped entirely. The model's native search handles web
-// queries — injecting local tools alongside it causes the model to be confused
-// and output thinking without calling any tool.
+// the local web_search tool is skipped to avoid conflicting with the model's
+// built-in search. The web_fetch tool is always injected since native search
+// does not handle direct URL fetching.
 func InjectLocalToolsIntoPrompt(messages []map[string]any, toolsRaw any, resolvedModel string) ([]map[string]any, []string) {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
 		return messages, nil
 	}
 
-	// Skip all local tools when the model has native search enabled.
-	// The model's built-in search handles web queries; local tools
-	// would conflict and cause the model to output thinking without
-	// calling any tool (resulting in "rate limit" errors).
+	// Skip local web_search when the model has native search enabled.
+	// This avoids the model being confused about which tool to use.
 	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
-	if searchEnabled {
-		return messages, nil
-	}
-
-	localPrompt, localNames := BuildLocalToolPrompt(false)
+	localPrompt, localNames := BuildLocalToolPrompt(searchEnabled)
 	if localPrompt == "" || len(localNames) == 0 {
 		return messages, nil
 	}
@@ -214,16 +208,13 @@ func InjectLocalToolsIntoPrompt(messages []map[string]any, toolsRaw any, resolve
 }
 
 // MergeLocalToolNames merges local tool names with client-provided tool names.
-// When the model has native search, local tools are skipped entirely.
+// When the model has native search, web_search is excluded from the merged list.
 func MergeLocalToolNames(clientNames []string, resolvedModel string) []string {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
 		return clientNames
 	}
 	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
-	if searchEnabled {
-		return clientNames
-	}
-	_, localNames := BuildLocalToolPromptParts(false)
+	_, localNames := BuildLocalToolPromptParts(searchEnabled)
 	merged := make([]string, 0, len(clientNames)+len(localNames))
 	seen := make(map[string]bool)
 	for _, name := range localNames {
@@ -242,14 +233,9 @@ func MergeLocalToolNames(clientNames []string, resolvedModel string) []string {
 }
 
 // MergeLocalToolsWithClientTools merges local web tool definitions with
-// client-provided tools. When the model has native search, local tools are
-// skipped entirely.
+// client-provided tools. Local tools are prepended so they take priority.
 func MergeLocalToolsWithClientTools(clientTools []any, resolvedModel string) []any {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
-		return clientTools
-	}
-	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
-	if searchEnabled {
 		return clientTools
 	}
 	localToolDefs := BuildLocalToolDescriptors()
