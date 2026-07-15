@@ -81,6 +81,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
     const addKey = async () => {
         const isEditing = Boolean(editingKey?.key)
         if (!isEditing && !newKey.key.trim()) {
+            onMessage('error', t('accountManager.keyRequired'))
             return
         }
         setLoading(true)
@@ -93,6 +94,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
                 ? { name: newKey.name, remark: newKey.remark }
                 : { key: newKey.key.trim(), name: newKey.name, remark: newKey.remark }
             if (!isEditing && !payload.key) {
+                onMessage('error', t('accountManager.keyRequired'))
                 return
             }
             const res = await apiFetch(endpoint, {
@@ -275,7 +277,7 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
         }
 
         onMessage('success', t('accountManager.testAllCompleted', { success: successCount, total: allAccounts.length }))
-        fetchAccounts()
+        await fetchAccounts()
         onRefresh()
         setTestingAll(false)
     }

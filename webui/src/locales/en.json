@@ -133,6 +133,7 @@
         "copyFailed": "Copy failed",
         "copyKeyTitle": "Copy key",
         "copyAccountTitle": "Copy account identifier",
+        "keyRequired": "Key content is required",
         "deleteKeyTitle": "Delete key",
         "noApiKeys": "No API keys found.",
         "accountsTitle": "DeepSeek Accounts",

@@ -65,7 +65,7 @@ const LandingPage = ({ onEnter }) => {
                         className="px-8 py-3 font-bold transition-all flex items-center gap-2"
                         style={{
                             background: 'var(--ds-blue)',
-                            color: 'var(--ds-text-on-primary)',
+                            color: 'var(--ds-text)',
                             borderRadius: 'var(--radius-ctrl)',
                             border: '1px solid var(--ds-blue)',
                             boxShadow: 'var(--ds-elevate-1)',
@@ -89,7 +89,7 @@ const LandingPage = ({ onEnter }) => {
                             background: 'transparent',
                             border: '1px solid var(--ds-border)',
                             borderRadius: 'var(--radius-ctrl)',
-                            color: 'var(--ds-text-secondary)',
+                            color: 'var(--ds-text)',
                         }}
                         onMouseEnter={e => {
                             e.currentTarget.style.borderColor = 'var(--ds-blue)'
@@ -97,7 +97,7 @@ const LandingPage = ({ onEnter }) => {
                         }}
                         onMouseLeave={e => {
                             e.currentTarget.style.borderColor = 'var(--ds-border)'
-                            e.currentTarget.style.color = 'var(--ds-text-secondary)'
+                            e.currentTarget.style.color = 'var(--ds-text)'
                         }}
                     >
                         <span>{t('landing.apiStatus')}</span>
@@ -110,7 +110,7 @@ const LandingPage = ({ onEnter }) => {
                             background: 'transparent',
                             border: '1px solid var(--ds-border)',
                             borderRadius: 'var(--radius-ctrl)',
-                            color: 'var(--ds-text-secondary)',
+                            color: 'var(--ds-text)',
                         }}
                         onMouseEnter={e => {
                             e.currentTarget.style.borderColor = 'var(--ds-blue)'
@@ -118,7 +118,7 @@ const LandingPage = ({ onEnter }) => {
                         }}
                         onMouseLeave={e => {
                             e.currentTarget.style.borderColor = 'var(--ds-border)'
-                            e.currentTarget.style.color = 'var(--ds-text-secondary)'
+                            e.currentTarget.style.color = 'var(--ds-text)'
                         }}
                     >
                         <span>GitHub</span>

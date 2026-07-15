@@ -2,7 +2,7 @@
   "client": {
     "name": "DeepSeek",
     "platform": "android",
-    "version": "2.0.4",
+    "version": "2.2.0",
     "android_api_level": "35",
     "locale": "zh_CN"
   },
@@ -10,7 +10,10 @@
     "Host": "chat.deepseek.com",
     "Accept": "application/json",
     "Content-Type": "application/json",
-    "accept-charset": "UTF-8"
+    "accept-charset": "UTF-8",
+    "accept-language": "zh-CN,zh;q=0.9",
+    "x-client-bundle-id": "com.deepseek.chat",
+    "x-client-timezone-offset": "28800"
   },
   "skip_contains_patterns": [
     "quasi_status",

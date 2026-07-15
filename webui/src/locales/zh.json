@@ -133,6 +133,7 @@
         "copyFailed": "复制失败",
         "copyKeyTitle": "复制密钥",
         "copyAccountTitle": "复制账号标识",
+        "keyRequired": "密钥内容不能为空",
         "deleteKeyTitle": "删除密钥",
         "noApiKeys": "未找到 API 密钥",
         "accountsTitle": "DeepSeek 账号",

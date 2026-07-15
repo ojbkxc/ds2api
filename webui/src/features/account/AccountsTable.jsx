@@ -169,7 +169,10 @@ export default function AccountsTable({
                                         <tr
                                             key={identifier || i}
                                             className="transition-colors"
-                                            style={{ borderBottom: '1px solid var(--ds-border)' }}
+                                            style={{
+                                                borderBottom: '1px solid var(--ds-border)',
+                                                opacity: account.disabled ? 0.45 : 1,
+                                            }}
                                             onMouseEnter={e => { e.currentTarget.style.background = 'var(--ds-surface)' }}
                                             onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                                         >
