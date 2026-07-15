@@ -96,12 +96,12 @@ func TestMessagesPrepareWithThinkingPreservesPromptShape(t *testing.T) {
 	messages := []map[string]any{{"role": "user", "content": "Question"}}
 	gotThinking := MessagesPrepareWithThinking(messages, true)
 	gotPlain := MessagesPrepareWithThinking(messages, false)
-	// 两者都应该包含User: Question，但guard可能不同（因为随机选择）
-	if !strings.Contains(gotThinking, "User: Question") {
-		t.Fatalf("expected user question in conventional format, got %q", gotThinking)
+	// Both should contain the DeepSeek native markup format
+	if !strings.Contains(gotThinking, "<|User|>Question") {
+		t.Fatalf("expected user question in deepseek format, got %q", gotThinking)
 	}
-	if !strings.Contains(gotPlain, "User: Question") {
-		t.Fatalf("expected user question in conventional format, got %q", gotPlain)
+	if !strings.Contains(gotPlain, "<|User|>Question") {
+		t.Fatalf("expected user question in deepseek format, got %q", gotPlain)
 	}
 	// 检查是否包含guard（因为skipGuard=false）
 	guardPrefixes := []string{

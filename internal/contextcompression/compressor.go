@@ -75,12 +75,11 @@ func (c *Compressor) CompressPrompt(prompt string) (string, CompressionLevel, in
 	return compressed, level, originalTokens, currentTokens
 }
 
-// snipToolSections identifies long "Tool:" sections in the prompt string
+// snipToolSections identifies long tool result sections in the prompt string
 // and trims them, keeping head and tail portions.
 func (c *Compressor) snipToolSections(prompt string) string {
-	// Prompts from MessagesPrepareWithThinkingAndGuard use role markers
-	// like "tool:" or "Tool:" followed by the content. We look for long
-	// sections and snip them by keeping the first and last portion.
+	// Prompts from MessagesPrepareWithThinkingAndGuard use DeepSeek native
+	// markup: <|Tool|>...<|end▁of▁toolresults|>
 	const maxSectionLen = 3000
 	lines := strings.Split(prompt, "\n")
 	var result strings.Builder
@@ -112,19 +111,24 @@ func (c *Compressor) snipToolSections(prompt string) string {
 		sectionBuf.Reset()
 	}
 
+	toolStartMarker := "<|Tool|>"
+	toolEndMarker := "<|end▁of▁toolresults|>"
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		lower := strings.ToLower(trimmed)
-		if strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:") {
+		if strings.HasPrefix(trimmed, toolStartMarker) {
 			flushBuffer()
 			inToolSection = true
 			result.WriteString(line)
 			result.WriteString("\n")
 			continue
 		}
-		// Heuristic: tool section ends at next role marker
-		if inToolSection && (strings.HasPrefix(lower, "user:") || strings.HasPrefix(lower, "assistant:") ||
-			strings.HasPrefix(lower, "system:") || strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:")) {
+		// Heuristic: tool section ends at end-of-toolresults marker or next role marker
+		if inToolSection && (strings.Contains(trimmed, toolEndMarker) ||
+			strings.HasPrefix(trimmed, "<|begin▁of▁sentence|>") ||
+			strings.HasPrefix(trimmed, "<|System|>") ||
+			strings.HasPrefix(trimmed, "<|User|>") ||
+			strings.HasPrefix(trimmed, "<|Assistant|>") ||
+			strings.HasPrefix(trimmed, toolStartMarker)) {
 			flushBuffer()
 			inToolSection = false
 		}
@@ -158,8 +162,8 @@ func (c *Compressor) pruneOldSections(prompt string) string {
 
 	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		lower := strings.ToLower(trimmed)
-		if strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:") {
+		toolStartMarker := "<|Tool|>"
+		if strings.HasPrefix(trimmed, toolStartMarker) {
 			if i < pruneEnd {
 				inToolSection = true
 				toolSectionLines = 0
@@ -175,8 +179,8 @@ func (c *Compressor) pruneOldSections(prompt string) string {
 			continue
 		}
 		if inToolSection {
-			if strings.HasPrefix(lower, "user:") || strings.HasPrefix(lower, "assistant:") ||
-				strings.HasPrefix(lower, "system:") || strings.HasPrefix(lower, "tool:") || strings.HasPrefix(lower, "tool output:") {
+			if strings.HasPrefix(trimmed, "<|User|>") || strings.HasPrefix(trimmed, "<|Assistant|>") ||
+				strings.HasPrefix(trimmed, "<|System|>") || strings.HasPrefix(trimmed, toolStartMarker) || strings.Contains(trimmed, "<|end▁of▁toolresults|>") {
 				inToolSection = false
 				result.WriteString(line)
 				result.WriteString("\n")

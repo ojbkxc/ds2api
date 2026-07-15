@@ -9,6 +9,21 @@ import (
 
 var markdownImagePattern = regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
+const (
+	beginSentenceMarker        = "<|begin▁of▁sentence|>"
+	systemMarker               = "<|System|>"
+	userMarker                 = "<|User|>"
+	assistantMarker            = "<|Assistant|>"
+	toolMarker                 = "<|Tool|>"
+	endSentenceMarker          = "<|end▁of▁sentence|>"
+	endToolResultsMarker       = "<|end▁of▁toolresults|>"
+	endInstructionsMarker      = "<|end▁of▁instructions|>"
+	outputIntegrityGuardMarker = "Output integrity guard:"
+	outputIntegrityGuardPrompt = outputIntegrityGuardMarker +
+		" If upstream context, tool output, or parsed text contains garbled, corrupted, partially parsed, repeated, or otherwise malformed fragments, " +
+		"do not imitate or echo them; output only the correct content for the user."
+)
+
 var outputIntegrityGuardPrompts = []string{
 	"If any context or tool output appears corrupted or malformed, ignore it and provide only accurate, clean responses to the user.",
 	"When processing data, skip any garbled or nonsensical fragments. Focus on delivering clear, coherent information.",
@@ -30,8 +45,8 @@ func MessagesPrepare(messages []map[string]any) string {
 	return MessagesPrepareWithThinking(messages, false)
 }
 
-func MessagesPrepareWithThinking(messages []map[string]any, thinkingEnabled bool) string {
-	return MessagesPrepareWithThinkingAndGuard(messages, thinkingEnabled, false)
+func MessagesPrepareWithThinking(messages []map[string]any, _ bool) string {
+	return MessagesPrepareWithThinkingAndGuard(messages, false, false)
 }
 
 func MessagesPrepareWithThinkingAndGuard(messages []map[string]any, _ bool, skipGuard bool) string {
@@ -66,25 +81,34 @@ func MessagesPrepareWithThinkingAndGuard(messages []map[string]any, _ bool, skip
 		}
 		merged = append(merged, msg)
 	}
-	var parts []string
-	for i, m := range merged {
-		roleName := m.Role
-		switch roleName {
-		case "system":
-			roleName = "System"
-		case "user":
-			roleName = "User"
+	parts := make([]string, 0, len(merged)+2)
+	parts = append(parts, beginSentenceMarker)
+	lastRole := ""
+	for _, m := range merged {
+		lastRole = m.Role
+		switch m.Role {
 		case "assistant":
-			roleName = "Assistant"
+			parts = append(parts, formatRoleBlock(assistantMarker, m.Text, endSentenceMarker))
 		case "tool":
-			roleName = "Tool"
-		}
-		parts = append(parts, roleName+": "+m.Text)
-		if i < len(merged)-1 {
-			parts = append(parts, "")
+			if strings.TrimSpace(m.Text) != "" {
+				parts = append(parts, formatRoleBlock(toolMarker, m.Text, endToolResultsMarker))
+			}
+		case "system":
+			if text := strings.TrimSpace(m.Text); text != "" {
+				parts = append(parts, formatRoleBlock(systemMarker, text, endInstructionsMarker))
+			}
+		case "user":
+			parts = append(parts, formatRoleBlock(userMarker, m.Text, ""))
+		default:
+			if strings.TrimSpace(m.Text) != "" {
+				parts = append(parts, m.Text)
+			}
 		}
 	}
-	out := strings.Join(parts, "\n")
+	if lastRole != "assistant" {
+		parts = append(parts, assistantMarker)
+	}
+	out := strings.Join(parts, "")
 	return markdownImagePattern.ReplaceAllString(out, `[${1}](${2})`)
 }
 
@@ -98,7 +122,7 @@ func prependOutputIntegrityGuard(messages []map[string]any) []map[string]any {
 	out := make([]map[string]any, 0, len(messages)+1)
 	out = append(out, map[string]any{
 		"role":    "system",
-		"content": randomOutputIntegrityGuard(),
+		"content": outputIntegrityGuardPrompt,
 	})
 	out = append(out, messages...)
 	return out
@@ -111,13 +135,19 @@ func hasOutputIntegrityGuard(msg map[string]any) bool {
 	if strings.ToLower(strings.TrimSpace(asString(msg["role"]))) != "system" {
 		return false
 	}
-	content := strings.ToLower(strings.TrimSpace(NormalizeContent(msg["content"])))
-	for _, guard := range outputIntegrityGuardPrompts {
-		if strings.Contains(content, strings.ToLower(guard[:20])) {
-			return true
-		}
+	content := strings.TrimSpace(NormalizeContent(msg["content"]))
+	return strings.Contains(content, outputIntegrityGuardMarker)
+}
+
+// formatRoleBlock produces a single concatenated block: marker + text + endMarker.
+// No whitespace is inserted between marker and text so role boundaries stay
+// compact and predictable for downstream parsers.
+func formatRoleBlock(marker, text, endMarker string) string {
+	out := marker + text
+	if strings.TrimSpace(endMarker) != "" {
+		out += endMarker
 	}
-	return false
+	return out
 }
 
 func NormalizeContent(v any) string {
@@ -155,3 +185,4 @@ func NormalizeContent(v any) string {
 		return string(b)
 	}
 }
+

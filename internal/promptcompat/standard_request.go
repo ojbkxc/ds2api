@@ -88,8 +88,6 @@ func (r StandardRequest) CompletionPayloadWithParent(sessionID string, parentMes
 		"ref_file_ids":      refFileIDs,
 		"thinking_enabled":  r.Thinking,
 		"search_enabled":    r.Search,
-		"action":            nil,
-		"preempt":           false,
 	}
 	if parentMessageID > 0 {
 		payload["parent_message_id"] = parentMessageID
