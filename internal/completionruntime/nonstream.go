@@ -102,6 +102,14 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 		}
 	}
 
+	// When reusing a session (parentMessageID > 0), strip old history from the
+	// prompt for models that don't support file uploads (e.g. deepseek-v4-pro).
+	// DeepSeek already has the full conversation from session context — keeping
+	// the full history in the prompt would send duplicate context every request.
+	if parentMessageID > 0 {
+		stdReq.StripHistoryForSessionReuse()
+	}
+
 	pow, err := ds.GetPow(ctx, a, maxAttempts)
 	if err != nil {
 		return StartResult{SessionID: sessionID, Request: stdReq}, &assistantturn.OutputError{Status: http.StatusUnauthorized, Message: "Failed to get PoW (invalid token or unknown error).", Code: "error"}

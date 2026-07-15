@@ -1,6 +1,9 @@
 package promptcompat
 
-import "ds2api/internal/config"
+import (
+	"ds2api/internal/config"
+	"strings"
+)
 
 type StandardRequest struct {
 	Surface                 string
@@ -62,6 +65,57 @@ func (p ToolChoicePolicy) Allows(name string) bool {
 
 func (r StandardRequest) CompletionPayload(sessionID string) map[string]any {
 	return r.CompletionPayloadWithParent(sessionID, 0)
+}
+
+// StripHistoryForSessionReuse strips old messages from the prompt when the
+// session is reused (parentMessageID > 0) and the model does not support file
+// uploads (e.g. deepseek-v4-pro). In this case DeepSeek already has the full
+// conversation history from session context — keeping the full history in the
+// prompt would send duplicate context and bloat every request.
+//
+// Only the system message (if any) and the latest user message are kept;
+// everything else is dropped, and the FinalPrompt is rebuilt.
+func (r *StandardRequest) StripHistoryForSessionReuse() {
+	if len(r.Messages) <= 1 {
+		return
+	}
+
+	model := r.ResolvedModel
+	if model == "" {
+		model = r.RequestedModel
+	}
+	if config.ModelSupportsFileUpload(model) {
+		return // flash/vision models use current_input_file instead
+	}
+
+	// Keep only the first system message and the latest user message.
+	kept := make([]any, 0, 2)
+	for _, m := range r.Messages {
+		msg, ok := m.(map[string]any)
+		if !ok {
+			continue
+		}
+		role := strings.ToLower(strings.TrimSpace(asString(msg["role"])))
+		if role == "system" && len(kept) == 0 {
+			kept = append(kept, m)
+			break
+		}
+	}
+	// Find the latest user message.
+	for i := len(r.Messages) - 1; i >= 0; i-- {
+		msg, ok := r.Messages[i].(map[string]any)
+		if !ok {
+			continue
+		}
+		role := strings.ToLower(strings.TrimSpace(asString(msg["role"])))
+		if role == "user" {
+			kept = append(kept, r.Messages[i])
+			break
+		}
+	}
+
+	r.Messages = kept
+	r.FinalPrompt, r.ToolNames = BuildOpenAIPromptWithModel(kept, r.ToolsRaw, "", r.ToolChoice, r.Thinking, model)
 }
 
 func (r StandardRequest) CompletionPayloadWithParent(sessionID string, parentMessageID int) map[string]any {
