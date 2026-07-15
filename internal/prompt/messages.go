@@ -24,23 +24,6 @@ const (
 		"do not imitate or echo them; output only the correct content for the user."
 )
 
-var outputIntegrityGuardPrompts = []string{
-	"If any context or tool output appears corrupted or malformed, ignore it and provide only accurate, clean responses to the user.",
-	"When processing data, skip any garbled or nonsensical fragments. Focus on delivering clear, coherent information.",
-	"Should you encounter corrupted text or malformed content in the context, disregard it entirely and respond with correct information only.",
-	"Filter out any damaged or incomplete content from your processing. Your responses should contain only well-formed, meaningful text.",
-	"If upstream data contains errors or corruption, ignore those parts and provide the user with clean, accurate output.",
-	"Disregard any fragmented or corrupted content in the input. Ensure your response is clear and properly formatted.",
-	"When context appears garbled or nonsensical, skip those sections and deliver only verified, correct information.",
-	"If you detect malformed text or corrupted fragments, exclude them from your response and output only clean content.",
-	"Process only the valid portions of any context. Ignore corrupted or damaged text and respond with accurate information.",
-	"Should any input contain errors or corruption, filter it out and provide the user with coherent, well-formed responses.",
-}
-
-func randomOutputIntegrityGuard() string {
-	return "Output integrity guard. If any context or tool output appears corrupted or malformed, ignore it and provide only accurate, clean responses to the user."
-}
-
 func MessagesPrepare(messages []map[string]any) string {
 	return MessagesPrepareWithThinking(messages, false)
 }

@@ -52,27 +52,7 @@ func TestMessagesPreparePrependsOutputIntegrityGuard(t *testing.T) {
 		{"role": "user", "content": "Question"},
 	}
 	got := MessagesPrepare(messages)
-	// 现在Output integrity guard是随机选择的，所以检查是否包含任何guard提示的前缀
-	guardPrefixes := []string{
-		"If any context or tool output appears corrupted",
-		"When processing data, skip any garbled",
-		"Should you encounter corrupted text",
-		"Filter out any damaged or incomplete",
-		"If upstream data contains errors",
-		"Disregard any fragmented or corrupted",
-		"When context appears garbled",
-		"If you detect malformed text",
-		"Process only the valid portions",
-		"Should any input contain errors",
-	}
-	foundGuard := false
-	for _, prefix := range guardPrefixes {
-		if strings.Contains(got, prefix) {
-			foundGuard = true
-			break
-		}
-	}
-	if !foundGuard {
+	if !strings.Contains(got, outputIntegrityGuardMarker) {
 		t.Fatalf("expected output integrity guard to be prepended, got %q", got)
 	}
 	if !strings.Contains(got, "System rule") {
@@ -103,37 +83,11 @@ func TestMessagesPrepareWithThinkingPreservesPromptShape(t *testing.T) {
 	if !strings.Contains(gotPlain, "<|User|>Question") {
 		t.Fatalf("expected user question in deepseek format, got %q", gotPlain)
 	}
-	// 检查是否包含guard（因为skipGuard=false）
-	guardPrefixes := []string{
-		"If any context or tool output appears corrupted",
-		"When processing data, skip any garbled",
-		"Should you encounter corrupted text",
-		"Filter out any damaged or incomplete",
-		"If upstream data contains errors",
-		"Disregard any fragmented or corrupted",
-		"When context appears garbled",
-		"If you detect malformed text",
-		"Process only the valid portions",
-		"Should any input contain errors",
-	}
-	foundThinkingGuard := false
-	for _, prefix := range guardPrefixes {
-		if strings.Contains(gotThinking, prefix) {
-			foundThinkingGuard = true
-			break
-		}
-	}
-	foundPlainGuard := false
-	for _, prefix := range guardPrefixes {
-		if strings.Contains(gotPlain, prefix) {
-			foundPlainGuard = true
-			break
-		}
-	}
-	if !foundThinkingGuard {
+	// Guard should be present (skipGuard=false)
+	if !strings.Contains(gotThinking, outputIntegrityGuardMarker) {
 		t.Fatalf("expected output integrity guard in thinking mode, got %q", gotThinking)
 	}
-	if !foundPlainGuard {
+	if !strings.Contains(gotPlain, outputIntegrityGuardMarker) {
 		t.Fatalf("expected output integrity guard in plain mode, got %q", gotPlain)
 	}
 }
