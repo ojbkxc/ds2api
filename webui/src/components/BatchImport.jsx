@@ -3,6 +3,7 @@ import { FileCode, Download, Upload, Copy, Check, AlertTriangle } from 'lucide-r
 
 import { useI18n } from '../i18n'
 import { getBatchImportTemplates } from '../utils/batchImportTemplates'
+import { copyToClipboard } from '../utils/copyToClipboard'
 import Button from '../components/ui/Button'
 
 export default function BatchImport({ onRefresh, onMessage, authFetch }) {
@@ -78,10 +79,10 @@ export default function BatchImport({ onRefresh, onMessage, authFetch }) {
             const res = await apiFetch('/admin/export')
             if (res.ok) {
                 const data = await res.json()
-                await navigator.clipboard.writeText(data.base64)
+                await copyToClipboard(data.base64)
                 setCopied(true)
                 setTimeout(() => setCopied(false), 2000)
-                onMessage('success', t('batchImport.copySuccess'))
+                onMessage('success', t('messages.copied'))
             }
         } catch (e) {
             onMessage('error', t('messages.copyFailed'))

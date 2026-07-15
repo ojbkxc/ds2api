@@ -1,4 +1,4 @@
-import React from 'react'
+import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
@@ -8,11 +8,11 @@ import './styles.css'
 const basename = import.meta.env.MODE === 'production' ? '/admin' : '/'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-    <React.StrictMode>
+    <StrictMode>
         <I18nProvider>
             <BrowserRouter basename={basename}>
                 <App />
             </BrowserRouter>
         </I18nProvider>
-    </React.StrictMode>,
+    </StrictMode>,
 )

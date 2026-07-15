@@ -42,8 +42,10 @@ func (h *Handler) getSettings(w http.ResponseWriter, _ *http.Request) {
 			"prompt":         h.Store.ThinkingInjectionPrompt(),
 			"default_prompt": promptcompat.DefaultThinkingInjectionPrompt,
 		},
-		"model_aliases":     snap.ModelAliases,
-		"env_backed":        h.Store.IsEnvBacked(),
-		"needs_vercel_sync": needsSync,
+		"model_aliases":      snap.ModelAliases,
+		"context_compression": snap.ContextCompression,
+		"mcp_servers":         snap.MCPServers,
+		"env_backed":          h.Store.IsEnvBacked(),
+		"needs_vercel_sync":   needsSync,
 	})
 }

@@ -77,7 +77,10 @@ func (h *Handler) listAccounts(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) addAccount(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	acc := toAccount(req)
 	if acc.Identifier() == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "需要 email 或 mobile"})

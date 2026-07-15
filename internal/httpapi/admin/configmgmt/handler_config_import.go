@@ -128,6 +128,12 @@ func (h *Handler) configImport(w http.ResponseWriter, r *http.Request) {
 			if strings.TrimSpace(incoming.CurrentInputFile.FilenameTemplate) != "" {
 				next.CurrentInputFile.FilenameTemplate = incoming.CurrentInputFile.FilenameTemplate
 			}
+			if incoming.ContextCompression.Enabled || incoming.ContextCompression.ContextWindow > 0 {
+				next.ContextCompression = incoming.ContextCompression
+			}
+			if len(incoming.MCPServers) > 0 {
+				next.MCPServers = incoming.MCPServers
+			}
 		}
 
 		normalizeSettingsConfig(&next)

@@ -1,9 +1,19 @@
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 
 import { maskSecret } from '../../utils/maskSecret'
 
 export default function AddKeyModal({ show, t, editingKey, newKey, setNewKey, loading, onClose, onAdd }) {
+    useEffect(() => {
+        if (!show) return
+        const onKey = (e) => {
+            if (e.key === 'Escape') onClose()
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [show, onClose])
+
     if (!show) {
         return null
     }

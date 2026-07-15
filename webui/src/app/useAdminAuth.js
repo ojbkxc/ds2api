@@ -55,7 +55,7 @@ export function useAdminAuth({ isProduction, location, t }) {
         }
 
         checkAuth()
-    }, [handleLogout, isAdminRoute, t])
+    }, [handleLogout, isAdminRoute])
 
     return {
         token,

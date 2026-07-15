@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, Trash2, ChevronDown, ChevronUp, Loader2, Copy, Check, Maximize2, Minimize2, Square } from 'lucide-react'
 import clsx from 'clsx'
+import { copyToClipboard } from '../../utils/copyToClipboard'
 
 function StatusLabel({ message }) {
     return (
@@ -45,7 +46,7 @@ export default function ChatPanel({
         const text = displayContent || displayThinking
         if (!text) return
         try {
-            await navigator.clipboard.writeText(text)
+            await copyToClipboard(text)
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
         } catch { /* ignore */ }

@@ -298,12 +298,10 @@ export function useAccountActions({ apiFetch, t, onMessage, onRefresh, config, f
             
             if (data.success) {
                 onMessage('success', t('accountManager.deleteAllSessionsSuccess'))
-                // 清除会话数显示
-                setSessionCounts(prev => {
-                    const newCounts = { ...prev }
-                    delete newCounts[accountID]
-                    return newCounts
-                })
+                // 会话数归零并保持显示，同步账号状态
+                setSessionCounts(prev => ({ ...prev, [accountID]: 0 }))
+                fetchAccounts()
+                onRefresh()
             } else {
                 onMessage('error', data.message || t('messages.requestFailed'))
             }

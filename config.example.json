@@ -63,8 +63,8 @@
   },
   "runtime": {
     "account_max_inflight": 2,
-    "account_max_queue": 0,
-    "global_max_inflight": 0,
+    "account_max_queue": 10,
+    "global_max_inflight": 10,
     "token_refresh_interval_hours": 24,
     "max_account_switches": 3,
     "max_messages_per_session": 50

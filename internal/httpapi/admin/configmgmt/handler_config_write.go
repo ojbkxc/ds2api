@@ -92,10 +92,14 @@ func (h *Handler) updateConfig(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) addKey(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
+
 	key, _ := req["key"].(string)
 	key = strings.TrimSpace(key)
-	name := fieldString(req, "name")
+	name := strings.TrimSpace(fieldString(req, "name"))
 	remark := fieldString(req, "remark")
 	if key == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "Key 不能为空"})

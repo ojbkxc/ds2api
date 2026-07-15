@@ -60,7 +60,10 @@ func (h *Handler) listProxies(w http.ResponseWriter, _ *http.Request) {
 
 func (h *Handler) addProxy(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	proxy := toProxy(req)
 	err := h.Store.Update(func(c *config.Config) error {
 		c.Proxies = append(c.Proxies, proxy)
@@ -79,7 +82,10 @@ func (h *Handler) updateProxy(w http.ResponseWriter, r *http.Request) {
 		proxyID = decoded
 	}
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	proxy := toProxy(req)
 	proxy.ID = strings.TrimSpace(proxyID)
 
@@ -146,7 +152,10 @@ func (h *Handler) deleteProxy(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) testProxy(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	proxyID := fieldString(req, "proxy_id")
 
 	var proxy config.Proxy
@@ -171,7 +180,10 @@ func (h *Handler) updateAccountProxy(w http.ResponseWriter, r *http.Request) {
 		identifier = decoded
 	}
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	proxyID := fieldString(req, "proxy_id")
 
 	err := h.Store.Update(func(c *config.Config) error {

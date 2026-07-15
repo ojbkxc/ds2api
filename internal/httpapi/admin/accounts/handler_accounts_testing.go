@@ -31,7 +31,10 @@ func (m modelAliasSnapshotReader) ModelAliases() map[string]string {
 
 func (h *Handler) testSingleAccount(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	identifier, _ := req["identifier"].(string)
 	if strings.TrimSpace(identifier) == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "需要账号标识（identifier / email / mobile）"})
@@ -53,7 +56,10 @@ func (h *Handler) testSingleAccount(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) testAllAccounts(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	model, _ := req["model"].(string)
 	if model == "" {
 		model = "deepseek-v4-flash"
@@ -234,7 +240,10 @@ func (h *Handler) testAccount(ctx context.Context, acc config.Account, model, me
 
 func (h *Handler) testAPI(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	model, _ := req["model"].(string)
 	message, _ := req["message"].(string)
 	apiKey, _ := req["api_key"].(string)
@@ -280,7 +289,10 @@ func (h *Handler) testAPI(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) deleteAllSessions(w http.ResponseWriter, r *http.Request) {
 	var req map[string]any
-	_ = json.NewDecoder(r.Body).Decode(&req)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "invalid json"})
+		return
+	}
 	identifier, _ := req["identifier"].(string)
 	if strings.TrimSpace(identifier) == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"detail": "需要账号标识（identifier / email / mobile）"})

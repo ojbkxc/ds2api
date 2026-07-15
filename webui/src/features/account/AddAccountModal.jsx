@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 
 export default function AddAccountModal({
@@ -9,6 +10,15 @@ export default function AddAccountModal({
     onClose,
     onAdd,
 }) {
+    useEffect(() => {
+        if (!show) return
+        const onKey = (e) => {
+            if (e.key === 'Escape') onClose()
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [show, onClose])
+
     if (!show) {
         return null
     }

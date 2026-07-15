@@ -105,6 +105,11 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px var(--ds-blue-glow) !important;
 }
 
+/* Logo inverse colour so it remains visible on dark surfaces */
+.ds-logo {
+  filter: invert(1);
+}
+
 /* ---- Component classes (ds-* namespace) ---- */
 .ds-card {
   background: var(--ds-card);

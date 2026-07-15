@@ -154,7 +154,7 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
                         <img
                             src={`${import.meta.env.BASE_URL}favicon.png`}
                             alt="DS2API"
-                            className="w-8 h-8 object-contain"
+                            className="w-8 h-8 object-contain ds-logo"
                             style={{ borderRadius: 'var(--radius-ctrl)' }}
                         />
                         <span>DS2API</span>
@@ -292,7 +292,7 @@ export default function DashboardShell({ token, onLogout, config, fetchConfig, s
                         <img
                             src={`${import.meta.env.BASE_URL}favicon.png`}
                             alt="DS2API"
-                            className="w-6 h-6 object-contain"
+                            className="w-6 h-6 object-contain ds-logo"
                             style={{ borderRadius: 'var(--radius-ctrl)' }}
                         />
                         <span className="font-semibold text-sm" style={{ color: 'var(--ds-text)' }}>DS2API</span>

@@ -3,30 +3,7 @@ import { Check, ChevronDown, Copy, Pencil, Plus, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 
 import { maskSecret } from '../../utils/maskSecret'
-
-function fallbackCopyText(text) {
-    const textArea = document.createElement('textarea')
-    textArea.value = text
-    textArea.setAttribute('readonly', '')
-    textArea.style.position = 'fixed'
-    textArea.style.top = '-9999px'
-    textArea.style.left = '-9999px'
-
-    document.body.appendChild(textArea)
-    textArea.focus()
-    textArea.select()
-
-    let copied = false
-    try {
-        copied = document.execCommand('copy')
-    } finally {
-        document.body.removeChild(textArea)
-    }
-
-    if (!copied) {
-        throw new Error('copy failed')
-    }
-}
+import { copyToClipboard } from '../../utils/copyToClipboard'
 
 export default function ApiKeysPanel({
     t,
@@ -46,24 +23,13 @@ export default function ApiKeysPanel({
 
     const handleCopyKey = async (key) => {
         try {
-            if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(key)
-            } else {
-                fallbackCopyText(key)
-            }
+            await copyToClipboard(key)
             setCopiedKey(key)
             setFailedKey(null)
             setTimeout(() => setCopiedKey(null), 2000)
         } catch {
-            try {
-                fallbackCopyText(key)
-                setCopiedKey(key)
-                setFailedKey(null)
-                setTimeout(() => setCopiedKey(null), 2000)
-            } catch {
-                setFailedKey(key)
-                setTimeout(() => setFailedKey(null), 2500)
-            }
+            setFailedKey(key)
+            setTimeout(() => setFailedKey(null), 2500)
         }
     }
 

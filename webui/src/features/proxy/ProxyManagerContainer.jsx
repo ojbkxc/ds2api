@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Play, Plus, Shield, Trash2, X } from 'lucide-react'
+import { Pencil, Play, Plus, Shield, Trash2 } from 'lucide-react'
 
 import { useI18n } from '../../i18n'
 import Modal from '../../components/ui/Modal'

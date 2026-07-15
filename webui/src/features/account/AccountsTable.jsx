@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Trash2, Edit3, Copy, Plus, Key, Search, ToggleLeft, ToggleRight, Loader2, RefreshCw, Globe, Zap } from 'lucide-react'
+import { Trash2, Edit3, Copy, Check, Plus, Key, Search, ToggleLeft, ToggleRight, Loader2, RefreshCw, Globe, Zap } from 'lucide-react'
 import clsx from 'clsx'
 import { useI18n } from '../../i18n'
 import StatusDot from '../../components/ui/StatusDot'
 import Badge from '../../components/ui/Badge'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import { copyToClipboard } from '../../utils/copyToClipboard'
 
 export default function AccountsTable({
     t,
@@ -51,10 +52,18 @@ export default function AccountsTable({
         }
     }
 
-    const handleCopy = async (text) => {
+    const [copiedAccountId, setCopiedAccountId] = useState(null)
+
+    const handleCopyAccount = async (accountId) => {
         try {
-            await navigator.clipboard.writeText(text)
-        } catch { /* ignore */ }
+            await copyToClipboard(accountId)
+            setCopiedAccountId(accountId)
+            setTimeout(() => {
+                setCopiedAccountId(prev => prev === accountId ? null : prev)
+            }, 2000)
+        } catch {
+            // Best-effort copy; ignore failures in non-secure contexts.
+        }
     }
 
     const safePage = Math.min(page || 1, Math.max(1, totalPages || 1))
@@ -263,12 +272,16 @@ export default function AccountsTable({
                                                         )}
                                                     </button>
                                                     <button
-                                                        onClick={() => handleCopy(account.session_token)}
+                                                        onClick={() => handleCopyAccount(identifier)}
                                                         className="ds-action-btn p-1.5"
-                                                        title={t('accountManager.copyKeyTitle')}
+                                                        title={t('accountManager.copyAccountTitle')}
                                                         style={{ borderRadius: 'var(--radius-ctrl)' }}
                                                     >
-                                                        <Copy className="w-3.5 h-3.5" />
+                                                        {copiedAccountId === identifier ? (
+                                                            <Check className="w-3.5 h-3.5" style={{ color: 'var(--ds-success)' }} />
+                                                        ) : (
+                                                            <Copy className="w-3.5 h-3.5" />
+                                                        )}
                                                     </button>
                                                     <button
                                                         onClick={() => onEditAccount(account)}

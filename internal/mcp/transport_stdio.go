@@ -25,6 +25,7 @@ type stdioTransport struct {
 	cmd    *exec.Cmd
 	stdin  io.WriteCloser
 	stdout *bufio.Reader
+	stderr io.WriteCloser
 
 	callMu sync.Mutex // one in-flight request/response at a time over the shared pipe
 
@@ -62,11 +63,13 @@ func newStdioTransport(name, command string, args []string, env map[string]strin
 	}
 	// stderr is forwarded to logrus at debug level so operators can inspect
 	// subprocess diagnostics without mixing them into stdout.
-	cmd.Stderr = logrus.StandardLogger().WriterLevel(logrus.DebugLevel)
+	stderr := logrus.StandardLogger().WriterLevel(logrus.DebugLevel)
+	cmd.Stderr = stderr
 
 	if err := cmd.Start(); err != nil {
 		_ = stdin.Close()
 		_ = stdout.Close()
+		_ = stderr.Close()
 		return nil, fmt.Errorf("start command: %w", err)
 	}
 
@@ -75,6 +78,7 @@ func newStdioTransport(name, command string, args []string, env map[string]strin
 		cmd:     cmd,
 		stdin:   stdin,
 		stdout:  bufio.NewReader(stdout),
+		stderr:  stderr,
 		pending: make(map[int]chan jsonRPCResult),
 		done:    make(chan struct{}),
 	}
@@ -145,7 +149,10 @@ func (t *stdioTransport) Call(ctx context.Context, method string, params json.Ra
 		Method:  method,
 		Params:  params,
 	}
-	data, _ := json.Marshal(req)
+	data, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request: %w", err)
+	}
 	data = append(data, '\n')
 
 	if _, err := t.stdin.Write(data); err != nil {
@@ -156,7 +163,10 @@ func (t *stdioTransport) Call(ctx context.Context, method string, params json.Ra
 	}
 
 	select {
-	case res := <-ch:
+	case res, ok := <-ch:
+		if !ok {
+			return nil, fmt.Errorf("transport closed")
+		}
 		if res.err != nil {
 			return nil, fmt.Errorf("rpc error %d: %s", res.err.Code, res.err.Message)
 		}
@@ -179,6 +189,7 @@ func (t *stdioTransport) Close() error {
 	t.mu.Unlock()
 
 	_ = t.stdin.Close()
+	_ = t.stderr.Close()
 	// Give process a moment to exit gracefully.
 	done := make(chan struct{})
 	go func() {
