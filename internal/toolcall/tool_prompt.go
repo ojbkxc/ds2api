@@ -84,6 +84,26 @@ Wrong 4 — empty parameters:
 ` + reminder + "\n" + buildCorrectToolExamples(toolNames)
 }
 
+// BuildCompactToolCallInstructions generates a minimal tool-calling instruction
+// block for single-tool scenarios (e.g. search models that only have web_fetch).
+// The full instruction block is ~85 lines and can trigger rate limiting on
+// DeepSeek's API; this compact version keeps only the essentials.
+func BuildCompactToolCallInstructions(toolName, paramName, paramExample string) string {
+	return `TOOL CALL FORMAT:
+
+<|DSML|tool_calls>
+  <|DSML|invoke name="` + toolName + `">
+    <|DSML|parameter name="` + paramName + `"><![CDATA[` + paramExample + `]]></|DSML|parameter>
+  </|DSML|invoke>
+</|DSML|tool_calls>
+
+Rules:
+1) Use <|DSML|tool_calls> wrapper format shown above.
+2) String values must use <![CDATA[...]]>.
+3) Do NOT wrap in markdown fences. Do NOT add text before or after the tool block.
+4) Put the tool call block at the very end of your response.`
+}
+
 type promptToolExample struct {
 	name   string
 	params string

@@ -152,13 +152,19 @@ func BuildLocalToolPrompt(skipWebSearch bool) (promptText string, toolNames []st
 		return "", nil
 	}
 
-	// Generate DSML tool call format instructions for local tools.
-	// CRITICAL: without these instructions, the model sees JSON schema
-	// descriptions and outputs JSON tool calls (e.g. {"tool":"web_fetch",...}),
-	// but the tool sieve only recognizes XML/DSML format
-	// (<|DSML|tool_calls> wrapper). This causes tool calls to be silently
-	// ignored and treated as plain text.
-	instructions := toolcall.BuildToolCallInstructions(toolNames)
+	// When only web_fetch is available (search models), use compact
+	// instructions to avoid triggering DeepSeek's rate limiting. The
+	// full DSML instruction block is ~85 lines with 15 rules, 4 wrong
+	// examples, and 4 correct examples — too much for a single tool.
+	//
+	// When both web_search and web_fetch are available (non-search models),
+	// use the full instructions for correctness with multiple tools.
+	var instructions string
+	if skipWebSearch && len(toolNames) == 1 && toolNames[0] == "web_fetch" {
+		instructions = toolcall.BuildCompactToolCallInstructions("web_fetch", "url", "https://example.com")
+	} else {
+		instructions = toolcall.BuildToolCallInstructions(toolNames)
+	}
 
 	var b strings.Builder
 	b.WriteString(descriptions)
