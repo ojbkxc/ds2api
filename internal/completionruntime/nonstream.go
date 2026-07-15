@@ -108,6 +108,12 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 	// the full history in the prompt would send duplicate context every request.
 	if parentMessageID > 0 {
 		stdReq.StripHistoryForSessionReuse()
+	} else if len(stdReq.Messages) > 3 {
+		// New session (sessionID was empty) with many messages: the previous
+		// session was likely full and DeepSeek has no context. For models that
+		// don't support file uploads, keep only the most recent 20 turns to
+		// avoid blowing up the prompt with the full history.
+		stdReq.TrimHistoryForNewSession(promptcompat.V4ProDefaultMaxTurns)
 	}
 
 	pow, err := ds.GetPow(ctx, a, maxAttempts)

@@ -76,6 +76,28 @@ func (r StandardRequest) CompletionPayload(sessionID string) map[string]any {
 // Only the system message (if any) and the latest user message are kept;
 // everything else is dropped, and the FinalPrompt is rebuilt.
 func (r *StandardRequest) StripHistoryForSessionReuse() {
+	r.trimHistory(1, false)
+}
+
+// TrimHistoryForNewSession keeps the most recent N user/assistant turns when a
+// new session is created because the previous one was full. For models that
+// don't support file uploads (e.g. deepseek-v4-pro), the new session has no
+// context from DeepSeek — so we must keep enough recent turns for continuity,
+// but not so many that the prompt balloons.
+//
+// The first system message is always preserved. Then the most recent maxTurns
+// user messages (and any assistant messages between them) are kept.
+func (r *StandardRequest) TrimHistoryForNewSession(maxTurns int) {
+	r.trimHistory(maxTurns, true)
+}
+
+const v4proDefaultMaxTurns = 20
+
+// trimHistory is the shared implementation. When keepRecentTurns is false
+// (session reuse), only the system message and the latest user message are
+// kept. When true (new session after full), up to maxTurns recent user
+// messages and the assistant messages between them are kept.
+func (r *StandardRequest) trimHistory(maxTurns int, keepRecentTurns bool) {
 	if len(r.Messages) <= 1 {
 		return
 	}
@@ -85,11 +107,11 @@ func (r *StandardRequest) StripHistoryForSessionReuse() {
 		model = r.RequestedModel
 	}
 	if config.ModelSupportsFileUpload(model) {
-		return // flash/vision models use current_input_file instead
+		return
 	}
 
-	// Keep only the first system message and the latest user message.
-	kept := make([]any, 0, 2)
+	// Always keep the first system message.
+	kept := make([]any, 0, maxTurns*2+2)
 	for _, m := range r.Messages {
 		msg, ok := m.(map[string]any)
 		if !ok {
@@ -101,19 +123,62 @@ func (r *StandardRequest) StripHistoryForSessionReuse() {
 			break
 		}
 	}
-	// Find the latest user message.
-	for i := len(r.Messages) - 1; i >= 0; i-- {
-		msg, ok := r.Messages[i].(map[string]any)
-		if !ok {
-			continue
+
+	if !keepRecentTurns {
+		// Session reuse: keep only the latest user message.
+		for i := len(r.Messages) - 1; i >= 0; i-- {
+			msg, ok := r.Messages[i].(map[string]any)
+			if !ok {
+				continue
+			}
+			role := strings.ToLower(strings.TrimSpace(asString(msg["role"])))
+			if role == "user" {
+				kept = append(kept, r.Messages[i])
+				break
+			}
 		}
-		role := strings.ToLower(strings.TrimSpace(asString(msg["role"])))
-		if role == "user" {
+	} else {
+		// New session: keep the most recent maxTurns user messages plus the
+		// assistant messages between them.
+		userCount := 0
+		cutIdx := -1
+		for i := len(r.Messages) - 1; i >= 0; i-- {
+			msg, ok := r.Messages[i].(map[string]any)
+			if !ok {
+				continue
+			}
+			role := strings.ToLower(strings.TrimSpace(asString(msg["role"])))
+			if role == "user" {
+				userCount++
+				if userCount >= maxTurns {
+					cutIdx = i
+					break
+				}
+			}
+		}
+		if cutIdx < 0 {
+			cutIdx = 0
+		}
+		// Keep messages from cutIdx to end, excluding tool messages.
+		for i := cutIdx; i < len(r.Messages); i++ {
+			msg, ok := r.Messages[i].(map[string]any)
+			if !ok {
+				kept = append(kept, r.Messages[i])
+				continue
+			}
+			role := strings.ToLower(strings.TrimSpace(asString(msg["role"])))
+			// Skip tool messages — they are already compressed by context
+			// compression and not useful in a new session without history.
+			if role == "tool" {
+				continue
+			}
 			kept = append(kept, r.Messages[i])
-			break
 		}
 	}
 
+	if len(kept) == 0 {
+		return
+	}
 	r.Messages = kept
 	r.FinalPrompt, r.ToolNames = BuildOpenAIPromptWithModel(kept, r.ToolsRaw, "", r.ToolChoice, r.Thinking, model)
 }
