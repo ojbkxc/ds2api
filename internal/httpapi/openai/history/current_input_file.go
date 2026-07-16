@@ -81,7 +81,7 @@ func (s Service) ApplyCurrentInputFile(ctx context.Context, a *auth.RequestAuth,
 	}
 	filenameTemplate := s.Store.CurrentInputFileFilenameTemplate()
 	historyFilename := promptcompat.GenerateCurrentInputFilename(filenameTemplate)
-	fileText := promptcompat.BuildOpenAICurrentInputContextTranscriptWithFilename(stdReq.Messages, historyFilename)
+	fileText := promptcompat.BuildOpenAICurrentInputContextTranscriptWithFilename(stdReq.Messages[index:], historyFilename)
 	if strings.TrimSpace(fileText) == "" {
 		return stdReq, errors.New("current user input file produced empty transcript")
 	}
@@ -248,7 +248,7 @@ func currentInputFilePrompt(historyFilename string, toolsFilename string, hasToo
 		"Here's the conversation context in %s. Pick up where we left off and address the current request.",
 		"%s contains the prior conversation. Use it to maintain context and respond to the latest input.",
 	}
-	prompt := fmt.Sprintf(templates[rand.Intn(len(templates))], historyFilename)
+	prompt := fmt.Sprintf(templates[rand.Intn(len(templates))], historyFilename) + fmt.Sprintf(" %04d", rand.Intn(10000))
 	if hasToolsFile {
 		toolTemplates := []string{
 			" Available tool descriptions and parameter schemas are attached in %s; use only those tools and follow the tool-call format rules in this prompt.",
@@ -260,7 +260,7 @@ func currentInputFilePrompt(historyFilename string, toolsFilename string, hasToo
 			" %s includes tool descriptions and parameters. Use only the provided tools with correct formatting.",
 			" Consult %s for tool definitions. Employ only those tools and maintain proper call structure.",
 		}
-		prompt += fmt.Sprintf(toolTemplates[rand.Intn(len(toolTemplates))], toolsFilename)
+		prompt += fmt.Sprintf(toolTemplates[rand.Intn(len(toolTemplates))], toolsFilename) + fmt.Sprintf(" %04d", rand.Intn(10000))
 	}
 	return prompt
 }

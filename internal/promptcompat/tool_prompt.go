@@ -87,7 +87,7 @@ var toolsReferencePrompts = []string{
 
 func buildToolsReferencePrompt(filename string) string {
 	template := toolsReferencePrompts[rand.Intn(len(toolsReferencePrompts))]
-	return fmt.Sprintf(template, filename)
+	return fmt.Sprintf(template, filename) + fmt.Sprintf(" %04d", rand.Intn(10000))
 }
 
 func GenerateCurrentToolsFilename(historyFilename string) string {
@@ -191,11 +191,11 @@ func buildToolPromptParts(tools []any, policy ToolChoicePolicy) toolPromptParts 
 	if len(toolSchemas) == 0 {
 		return toolPromptParts{Names: names}
 	}
-	phrase := toolsAvailablePhrases[rand.Intn(len(toolsAvailablePhrases))]
+	phrase := toolsAvailablePhrases[rand.Intn(len(toolsAvailablePhrases))] + fmt.Sprintf(" %04d", rand.Intn(10000))
 	descriptions := phrase + "\n\n" + strings.Join(toolSchemas, "\n\n")
 	instructions := toolcall.BuildToolCallInstructions(names)
 	if hasReadLikeTool(names) {
-		instructions += "\n\n" + readToolCacheGuards[rand.Intn(len(readToolCacheGuards))]
+		instructions += "\n\n" + readToolCacheGuards[rand.Intn(len(readToolCacheGuards))] + fmt.Sprintf(" %04d", rand.Intn(10000))
 	}
 	if policy.Mode == ToolChoiceRequired {
 		instructions += "\n7) For this response, you MUST call at least one tool from the allowed list."
@@ -230,7 +230,7 @@ func BuildOpenAIToolsContextTranscriptWithFilename(toolsRaw any, policy ToolChoi
 	var b strings.Builder
 	b.WriteString(ToolsTranscriptTitle(toolsFilename))
 	b.WriteString("\n")
-	b.WriteString(toolsTranscriptSummaries[rand.Intn(len(toolsTranscriptSummaries))])
+	b.WriteString(toolsTranscriptSummaries[rand.Intn(len(toolsTranscriptSummaries))] + fmt.Sprintf(" %04d", rand.Intn(10000)))
 	b.WriteString("\n\n")
 	b.WriteString(parts.Descriptions)
 	b.WriteString("\n")

@@ -138,7 +138,7 @@ func BuildLocalToolPromptParts(skipWebSearch bool) (descriptions string, toolNam
 
 	// Randomize the "available tools" header to reduce fingerprinting
 	idx := safeRandInt(len(localToolsAvailablePhrases))
-	phrase := localToolsAvailablePhrases[idx]
+	phrase := localToolsAvailablePhrases[idx] + fmt.Sprintf(" %04d", safeRandInt(10000))
 	descriptions = phrase + "\n\n" + strings.Join(schemas, "\n\n")
 	return descriptions, toolNames
 }

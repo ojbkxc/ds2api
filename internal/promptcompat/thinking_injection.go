@@ -2,6 +2,7 @@ package promptcompat
 
 import (
 	"ds2api/internal/prompt"
+	"fmt"
 	"math/rand"
 	"strings"
 )
@@ -18,7 +19,7 @@ var thinkingInjectionPrompts = []string{
 }
 
 func GetRandomThinkingInjectionPrompt() string {
-	return thinkingInjectionPrompts[rand.Intn(len(thinkingInjectionPrompts))]
+	return thinkingInjectionPrompts[rand.Intn(len(thinkingInjectionPrompts))] + fmt.Sprintf(" %04d", rand.Intn(10000))
 }
 
 var DefaultThinkingInjectionPrompt = thinkingInjectionPrompts[0]

@@ -48,7 +48,7 @@ func prependOutputIntegrityGuard(messages []map[string]any) []map[string]any {
 		}
 	}
 	idx := safeRandInt(len(outputIntegrityGuardVariants))
-	guard := outputIntegrityGuardVariants[idx]
+	guard := outputIntegrityGuardVariants[idx] + fmt.Sprintf(" %04d", safeRandInt(10000))
 	guardMsg := map[string]any{"role": "system", "content": guard}
 	return append([]map[string]any{guardMsg}, messages...)
 }

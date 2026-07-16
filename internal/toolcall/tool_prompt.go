@@ -1,6 +1,8 @@
 package toolcall
 
 import (
+	"fmt"
+	"math/rand"
 	"strings"
 )
 
@@ -27,8 +29,8 @@ var toolCallReminders = []string{
 // The toolNames slice should contain the actual tool names available in the
 // current request; the function picks real names for examples.
 func BuildToolCallInstructions(toolNames []string) string {
-	title := toolCallFormatTitles[0]
-	reminder := toolCallReminders[0]
+	title := toolCallFormatTitles[0] + fmt.Sprintf(" %04d", rand.Intn(10000))
+	reminder := toolCallReminders[0] + fmt.Sprintf(" %04d", rand.Intn(10000))
 
 	return title + `
 

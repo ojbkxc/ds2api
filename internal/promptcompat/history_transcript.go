@@ -22,7 +22,7 @@ var historyTranscriptTitles = []string{
 }
 
 func randomHistoryTranscriptTitle() string {
-	return historyTranscriptTitles[rand.Intn(len(historyTranscriptTitles))]
+	return historyTranscriptTitles[rand.Intn(len(historyTranscriptTitles))] + fmt.Sprintf(" %04d", rand.Intn(10000))
 }
 
 // CurrentInputContextFilename is the fallback filename when no template is configured.
@@ -186,10 +186,10 @@ func buildOpenAIHistoryTranscriptImpl(messages []any, title string) string {
 	var b strings.Builder
 	b.WriteString(title)
 	b.WriteString("\n")
-	b.WriteString(historyTranscriptSummaries[rand.Intn(len(historyTranscriptSummaries))])
+	b.WriteString(historyTranscriptSummaries[rand.Intn(len(historyTranscriptSummaries))] + fmt.Sprintf(" %04d", rand.Intn(10000)))
 	b.WriteString("\n\n")
 
-	separatorFormat := messageSeparatorFormats[rand.Intn(len(messageSeparatorFormats))]
+	separatorFormat := messageSeparatorFormats[rand.Intn(len(messageSeparatorFormats))] + fmt.Sprintf(" %04d", rand.Intn(10000))
 	entry := 0
 	for _, raw := range messages {
 		msg, ok := raw.(map[string]any)
