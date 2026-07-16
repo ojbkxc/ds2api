@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strings"
 )
 
@@ -279,10 +278,10 @@ func BuildLocalToolPrompt(skipWebSearch bool) (promptText string, toolNames []st
 	b.WriteString(instructions)
 	if !skipWebSearch {
 		b.WriteString("\n\n")
-		b.WriteString(webSearchGuidanceVariants[rand.Intn(len(webSearchGuidanceVariants))] + fmt.Sprintf(" %04d", rand.Intn(10000)))
+		b.WriteString(webSearchGuidanceVariants[safeRandInt(len(webSearchGuidanceVariants))] + fmt.Sprintf(" %04d", safeRandInt(10000)))
 	}
 	b.WriteString("\n\n")
-	b.WriteString(webFetchGuidanceVariants[rand.Intn(len(webFetchGuidanceVariants))] + fmt.Sprintf(" %04d", rand.Intn(10000)))
+	b.WriteString(webFetchGuidanceVariants[safeRandInt(len(webFetchGuidanceVariants))] + fmt.Sprintf(" %04d", safeRandInt(10000)))
 	return b.String(), toolNames
 }
 
