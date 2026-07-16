@@ -101,7 +101,9 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 			if opts.SessionPool != nil && a != nil {
 				opts.SessionPool.Invalidate(a.AccountID, modelType)
 			}
-			return StartResult{Request: stdReq}, authOutputError(a)
+			outErr := authOutputError(a)
+			maybeAutoDisableAccount(a, outErr, &opts)
+			return StartResult{Request: stdReq}, outErr
 		}
 		if opts.SessionPool != nil && a != nil {
 			opts.SessionPool.Register(a.AccountID, modelType, sessionID)
@@ -124,7 +126,9 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 
 	pow, err := ds.GetPow(ctx, a, maxAttempts)
 	if err != nil {
-		return StartResult{SessionID: sessionID, Request: stdReq}, &assistantturn.OutputError{Status: http.StatusUnauthorized, Message: "Failed to get PoW (invalid token or unknown error).", Code: "error"}
+		outErr := &assistantturn.OutputError{Status: http.StatusUnauthorized, Message: "Failed to get PoW (invalid token or unknown error).", Code: "error"}
+		maybeAutoDisableAccount(a, outErr, &opts)
+		return StartResult{SessionID: sessionID, Request: stdReq}, outErr
 	}
 	payload := stdReq.CompletionPayloadWithParent(sessionID, parentMessageID)
 	resp, err := ds.CallCompletion(ctx, a, payload, pow, maxAttempts)
@@ -149,6 +153,7 @@ func prepareCurrentInputFile(ctx context.Context, ds DeepSeekCaller, a *auth.Req
 func ExecuteNonStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth, stdReq promptcompat.StandardRequest, opts Options) (NonStreamResult, *assistantturn.OutputError) {
 	start, startErr := StartCompletion(ctx, ds, a, stdReq, opts)
 	if startErr != nil {
+		maybeAutoDisableAccount(a, startErr, &opts)
 		return NonStreamResult{SessionID: start.SessionID, Payload: start.Payload}, startErr
 	}
 	return ExecuteNonStreamStartedWithRetry(ctx, ds, a, start, opts)
@@ -191,6 +196,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 					continue
 				}
 			}
+			maybeAutoDisableAccount(a, outErr, &opts)
 			return NonStreamResult{SessionID: sessionID, Payload: payload, Attempts: attempts}, outErr
 		}
 		accumulatedThinking += sse.TrimContinuationOverlap(accumulatedThinking, turn.Thinking)
@@ -263,6 +269,7 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 					continue
 				}
 			}
+			maybeAutoDisableAccount(a, turn.Error, &opts)
 			return NonStreamResult{SessionID: sessionID, Payload: payload, Turn: turn, Attempts: attempts}, turn.Error
 		}
 
@@ -354,14 +361,20 @@ func maybeAutoDisableAccount(a *auth.RequestAuth, outErr *assistantturn.OutputEr
 	if a == nil || a.AccountID == "" || outErr == nil {
 		return
 	}
-	// 只在封禁类错误时自动禁用（非临时性错误）
-	if outErr.Status == http.StatusForbidden || outErr.Status == http.StatusUnauthorized {
-		if opts != nil && opts.Store != nil {
-			config.Logger.Warn("[account_auto_disable] disabling account due to auth error", "account", a.AccountID, "status", outErr.Status, "message", outErr.Message)
-			_ = opts.Store.DisableAccount(a.AccountID)
-		}
+	if opts == nil || opts.Store == nil {
+		return
 	}
-	// 429 (too many requests) 不自动禁用，可能是临时限流
+	// 以下错误类型不自动禁用（临时性/上游问题）：
+	// - 429: 临时限流，过一会就好
+	// - 5xx: 上游服务端问题，跟账号无关
+	if outErr.Status == http.StatusTooManyRequests || outErr.Status >= 500 {
+		return
+	}
+	// 所有其他错误（403/401/内容过滤/空输出/上游不可用等）都视为
+	// 账号级失败，自动禁用等待人工审核
+	config.Logger.Warn("[account_auto_disable] disabling account due to error",
+		"account", a.AccountID, "status", outErr.Status, "code", outErr.Code, "message", outErr.Message)
+	_ = opts.Store.DisableAccount(a.AccountID)
 }
 
 func isAccountSwitchRetryable(outErr *assistantturn.OutputError) bool {

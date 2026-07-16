@@ -70,6 +70,12 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 			return
 		}
 		if !retryable || !opts.RetryEnabled {
+			if hooks.LastAttemptError != nil {
+				maybeAutoDisableAccount(a, hooks.LastAttemptError(), &Options{
+					MaxAccountSwitches: opts.MaxAccountSwitches,
+					Store:              opts.Store,
+				})
+			}
 			if hooks.Finalize != nil {
 				hooks.Finalize(attempts)
 			}
@@ -89,6 +95,10 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 			}) {
 				switched, switchErr := startPayloadCompletionOnAlternateAccount(ctx, ds, a, payload, opts, maxAttempts)
 				if switchErr != nil {
+					maybeAutoDisableAccount(a, switchErr, &Options{
+						MaxAccountSwitches: opts.MaxAccountSwitches,
+						Store:              opts.Store,
+					})
 					if hooks.OnRetryFailure != nil {
 						hooks.OnRetryFailure(switchErr.Status, switchErr.Message, switchErr.Code)
 					}
@@ -126,6 +136,11 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 					continue
 				}
 			}
+			// 所有重试均失败，禁用账户
+			maybeAutoDisableAccount(a, lastErr, &Options{
+				MaxAccountSwitches: opts.MaxAccountSwitches,
+				Store:              opts.Store,
+			})
 			if hooks.Finalize != nil {
 				hooks.Finalize(attempts)
 			}

@@ -185,19 +185,14 @@ func BuildLocalToolPrompt(skipWebSearch bool) (promptText string, toolNames []st
 // the local web_search tool is skipped to avoid conflicting with the model's
 // built-in search. The web_fetch tool is always injected since native search
 // does not handle direct URL fetching.
-//
-// For vision models, only web_fetch is injected (no web_search).
 func InjectLocalToolsIntoPrompt(messages []map[string]any, toolsRaw any, resolvedModel string) ([]map[string]any, []string) {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
 		return messages, nil
 	}
 
-	// Skip local web_search when the model has native search enabled OR
-	// when the model type doesn't support web_search (e.g. vision).
+	// Skip local web_search when the model has native search enabled.
+	// This avoids the model being confused about which tool to use.
 	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
-	if !config.ModelSupportsLocalWebSearch(resolvedModel) {
-		searchEnabled = true // force skip web_search
-	}
 	localPrompt, localNames := BuildLocalToolPrompt(searchEnabled)
 	if localPrompt == "" || len(localNames) == 0 {
 		return messages, nil
@@ -217,15 +212,12 @@ func InjectLocalToolsIntoPrompt(messages []map[string]any, toolsRaw any, resolve
 }
 
 // MergeLocalToolNames merges local tool names with client-provided tool names.
-// When the model has native search or is vision-only, web_search is excluded.
+// When the model has native search, web_search is excluded from the merged list.
 func MergeLocalToolNames(clientNames []string, resolvedModel string) []string {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
 		return clientNames
 	}
 	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
-	if !config.ModelSupportsLocalWebSearch(resolvedModel) {
-		searchEnabled = true // force skip web_search for vision
-	}
 	_, localNames := BuildLocalToolPromptParts(searchEnabled)
 	merged := make([]string, 0, len(clientNames)+len(localNames))
 	seen := make(map[string]bool)
