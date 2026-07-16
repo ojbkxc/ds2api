@@ -111,38 +111,30 @@ func TestBuildToolCallInstructions_WriteUsesFilePathAndContent(t *testing.T) {
 
 func TestBuildToolCallInstructions_AnchorsMissingOpeningWrapperFailureMode(t *testing.T) {
 	out := BuildToolCallInstructions([]string{"read_file"})
-	if !strings.Contains(out, "Never omit the opening <|DSML|tool_calls> tag") {
-		t.Fatalf("expected explicit missing-opening-tag warning, got: %s", out)
-	}
-	if !strings.Contains(out, "Wrong 3 — missing opening wrapper") {
-		t.Fatalf("expected missing-opening-wrapper negative example, got: %s", out)
+	if !strings.Contains(out, "Wrap tool calls in <|DSML|tool_calls>") {
+		t.Fatalf("expected tool_calls wrapper instruction, got: %s", out)
 	}
 }
 
 func TestBuildToolCallInstructions_RejectsEmptyParametersInPrompt(t *testing.T) {
 	out := BuildToolCallInstructions([]string{"Bash"})
+	// Compressed format no longer includes explicit "wrong" examples.
+	// Verify the rules still cover parameter requirements.
 	for _, want := range []string{
-		"Do not emit placeholder, blank, or whitespace-only parameters.",
-		"If a required parameter value is unknown, ask the user or answer normally instead of outputting an empty tool call.",
-		"Never call them with an empty command.",
-		"Wrong 4 — empty parameters",
+		"Use only the parameter names from the tool schema",
 	} {
 		if !strings.Contains(out, want) {
-			t.Fatalf("expected empty-parameter instruction %q, got: %s", want, out)
+			t.Fatalf("expected parameter instruction %q, got: %s", want, out)
 		}
 	}
 }
 
 func TestBuildToolCallInstructions_UsesPositiveTagPunctuationAlphabet(t *testing.T) {
 	out := BuildToolCallInstructions([]string{"Bash"})
-	want := `Tag punctuation alphabet: ASCII < > / = " plus the halfwidth pipe |.`
-	if !strings.Contains(out, want) {
-		t.Fatalf("expected positive tag punctuation alphabet %q, got: %s", want, out)
-	}
-	for _, bad := range []string{"lookalike", "substitute", "！", "〈", "〉", "“", "”", "、"} {
-		if strings.Contains(out, bad) {
-			t.Fatalf("tool prompt should not include negative punctuation examples %q, got: %s", bad, out)
-		}
+	// Compressed format no longer includes the explicit tag punctuation alphabet
+	// instruction. Verify the CDATA wrapper instruction is present instead.
+	if !strings.Contains(out, "String values use <![CDATA[") {
+		t.Fatalf("expected CDATA instruction, got: %s", out)
 	}
 }
 

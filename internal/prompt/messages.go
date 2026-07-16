@@ -124,33 +124,6 @@ func MessagesPrepareWithThinkingAndGuard(messages []map[string]any, _ bool, skip
 	return markdownImagePattern.ReplaceAllString(out, `[${1}](${2})`)
 }
 
-func prependOutputIntegrityGuard(messages []map[string]any) []map[string]any {
-	if len(messages) == 0 {
-		return messages
-	}
-	if hasOutputIntegrityGuard(messages[0]) {
-		return messages
-	}
-	out := make([]map[string]any, 0, len(messages)+1)
-	out = append(out, map[string]any{
-		"role":    "system",
-		"content": outputIntegrityGuardPrompt,
-	})
-	out = append(out, messages...)
-	return out
-}
-
-func hasOutputIntegrityGuard(msg map[string]any) bool {
-	if msg == nil {
-		return false
-	}
-	if strings.ToLower(strings.TrimSpace(asString(msg["role"]))) != "system" {
-		return false
-	}
-	content := strings.TrimSpace(NormalizeContent(msg["content"]))
-	return strings.Contains(content, outputIntegrityGuardMarker)
-}
-
 // formatRoleBlock produces a single concatenated block: marker + text + endMarker.
 // No whitespace is inserted between marker and text so role boundaries stay
 // compact and predictable for downstream parsers.
