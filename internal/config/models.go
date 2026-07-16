@@ -110,11 +110,12 @@ func GetModelType(model string) (modelType string, ok bool) {
 	}
 	baseModel, _ = splitNoThinkingModel(baseModel)
 	switch baseModel {
-	case "deepseek-v4-flash", "deepseek-v4-flash-search", "deepseek-v4-pro", "deepseek-v4-vision":
-		// Unified to "default" — "expert" and "vision" model_type values
-		// are no longer recognized by the upstream DeepSeek API and cause
-		// empty responses ("Upstream service is unavailable").
+	case "deepseek-v4-flash", "deepseek-v4-flash-search":
 		return "default", true
+	case "deepseek-v4-pro":
+		return "expert", true
+	case "deepseek-v4-vision":
+		return "vision", true
 	default:
 		return "", false
 	}

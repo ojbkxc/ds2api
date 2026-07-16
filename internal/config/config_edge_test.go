@@ -79,12 +79,12 @@ func TestGetModelTypeDefaultExpertAndVision(t *testing.T) {
 		t.Fatalf("expected default model_type for nothinking, got ok=%v model_type=%q", ok, defaultNoThinkingType)
 	}
 	expertType, ok := GetModelType("deepseek-v4-pro")
-	if !ok || expertType != "default" {
-		t.Fatalf("expected default model_type for pro, got ok=%v model_type=%q", ok, expertType)
+	if !ok || expertType != "expert" {
+		t.Fatalf("expected expert model_type for pro, got ok=%v model_type=%q", ok, expertType)
 	}
 	visionType, ok := GetModelType("deepseek-v4-vision")
-	if !ok || visionType != "default" {
-		t.Fatalf("expected default model_type for vision, got ok=%v model_type=%q", ok, visionType)
+	if !ok || visionType != "vision" {
+		t.Fatalf("expected vision model_type for vision, got ok=%v model_type=%q", ok, visionType)
 	}
 }
 
@@ -95,10 +95,10 @@ func TestGetModelTypeLegacyDeepSeekIDs(t *testing.T) {
 		wantOk   bool
 	}{
 		{"deepseek-chat", "default", true},
-		{"deepseek-reasoner", "default", true},
+		{"deepseek-reasoner", "expert", true},
 		{"deepseek-v4-flash-search", "default", true},
-		{"deepseek-v4-pro-search", "default", true},
-		{"deepseek-vision", "default", true},
+		{"deepseek-v4-pro-search", "expert", true},
+		{"deepseek-vision", "vision", true},
 		{"unknown-model", "", false},
 	}
 	for _, tc := range cases {
