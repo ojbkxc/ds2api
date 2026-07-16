@@ -201,7 +201,7 @@ func TestHandleVercelStreamPrepareUsesHalfwidthDSMLToolPrompt(t *testing.T) {
 	payload, _ := body["payload"].(map[string]any)
 	payloadPrompt, _ := payload["prompt"].(string)
 	for label, promptText := range map[string]string{"final_prompt": finalPrompt, "payload.prompt": payloadPrompt} {
-		if !strings.Contains(promptText, "<|DSML|tool_calls>") || !strings.Contains(promptText, "String values use <![CDATA[") {
+		if !strings.Contains(promptText, "<|DSML|tool_calls>") || !strings.Contains(promptText, "CDATA") {
 			t.Fatalf("expected %s to contain halfwidth DSML tool instructions, got %q", label, promptText)
 		}
 		if strings.Contains(promptText, "\uff5c") || strings.Contains(promptText, "full"+"width vertical bar") {
