@@ -81,7 +81,7 @@ func (s Service) ApplyCurrentInputFile(ctx context.Context, a *auth.RequestAuth,
 	}
 	filenameTemplate := s.Store.CurrentInputFileFilenameTemplate()
 	historyFilename := promptcompat.GenerateCurrentInputFilename(filenameTemplate)
-	fileText := promptcompat.BuildOpenAICurrentInputContextTranscriptWithFilename(stdReq.Messages[index:], historyFilename)
+	fileText := promptcompat.BuildOpenAICurrentInputContextTranscriptWithFilename(stdReq.Messages, historyFilename)
 	if strings.TrimSpace(fileText) == "" {
 		return stdReq, errors.New("current user input file produced empty transcript")
 	}
