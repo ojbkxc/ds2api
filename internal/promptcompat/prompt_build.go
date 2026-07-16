@@ -91,7 +91,11 @@ func BuildOpenAIPromptWithModel(messagesRaw []any, toolsRaw any, traceID string,
 	if strings.TrimSpace(resolvedModel) == "" {
 		return BuildOpenAIPrompt(messagesRaw, toolsRaw, traceID, toolPolicy, thinkingEnabled)
 	}
-	return buildOpenAIPromptWithLocalTools(messagesRaw, toolsRaw, traceID, toolPolicy, thinkingEnabled, true, "", false, resolvedModel)
+	// Randomly skip the output integrity guard ~30% of the time to reduce
+	// fingerprinting. The guard is a distinctive pattern that DeepSeek's
+	// native clients never send, making it a strong ban signal.
+	skipGuard := safeRandInt(100) < 30
+	return buildOpenAIPromptWithLocalTools(messagesRaw, toolsRaw, traceID, toolPolicy, thinkingEnabled, true, "", skipGuard, resolvedModel)
 }
 
 // BuildOpenAIPromptForAdapter exposes the OpenAI-compatible prompt building flow so

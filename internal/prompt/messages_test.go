@@ -52,7 +52,13 @@ func TestMessagesPreparePrependsOutputIntegrityGuard(t *testing.T) {
 		{"role": "user", "content": "Question"},
 	}
 	got := MessagesPrepare(messages)
-	if !strings.Contains(got, outputIntegrityGuardMarker) {
+	// Guard variants no longer have a fixed prefix. Check for any of the
+	// guard keywords that appear in all variants.
+	hasGuard := strings.Contains(got, "garbled") ||
+		strings.Contains(got, "malformed") ||
+		strings.Contains(got, "mangled") ||
+		strings.Contains(got, "corrupted")
+	if !hasGuard {
 		t.Fatalf("expected output integrity guard to be prepended, got %q", got)
 	}
 	if !strings.Contains(got, "System rule") {
@@ -84,10 +90,18 @@ func TestMessagesPrepareWithThinkingPreservesPromptShape(t *testing.T) {
 		t.Fatalf("expected user question in deepseek format, got %q", gotPlain)
 	}
 	// Guard should be present (skipGuard=false)
-	if !strings.Contains(gotThinking, outputIntegrityGuardMarker) {
+	hasGuard1 := strings.Contains(gotThinking, "garbled") ||
+		strings.Contains(gotThinking, "malformed") ||
+		strings.Contains(gotThinking, "mangled") ||
+		strings.Contains(gotThinking, "corrupted")
+	if !hasGuard1 {
 		t.Fatalf("expected output integrity guard in thinking mode, got %q", gotThinking)
 	}
-	if !strings.Contains(gotPlain, outputIntegrityGuardMarker) {
+	hasGuard2 := strings.Contains(gotPlain, "garbled") ||
+		strings.Contains(gotPlain, "malformed") ||
+		strings.Contains(gotPlain, "mangled") ||
+		strings.Contains(gotPlain, "corrupted")
+	if !hasGuard2 {
 		t.Fatalf("expected output integrity guard in plain mode, got %q", gotPlain)
 	}
 }

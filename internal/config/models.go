@@ -156,11 +156,15 @@ func IsNoThinkingModel(model string) bool {
 // have local web_search and web_fetch tools injected into the system prompt and
 // route through the tool loop.
 //
+// Model-specific rules:
+//   - flash / flash-search: full tools (web_search + web_fetch), supports file uploads
+//   - pro: no local tools injected (cannot handle file uploads)
+//   - vision: web_fetch only (can handle image uploads, no need for web_search)
+//
 // For models with native search (deepseek-v4-flash-search), web_search is
 // excluded at the tool-injection layer (BuildLocalToolPrompt skips it when
 // searchEnabled=true), but web_fetch is always included because native search
-// cannot handle direct URL fetching. Without web_fetch, the model cannot
-// retrieve content from user-provided URLs and will fail with empty output.
+// cannot handle direct URL fetching.
 func ModelSupportsLocalWebTools(model string) bool {
 	baseModel, _ := splitNoThinkingModel(model)
 	aliases := DefaultModelAliases()
@@ -169,11 +173,26 @@ func ModelSupportsLocalWebTools(model string) bool {
 	}
 	baseModel, _ = splitNoThinkingModel(baseModel)
 	switch baseModel {
-	case "deepseek-v4-flash", "deepseek-v4-pro", "deepseek-v4-vision", "deepseek-v4-flash-search":
+	case "deepseek-v4-flash", "deepseek-v4-flash-search", "deepseek-v4-vision":
 		return true
 	default:
 		return false
 	}
+}
+
+// ModelSupportsLocalWebSearch reports whether the model should have local
+// web_search tool injected. Vision models only get web_fetch, not web_search.
+func ModelSupportsLocalWebSearch(model string) bool {
+	if !ModelSupportsLocalWebTools(model) {
+		return false
+	}
+	baseModel, _ := splitNoThinkingModel(model)
+	aliases := DefaultModelAliases()
+	if mapped, ok := aliases[baseModel]; ok {
+		baseModel = mapped
+	}
+	baseModel, _ = splitNoThinkingModel(baseModel)
+	return baseModel != "deepseek-v4-vision"
 }
 
 func DefaultModelAliases() map[string]string {

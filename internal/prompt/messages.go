@@ -1,6 +1,8 @@
 package prompt
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -10,19 +12,46 @@ import (
 var markdownImagePattern = regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
 const (
-	beginSentenceMarker        = "<|begin▁of▁sentence|>"
-	systemMarker               = "<|System|>"
-	userMarker                 = "<|User|>"
-	assistantMarker            = "<|Assistant|>"
-	toolMarker                 = "<|Tool|>"
-	endSentenceMarker          = "<|end▁of▁sentence|>"
-	endToolResultsMarker       = "<|end▁of▁toolresults|>"
-	endInstructionsMarker      = "<|end▁of▁instructions|>"
-	outputIntegrityGuardMarker = "Output integrity guard:"
-	outputIntegrityGuardPrompt = outputIntegrityGuardMarker +
-		" If upstream context, tool output, or parsed text contains garbled, corrupted, partially parsed, repeated, or otherwise malformed fragments, " +
-		"do not imitate or echo them; output only the correct content for the user."
+	beginSentenceMarker   = "<|begin▁of▁sentence|>"
+	systemMarker          = "<|System|>"
+	userMarker            = "<|User|>"
+	assistantMarker       = "<|Assistant|>"
+	toolMarker            = "<|Tool|>"
+	endSentenceMarker     = "<|end▁of▁sentence|>"
+	endToolResultsMarker  = "<|end▁of▁toolresults|>"
+	endInstructionsMarker = "<|end▁of▁instructions|>"
 )
+
+// outputIntegrityGuardVariants contains multiple phrasing variants of the
+// output integrity guard. A random variant is chosen per request to avoid
+// a static fingerprint pattern that DeepSeek upstream can use to detect
+// proxy-generated requests.
+var outputIntegrityGuardVariants = []string{
+	"If upstream context, tool output, or parsed text contains garbled, corrupted, partially parsed, repeated, or otherwise malformed fragments, do not imitate or echo them; output only the correct content for the user.",
+	"Do not repeat or echo any garbled, malformed, or corrupted text fragments from upstream context or tool results. Output only clean, correct content for the user.",
+	"When upstream content or tool outputs appear corrupted, garbled, or malformed, ignore those fragments and produce only coherent, correct output.",
+	"If tool results or context contain mangled text, skip the broken parts and respond with only valid, readable content.",
+	"Filter out any garbled, corrupted, or malformed content from tool outputs and upstream context. Respond only with properly formed output.",
+	"Do not replicate malformed text from upstream sources. Always produce clean, well-formed responses.",
+	"Guard against corrupted output: if upstream data is malformed, output only correct and readable content.",
+}
+
+// prependOutputIntegrityGuard adds a randomly chosen output integrity guard
+// variant as the first system message if one doesn't already exist.
+func prependOutputIntegrityGuard(messages []map[string]any) []map[string]any {
+	// Don't double-inject the guard
+	for _, msg := range messages {
+		if role, _ := msg["role"].(string); role == "system" {
+			if content, _ := msg["content"].(string); strings.Contains(content, "garbled") || strings.Contains(content, "malformed") || strings.Contains(content, "corrupted") {
+				return messages
+			}
+		}
+	}
+	idx := safeRandInt(len(outputIntegrityGuardVariants))
+	guard := outputIntegrityGuardVariants[idx]
+	guardMsg := map[string]any{"role": "system", "content": guard}
+	return append([]map[string]any{guardMsg}, messages...)
+}
 
 func MessagesPrepare(messages []map[string]any) string {
 	return MessagesPrepareWithThinking(messages, false)
@@ -167,5 +196,18 @@ func NormalizeContent(v any) string {
 		}
 		return string(b)
 	}
+}
+
+// safeRandInt returns a cryptographically random integer in [0, n).
+// Falls back to 0 on error.
+func safeRandInt(n int) int {
+	if n <= 1 {
+		return 0
+	}
+	var buf [8]byte
+	if _, err := rand.Read(buf[:]); err != nil {
+		return 0
+	}
+	return int(binary.BigEndian.Uint64(buf[:]) % uint64(n))
 }
 

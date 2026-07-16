@@ -4,6 +4,8 @@ import (
 	"ds2api/internal/config"
 	"ds2api/internal/localtool"
 	"ds2api/internal/toolcall"
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -134,7 +136,9 @@ func BuildLocalToolPromptParts(skipWebSearch bool) (descriptions string, toolNam
 		return "", nil
 	}
 
-	phrase := localToolsAvailablePhrases[0]
+	// Randomize the "available tools" header to reduce fingerprinting
+	idx := safeRandInt(len(localToolsAvailablePhrases))
+	phrase := localToolsAvailablePhrases[idx]
 	descriptions = phrase + "\n\n" + strings.Join(schemas, "\n\n")
 	return descriptions, toolNames
 }
@@ -181,14 +185,19 @@ func BuildLocalToolPrompt(skipWebSearch bool) (promptText string, toolNames []st
 // the local web_search tool is skipped to avoid conflicting with the model's
 // built-in search. The web_fetch tool is always injected since native search
 // does not handle direct URL fetching.
+//
+// For vision models, only web_fetch is injected (no web_search).
 func InjectLocalToolsIntoPrompt(messages []map[string]any, toolsRaw any, resolvedModel string) ([]map[string]any, []string) {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
 		return messages, nil
 	}
 
-	// Skip local web_search when the model has native search enabled.
-	// This avoids the model being confused about which tool to use.
+	// Skip local web_search when the model has native search enabled OR
+	// when the model type doesn't support web_search (e.g. vision).
 	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
+	if !config.ModelSupportsLocalWebSearch(resolvedModel) {
+		searchEnabled = true // force skip web_search
+	}
 	localPrompt, localNames := BuildLocalToolPrompt(searchEnabled)
 	if localPrompt == "" || len(localNames) == 0 {
 		return messages, nil
@@ -208,12 +217,15 @@ func InjectLocalToolsIntoPrompt(messages []map[string]any, toolsRaw any, resolve
 }
 
 // MergeLocalToolNames merges local tool names with client-provided tool names.
-// When the model has native search, web_search is excluded from the merged list.
+// When the model has native search or is vision-only, web_search is excluded.
 func MergeLocalToolNames(clientNames []string, resolvedModel string) []string {
 	if !config.ModelSupportsLocalWebTools(resolvedModel) {
 		return clientNames
 	}
 	_, searchEnabled, _ := config.GetModelConfig(resolvedModel)
+	if !config.ModelSupportsLocalWebSearch(resolvedModel) {
+		searchEnabled = true // force skip web_search for vision
+	}
 	_, localNames := BuildLocalToolPromptParts(searchEnabled)
 	merged := make([]string, 0, len(clientNames)+len(localNames))
 	seen := make(map[string]bool)
@@ -245,4 +257,17 @@ func MergeLocalToolsWithClientTools(clientTools []any, resolvedModel string) []a
 	}
 	merged = append(merged, clientTools...)
 	return merged
+}
+
+// safeRandInt returns a cryptographically random integer in [0, n).
+// Falls back to 0 on error.
+func safeRandInt(n int) int {
+	if n <= 1 {
+		return 0
+	}
+	var buf [8]byte
+	if _, err := rand.Read(buf[:]); err != nil {
+		return 0
+	}
+	return int(binary.BigEndian.Uint64(buf[:]) % uint64(n))
 }
