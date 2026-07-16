@@ -80,7 +80,7 @@ func TestBuildOpenAIFinalPrompt_VercelPreparePathKeepsFinalAnswerInstruction(t *
 	if !strings.Contains(finalPrompt, "TOOL CALL FORMAT") {
 		t.Fatalf("vercel prepare finalPrompt missing xml format instruction: %q", finalPrompt)
 	}
-	if !strings.Contains(finalPrompt, "Do NOT wrap XML in markdown fences") {
+	if !strings.Contains(finalPrompt, "Do NOT wrap in markdown fences") {
 		t.Fatalf("vercel prepare finalPrompt missing no-fence xml instruction: %q", finalPrompt)
 	}
 	if strings.Contains(finalPrompt, "```json") {
@@ -168,7 +168,16 @@ func TestBuildOpenAIFinalPromptPrependsOutputIntegrityGuard(t *testing.T) {
 	}
 
 	finalPrompt, _ := buildOpenAIFinalPrompt(messages, tools, "", false)
-	guardIdx := strings.Index(finalPrompt, "Output integrity guard")
+	guardIdx := strings.Index(finalPrompt, "garbled")
+	if guardIdx < 0 {
+		guardIdx = strings.Index(finalPrompt, "malformed")
+	}
+	if guardIdx < 0 {
+		guardIdx = strings.Index(finalPrompt, "mangled")
+	}
+	if guardIdx < 0 {
+		guardIdx = strings.Index(finalPrompt, "corrupted")
+	}
 	toolIdx := strings.Index(finalPrompt, "TOOL CALL FORMAT")
 	if guardIdx < 0 {
 		t.Fatalf("expected output integrity guard in final prompt, got: %q", finalPrompt)
@@ -240,7 +249,23 @@ func TestBuildOpenAIFinalPromptWithThinkingKeepsPromptUnchanged(t *testing.T) {
 
 	finalPromptThinking, _ := buildOpenAIFinalPrompt(messages, nil, "", true)
 	finalPromptPlain, _ := buildOpenAIFinalPrompt(messages, nil, "", false)
-	if finalPromptThinking != finalPromptPlain {
-		t.Fatalf("expected thinking flag not to prepend continuation contract, thinking=%q plain=%q", finalPromptThinking, finalPromptPlain)
+	// Strip the output integrity guard (randomized per call) from both prompts
+	// before comparing. The guard is injected as the first system message.
+	stripGuard := func(s string) string {
+		// Guard is between <|System|> and <|end▁of▁instructions|> in the first
+		// system block. Remove the first system message entirely.
+		const marker = "<|end▁of▁instructions|>"
+		idx := strings.Index(s, marker)
+		if idx < 0 {
+			return s
+		}
+		// Skip the guard: reconstruct without the first system message
+		remaining := s[idx+len(marker):]
+		return "<|begin▁of▁sentence|><|System|>" + marker + remaining
+	}
+	thinkingStripped := stripGuard(finalPromptThinking)
+	plainStripped := stripGuard(finalPromptPlain)
+	if thinkingStripped != plainStripped {
+		t.Fatalf("expected thinking flag not to change prompt (aside from guard), thinking=%q plain=%q", thinkingStripped, plainStripped)
 	}
 }
