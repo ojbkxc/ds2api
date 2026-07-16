@@ -80,7 +80,7 @@ func TestBuildOpenAIFinalPrompt_VercelPreparePathKeepsFinalAnswerInstruction(t *
 	if !strings.Contains(finalPrompt, "TOOL CALL FORMAT") {
 		t.Fatalf("vercel prepare finalPrompt missing xml format instruction: %q", finalPrompt)
 	}
-	if !strings.Contains(finalPrompt, "Do NOT wrap in markdown fences") {
+	if !strings.Contains(finalPrompt, "Do NOT wrap in markdown fences") && !strings.Contains(finalPrompt, "Never use markdown code fences") && !strings.Contains(finalPrompt, "Don't wrap in ``` fences") {
 		t.Fatalf("vercel prepare finalPrompt missing no-fence xml instruction: %q", finalPrompt)
 	}
 	if strings.Contains(finalPrompt, "```json") {

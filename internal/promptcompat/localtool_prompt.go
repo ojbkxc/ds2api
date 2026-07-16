@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
 )
 
@@ -21,9 +22,10 @@ var localToolsAvailablePhrases = []string{
 	"The following built-in tools are available:",
 }
 
-// webSearchGuidance is injected into the system prompt when local web_search is
-// available. It follows the same pattern as deepseek-pp's renderWebSearchGuidance.
-const webSearchGuidance = `## Web Search Rules
+// webSearchGuidanceVariants provides randomized phrasing for web search
+// guidance while keeping the same functional instructions.
+var webSearchGuidanceVariants = []string{
+	`## Web Search Rules
 
 Use the web_search tool when any of these apply:
 - The user asks about real-time information, news, events, exchange rates, weather, or similar
@@ -39,13 +41,67 @@ Use the web_search tool when any of these apply:
 ### Rules
 - Use keywords that match the user's language and target sources
 - If one search is not enough, call web_search again with different keywords
-- Do not invent real-time information without searching`
+- Do not invent real-time information without searching`,
 
-// webFetchGuidance is injected into the system prompt when local web_fetch is
-// available. It tells the model when to use web_fetch instead of web_search.
-// CRITICAL: without this guidance, the model sees web_fetch in the tool list
-// but does not know when to use it (webSearchGuidance only covers web_search).
-const webFetchGuidance = `## Web Fetch Rules
+	`## Web Search
+
+You can use web_search to look up current information. Call it when:
+- The user wants real-time data: news, weather, exchange rates, events, etc.
+- You're unsure about something and need up-to-date sources
+- The user directly asks you to search or look things up
+- You need to verify facts or check citations
+
+How it works:
+1. Output a web_search call with search keywords
+2. Results come back automatically
+3. Use those results to answer the user
+
+Tips:
+- Match keywords to the user's language and target sources
+- Search again with different terms if the first search isn't enough
+- Never make up real-time information — search for it instead`,
+
+	`## Search the Web
+
+web_search lets you find current information online. Use it for:
+- Real-time info: news, events, weather, rates, etc.
+- Anything you're uncertain about that needs current sources
+- When the user asks you to search or look something up
+- Fact-checking and verifying citations
+
+Process:
+1. Call web_search with your query
+2. Wait for results (automatic)
+3. Answer based on what you found
+
+Guidelines:
+- Use keywords in the user's language, targeting appropriate sources
+- Try different keywords if needed
+- Always search — don't guess real-time information`,
+
+	`## Using web_search
+
+When to search:
+- Real-time or current information (news, weather, events, rates)
+- Topics you're unsure about and need fresh sources
+- User explicitly says "search" or "look up"
+- Verifying facts, data, or sources
+
+How:
+1. Send a web_search call with your query
+2. Results arrive automatically
+3. Answer from those results
+
+Remember:
+- Choose keywords that match the user's language
+- Retry with different keywords if needed
+- Don't fabricate real-time data — use web_search`,
+}
+
+// webFetchGuidanceVariants provides randomized phrasing for web fetch
+// guidance while keeping the same functional instructions.
+var webFetchGuidanceVariants = []string{
+	`## Web Fetch Rules
 
 Use the web_fetch tool when any of these apply:
 - The user asks you to access, fetch, visit, or read content from a specific URL
@@ -62,7 +118,65 @@ Use the web_fetch tool when any of these apply:
 - Always include the full URL with the https:// prefix
 - If the fetch fails, explain the error to the user and suggest alternatives
 - Use web_fetch for direct URL access, not web_search
-- If the user asks you to "access", "visit", "open", "read", or "fetch" a URL, use web_fetch`
+- If the user asks you to "access", "visit", "open", "read", or "fetch" a URL, use web_fetch`,
+
+	`## Web Fetch
+
+You can use web_fetch to retrieve content from specific URLs. Use it when:
+- The user wants you to access, fetch, visit, or read a specific URL
+- They give you a link and want its content extracted
+- They ask you to open a webpage, check a link, or get info from a web address
+- They want you to summarize or analyze a specific web page
+
+How it works:
+1. Call web_fetch with the full URL
+2. Page content is sent back automatically
+3. Answer based on the retrieved content
+
+Tips:
+- Always include https:// in the URL
+- If fetch fails, tell the user and suggest alternatives
+- For URLs, use web_fetch (not web_search)
+- Keywords like "access", "visit", "open", "read", "fetch" mean use web_fetch`,
+
+	`## Fetching Web Pages
+
+web_fetch retrieves content from a given URL. Use it for:
+- Accessing, fetching, visiting, or reading a specific URL
+- Extracting content from a link the user provided
+- Opening a webpage, checking a link, or getting info from a web address
+- Summarizing or analyzing a specific web page
+
+Process:
+1. Send a web_fetch call with the target URL
+2. Content loads automatically
+3. Respond based on what you retrieved
+
+Guidelines:
+- Include the full URL starting with https://
+- Explain errors and suggest alternatives if fetch fails
+- web_fetch is for URLs, web_search is for general queries
+- When the user says "access", "visit", "open", "read", or "fetch" a URL, that means web_fetch`,
+
+	`## Using web_fetch
+
+When to fetch:
+- User asks you to access/fetch/visit/read a specific URL
+- User provides a link and wants content from it
+- User wants you to open a webpage or check a link
+- User asks to summarize or analyze a web page
+
+How:
+1. Call web_fetch with the full URL
+2. Page content returns automatically
+3. Answer based on the content
+
+Remember:
+- Always use https:// prefix
+- If it fails, explain and suggest alternatives
+- web_fetch handles URLs; web_search handles general queries
+- Trigger words: "access", "visit", "open", "read", "fetch" → web_fetch`,
+}
 
 // BuildLocalToolDescriptors returns all local tools (web_search, web_fetch, MCP tools)
 // as OpenAI-format tool definitions suitable for prompt injection.
@@ -157,11 +271,6 @@ func BuildLocalToolPrompt(skipWebSearch bool) (promptText string, toolNames []st
 	}
 
 	// Generate DSML tool call format instructions for local tools.
-	// CRITICAL: without these instructions, the model sees JSON schema
-	// descriptions and outputs JSON tool calls (e.g. {"tool":"web_fetch",...}),
-	// but the tool sieve only recognizes XML/DSML format
-	// (<|DSML|tool_calls> wrapper). This causes tool calls to be silently
-	// ignored and treated as plain text.
 	instructions := toolcall.BuildToolCallInstructions(toolNames)
 
 	var b strings.Builder
@@ -170,10 +279,10 @@ func BuildLocalToolPrompt(skipWebSearch bool) (promptText string, toolNames []st
 	b.WriteString(instructions)
 	if !skipWebSearch {
 		b.WriteString("\n\n")
-		b.WriteString(webSearchGuidance)
+		b.WriteString(webSearchGuidanceVariants[rand.Intn(len(webSearchGuidanceVariants))] + fmt.Sprintf(" %04d", rand.Intn(10000)))
 	}
 	b.WriteString("\n\n")
-	b.WriteString(webFetchGuidance)
+	b.WriteString(webFetchGuidanceVariants[rand.Intn(len(webFetchGuidanceVariants))] + fmt.Sprintf(" %04d", rand.Intn(10000)))
 	return b.String(), toolNames
 }
 

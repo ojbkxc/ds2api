@@ -15,6 +15,28 @@ var toolCallFormatTitles = []string{
 	"EXECUTION FORMAT SPECIFICATION:",
 }
 
+var toolCallRules = [][]string{
+	{ // Rule 1: wrapper placement
+		"Wrap tool calls in <|DSML|tool_calls>...</|DSML|tool_calls> at the end of your response.",
+		"Place all tool calls inside <|DSML|tool_calls>...</|DSML|tool_calls> at the end.",
+		"Put tool calls within <|DSML|tool_calls>...</|DSML|tool_calls> wrapper, positioned at the end of your response.",
+	},
+	{ // Rule 2: string CDATA
+		"String values use <![CDATA[...]]>. Numbers, booleans, null are plain text.",
+		"Wrap string values in <![CDATA[...]]>. Numbers, booleans, and null go as plain text.",
+		"Strings go inside <![CDATA[...]]>. Other types (numbers, booleans, null) are unquoted.",
+	},
+	{ // Rule 3: no markdown / no trailing text
+		"Do NOT wrap in markdown fences. Do NOT add text after the closing tag.",
+		"Never use markdown code fences. No text after </|DSML|tool_calls>.",
+		"Don't wrap in ``` fences. Nothing after the closing </|DSML|tool_calls> tag.",
+	},
+	{ // Rule 4: schema parameter names
+		"Use only the parameter names from the tool schema.",
+		"Only use parameter names defined in the tool schema.",
+		"Stick to parameter names as specified in the tool definition.",
+	},
+}
 var toolCallReminders = []string{
 	"Remember: The ONLY valid way to use tools is the <|DSML|tool_calls>...</|DSML|tool_calls> block at the end of your response.",
 	"Note: Always use the <|DSML|tool_calls>...</|DSML|tool_calls> wrapper for tool execution.",
@@ -41,10 +63,10 @@ func BuildToolCallInstructions(toolNames []string) string {
 </|DSML|tool_calls>
 
 RULES:
-- Wrap tool calls in <|DSML|tool_calls>...</|DSML|tool_calls> at the end of your response.
-- String values use <![CDATA[...]]>. Numbers, booleans, null are plain text.
-- Do NOT wrap in markdown fences. Do NOT add text after the closing tag.
-- Use only the parameter names from the tool schema.
+- ` + toolCallRules[0][rand.Intn(len(toolCallRules[0]))] + `
+- ` + toolCallRules[1][rand.Intn(len(toolCallRules[1]))] + `
+- ` + toolCallRules[2][rand.Intn(len(toolCallRules[2]))] + `
+- ` + toolCallRules[3][rand.Intn(len(toolCallRules[3]))] + `
 
 ` + reminder + "\n\n" + buildCorrectToolExamples(toolNames)
 }

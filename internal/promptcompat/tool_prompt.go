@@ -186,7 +186,7 @@ func buildToolPromptParts(tools []any, policy ToolChoicePolicy) toolPromptParts 
 		}
 		b, _ := json.Marshal(schema)
 		template := toolDescriptionTemplates[rand.Intn(len(toolDescriptionTemplates))]
-		toolSchemas = append(toolSchemas, fmt.Sprintf(template, name, desc, string(b)))
+		toolSchemas = append(toolSchemas, fmt.Sprintf(template, name, desc, string(b))+fmt.Sprintf(" %04d", rand.Intn(10000)))
 	}
 	if len(toolSchemas) == 0 {
 		return toolPromptParts{Names: names}

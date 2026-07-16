@@ -111,7 +111,7 @@ func TestBuildToolCallInstructions_WriteUsesFilePathAndContent(t *testing.T) {
 
 func TestBuildToolCallInstructions_AnchorsMissingOpeningWrapperFailureMode(t *testing.T) {
 	out := BuildToolCallInstructions([]string{"read_file"})
-	if !strings.Contains(out, "Wrap tool calls in <|DSML|tool_calls>") {
+	if !strings.Contains(out, "Wrap tool calls in <|DSML|tool_calls>") && !strings.Contains(out, "Place all tool calls inside <|DSML|tool_calls>") && !strings.Contains(out, "Put tool calls within <|DSML|tool_calls>") {
 		t.Fatalf("expected tool_calls wrapper instruction, got: %s", out)
 	}
 }
@@ -119,21 +119,19 @@ func TestBuildToolCallInstructions_AnchorsMissingOpeningWrapperFailureMode(t *te
 func TestBuildToolCallInstructions_RejectsEmptyParametersInPrompt(t *testing.T) {
 	out := BuildToolCallInstructions([]string{"Bash"})
 	// Compressed format no longer includes explicit "wrong" examples.
-	// Verify the rules still cover parameter requirements.
-	for _, want := range []string{
-		"Use only the parameter names from the tool schema",
-	} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("expected parameter instruction %q, got: %s", want, out)
-		}
+	// Verify the rules still cover parameter requirements (randomized phrasing).
+	found := strings.Contains(out, "Use only the parameter names") ||
+		strings.Contains(out, "Only use parameter names") ||
+		strings.Contains(out, "Stick to parameter names")
+	if !found {
+		t.Fatalf("expected parameter instruction, got: %s", out)
 	}
 }
 
 func TestBuildToolCallInstructions_UsesPositiveTagPunctuationAlphabet(t *testing.T) {
 	out := BuildToolCallInstructions([]string{"Bash"})
-	// Compressed format no longer includes the explicit tag punctuation alphabet
-	// instruction. Verify the CDATA wrapper instruction is present instead.
-	if !strings.Contains(out, "String values use <![CDATA[") {
+	// Compressed format with randomized phrasing for CDATA instruction.
+	if !strings.Contains(out, "CDATA") {
 		t.Fatalf("expected CDATA instruction, got: %s", out)
 	}
 }
