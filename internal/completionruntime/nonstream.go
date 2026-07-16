@@ -42,10 +42,10 @@ type AccountDisabler interface {
 }
 
 type SessionPoolAccessor interface {
-	Acquire(accountID string, maxMessages int) (sessionID string, parentMessageID int)
-	Register(accountID string, sessionID string)
-	Update(accountID string, sessionID string, responseMessageID int)
-	Invalidate(accountID string)
+	Acquire(accountID string, modelType string, maxMessages int) (sessionID string, parentMessageID int)
+	Register(accountID string, modelType string, sessionID string)
+	Update(accountID string, modelType string, sessionID string, responseMessageID int)
+	Invalidate(accountID string, modelType string)
 }
 
 type NonStreamResult struct {
@@ -74,6 +74,12 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 		return StartResult{Request: stdReq}, prepErr
 	}
 
+	// Resolve model_type for session pool isolation (default/expert/vision)
+	modelType := "default"
+	if mt, ok := config.GetModelType(stdReq.ResolvedModel); ok {
+		modelType = mt
+	}
+
 	// 会话池：尝试复用已有会话
 	var sessionID string
 	var parentMessageID int
@@ -84,7 +90,7 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 				maxMessages = m
 			}
 		}
-		sessionID, parentMessageID = opts.SessionPool.Acquire(a.AccountID, maxMessages)
+		sessionID, parentMessageID = opts.SessionPool.Acquire(a.AccountID, modelType, maxMessages)
 	}
 
 	// 池中没有可复用的会话，创建新会话
@@ -93,12 +99,12 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 		sessionID, err = ds.CreateSession(ctx, a, maxAttempts)
 		if err != nil {
 			if opts.SessionPool != nil && a != nil {
-				opts.SessionPool.Invalidate(a.AccountID)
+				opts.SessionPool.Invalidate(a.AccountID, modelType)
 			}
 			return StartResult{Request: stdReq}, authOutputError(a)
 		}
 		if opts.SessionPool != nil && a != nil {
-			opts.SessionPool.Register(a.AccountID, sessionID)
+			opts.SessionPool.Register(a.AccountID, modelType, sessionID)
 		}
 	}
 
@@ -204,7 +210,11 @@ func ExecuteNonStreamStartedWithRetry(ctx context.Context, ds DeepSeekCaller, a 
 
 		// 回写 response_message_id 到会话池，供下一次请求复用
 		if opts.SessionPool != nil && a != nil && turn.ResponseMessageID > 0 {
-			opts.SessionPool.Update(a.AccountID, sessionID, turn.ResponseMessageID)
+			reqModelType := "default"
+			if mt, ok := config.GetModelType(stdReq.ResolvedModel); ok {
+				reqModelType = mt
+			}
+			opts.SessionPool.Update(a.AccountID, reqModelType, sessionID, turn.ResponseMessageID)
 		}
 
 		retryMax := opts.RetryMaxAttempts
@@ -375,16 +385,20 @@ func startStandardCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekC
 	if prepErr != nil {
 		return StartResult{Request: stdReq}, prepErr
 	}
-	// 换号时使旧会话失效，创建新会话
+	// 换号时使旧账号所有模型类型的会话失效
 	if opts.SessionPool != nil && a != nil {
-		opts.SessionPool.Invalidate(a.AccountID)
+		opts.SessionPool.Invalidate(a.AccountID, "")
 	}
 	sessionID, err := ds.CreateSession(ctx, a, maxAttempts)
 	if err != nil {
 		return StartResult{}, authOutputError(a)
 	}
+	reqModelType := "default"
+	if mt, ok := config.GetModelType(stdReq.ResolvedModel); ok {
+		reqModelType = mt
+	}
 	if opts.SessionPool != nil && a != nil {
-		opts.SessionPool.Register(a.AccountID, sessionID)
+		opts.SessionPool.Register(a.AccountID, reqModelType, sessionID)
 	}
 	pow, err := ds.GetPow(ctx, a, maxAttempts)
 	if err != nil {

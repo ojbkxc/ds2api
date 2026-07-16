@@ -363,7 +363,11 @@ func (h *Handler) executeStreamWithToolCalls(
 		// Update session pool with the response message ID so the next
 		// iteration reuses the same session with correct parent.
 		if h.DS.SessionPool() != nil && a != nil && a.AccountID != "" && streamRuntime.responseMessageID > 0 {
-			h.DS.SessionPool().Update(a.AccountID, lastSessionID, streamRuntime.responseMessageID)
+			reqModelType := "default"
+			if mt, ok := config.GetModelType(stdReq.ResolvedModel); ok {
+				reqModelType = mt
+			}
+			h.DS.SessionPool().Update(a.AccountID, reqModelType, lastSessionID, streamRuntime.responseMessageID)
 		}
 
 		// Append tool results to messages and rebuild prompt.
