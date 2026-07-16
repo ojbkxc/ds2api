@@ -364,10 +364,8 @@ func maybeAutoDisableAccount(a *auth.RequestAuth, outErr *assistantturn.OutputEr
 	if opts == nil || opts.Store == nil {
 		return
 	}
-	// 以下错误类型不自动禁用（临时性/上游问题）：
-	// - 429: 临时限流，过一会就好
-	// - 5xx: 上游服务端问题，跟账号无关
-	if outErr.Status == http.StatusTooManyRequests || outErr.Status >= 500 {
+	// 仅 429 (临时限流) 不自动禁用，其他所有错误都触发禁用
+	if outErr.Status == http.StatusTooManyRequests {
 		return
 	}
 	// 所有其他错误（403/401/内容过滤/空输出/上游不可用等）都视为
