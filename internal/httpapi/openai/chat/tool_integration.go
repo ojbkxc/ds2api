@@ -330,6 +330,13 @@ func (h *Handler) executeStreamWithToolCalls(
 						"tool_names", stdReq.ToolNames,
 						"status", outcome.Error.Status,
 						"code", outcome.Error.Code)
+					// Auto-disable account on empty output: upstream returns
+					// nothing, which may indicate the account has been banned.
+					if outcome.Error.Status != http.StatusTooManyRequests {
+						config.Logger.Warn("[stream_tool_loop] auto-disabling account due to empty output",
+							"account", a.AccountID, "status", outcome.Error.Status)
+						_ = h.Store.DisableAccount(a.AccountID)
+					}
 				}
 				streamRuntime.sendFailedChunk(outcome.Error.Status, outcome.Error.Message, outcome.Error.Code)
 				if historySession != nil {

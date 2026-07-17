@@ -99,6 +99,12 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 			if historySession != nil {
 				historySession.error(outErr.Status, outErr.Message, outErr.Code, historyThinkingForArchive(result.Turn.RawThinking, result.Turn.DetectionThinking, result.Turn.Thinking), historyTextForArchive(result.Turn.RawText, result.Turn.Text))
 			}
+			// Auto-disable account on non-stream error (except 429 temporary rate limit).
+			if outErr.Status != http.StatusTooManyRequests {
+				config.Logger.Warn("[handler_chat] auto-disabling account due to nonstream error",
+					"account", a.AccountID, "status", outErr.Status, "code", outErr.Code)
+				_ = h.Store.DisableAccount(a.AccountID)
+			}
 			writeOpenAIErrorWithCode(w, outErr.Status, outErr.Message, outErr.Code)
 			return
 		}
